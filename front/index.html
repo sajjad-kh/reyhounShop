@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Security Headers -->
+  <!-- Content Security Policy - Strict XSS Protection -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: http://localhost:3000 blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; media-src 'self'; worker-src 'self' blob:; manifest-src 'self';" />
+  <!-- Prevent MIME type sniffing -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <!-- Prevent clickjacking attacks -->
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <!-- Enable XSS filtering in older browsers -->
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+  <!-- Control referrer information -->
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <!-- Permissions Policy - Restrict browser features -->
+  <meta http-equiv="Permissions-Policy"
+    content="geolocation=(), microphone=(), camera=(), payment=(self), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" />
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="description" content="Modern glassmorphism e-commerce platform with premium shopping experience" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GlassShop" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+
+  <title data-default>GlassShop - Premium E-Commerce</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

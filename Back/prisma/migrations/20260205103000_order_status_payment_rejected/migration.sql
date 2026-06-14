@@ -1,0 +1,1 @@
+-- SQLite stores Order.status as TEXT; new enum variant PAYMENT_REJECTED is enforced by Prisma Client.

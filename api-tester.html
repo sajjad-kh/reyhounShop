@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basalam API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .token-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .token-input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .token-input-group label {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .token-input-group input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .token-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .token-input-group button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .token-input-group button:hover {
+            background: #5568d3;
+        }
+
+        .token-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .token-status.saved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .content {
+            display: flex;
+            height: calc(100vh - 250px);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            border-right: 1px solid #ddd;
+            overflow-y: hidden;
+            padding: 0;
+            order: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-box {
+            width: calc(100% - 40px);
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 20px 15px 20px;
+            font-size: 1em;
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            z-index: 10;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .api-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px 20px;
+        }
+
+        .api-group {
+            margin-bottom: 5px;
+        }
+
+        .api-group-title {
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .api-group-title:hover {
+            background: #5568d3;
+        }
+
+        .api-group-title::after {
+            content: '▼';
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+
+        .api-group-title.collapsed::after {
+            transform: rotate(-90deg);
+        }
+
+        .api-group-items {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 1;
+        }
+
+        .api-group-items.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .api-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .api-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .api-item.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .method-get {
+            background: #28a745;
+            color: white;
+        }
+
+        .method-post {
+            background: #007bff;
+            color: white;
+        }
+
+        .method-put {
+            background: #ffc107;
+            color: black;
+        }
+
+        .method-patch {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .method-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            order: 1;
+        }
+
+        .api-details {
+            display: none;
+        }
+
+        .api-details.active {
+            display: block;
+        }
+
+        .detail-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .param-group {
+            margin-bottom: 15px;
+        }
+
+        .param-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .param-group input,
+        .param-group textarea,
+        .param-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .param-group select {
+            font-family: inherit;
+        }
+
+        .param-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .param-group textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        .response-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .response-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .response-content {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .success {
+            color: #28a745;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Basalam API Tester</h1>
+            <p>تست و بررسی APIهای Basalam</p>
+        </div>
+
+        <div class="token-section">
+            <div class="token-input-group" style="margin-bottom: 15px;">
+                <label>� فوایل OpenAPI:</label>
+                <input type="file" id="openApiFile" accept=".json" onchange="loadOpenAPIFromFile()" style="flex: 1;">
+            </div>
+            <div class="token-input-group">
+                <label>🔑 توکن احراز هویت:</label>
+                <input type="text" id="authToken" placeholder="توکن خود را وارد کنید">
+                <button onclick="saveToken()">ذخیره توکن</button>
+            </div>
+            <div id="tokenStatus"></div>
+        </div>
+
+        <div class="content">
+            <div class="sidebar">
+                <input type="text" class="search-box" id="searchBox" placeholder="جستجوی API..." onkeyup="filterAPIs()">
+                <div class="api-list-container">
+                    <div id="apiList"></div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div id="apiDetailsContainer">
+                    <div style="text-align: center; padding: 50px; color: #999;">
+                        <h2>یک API را از لیست سمت راست انتخاب کنید</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let openApiSpec = null;
+        let authToken = localStorage.getItem('basalam_auth_token') || '';
+
+        if (authToken) {
+            document.getElementById('authToken').value = authToken;
+            showTokenStatus('توکن از حافظه بارگذاری شد', true);
+        }
+
+        function saveToken() {
+            authToken = document.getElementById('authToken').value.trim();
+            if (authToken) {
+                localStorage.setItem('basalam_auth_token', authToken);
+                showTokenStatus('توکن با موفقیت ذخیره شد', true);
+            }
+        }
+
+        function showTokenStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('tokenStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'token-status ' + (isSuccess ? 'saved' : '');
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'token-status';
+            }, 3000);
+        }
+
+        function loadOpenAPIFromFile() {
+            const fileInput = document.getElementById('openApiFile');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    openApiSpec = JSON.parse(e.target.result);
+                    renderAPIList();
+                    showTokenStatus('فایل OpenAPI با موفقیت بارگذاری شد', true);
+                } catch (error) {
+                    console.error('خطا در پردازش فایل:', error);
+                    alert('خطا در پردازش فایل OpenAPI. لطفا یک فایل JSON معتبر انتخاب کنید.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function loadOpenAPI() {
+            try {
+                const response = await fetch('openapi.json');
+                openApiSpec = await response.json();
+                renderAPIList();
+            } catch (error) {
+                console.log('فایل openapi.json یافت نشد. لطفا فایل را از بالا انتخاب کنید.');
+            }
+        }
+
+        function renderAPIList() {
+            const apiList = document.getElementById('apiList');
+            const groupedAPIs = {};
+
+            Object.keys(openApiSpec.paths).forEach(path => {
+                Object.keys(openApiSpec.paths[path]).forEach(method => {
+                    const endpoint = openApiSpec.paths[path][method];
+                    const tag = endpoint.tags?.[0] || 'Other';
+
+                    if (!groupedAPIs[tag]) {
+                        groupedAPIs[tag] = [];
+                    }
+
+                    groupedAPIs[tag].push({
+                        path,
+                        method: method.toUpperCase(),
+                        summary: endpoint.summary || path,
+                        operationId: endpoint.operationId
+                    });
+                });
+            });
+
+            let html = '';
+            Object.keys(groupedAPIs).sort().forEach((tag, index) => {
+                const groupId = `group-${index}`;
+                // First group is open by default, others are collapsed
+                const isCollapsed = index !== 0 ? 'collapsed' : '';
+                html += `<div class="api-group">`;
+                html += `<div class="api-group-title ${isCollapsed}" onclick="toggleGroup('${groupId}')">${tag}</div>`;
+                html += `<div class="api-group-items ${isCollapsed}" id="${groupId}">`;
+                groupedAPIs[tag].forEach(api => {
+                    html += `<div class="api-item" onclick="showAPIDetails('${api.path}', '${api.method}')">`;
+                    html += `<span class="method-badge method-${api.method.toLowerCase()}">${api.method}</span>`;
+                    html += `<div style="margin-top: 5px;">${api.summary}</div>`;
+                    html += `<div style="font-size: 0.85em; color: #666; margin-top: 3px;">${api.path}</div>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                html += `</div>`;
+            });
+
+            apiList.innerHTML = html;
+        }
+
+        function toggleGroup(groupId) {
+            const groupItems = document.getElementById(groupId);
+            const groupTitle = event.target;
+            const isCurrentlyCollapsed = groupItems.classList.contains('collapsed');
+
+            // Close all groups first (accordion behavior)
+            document.querySelectorAll('.api-group-items').forEach(items => {
+                items.classList.add('collapsed');
+            });
+            document.querySelectorAll('.api-group-title').forEach(title => {
+                title.classList.add('collapsed');
+            });
+
+            // If the clicked group was collapsed, open it
+            if (isCurrentlyCollapsed) {
+                groupItems.classList.remove('collapsed');
+                groupTitle.classList.remove('collapsed');
+            }
+            // If it was already open, it stays closed (all groups closed now)
+        }
+
+        function filterAPIs() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const apiGroups = document.querySelectorAll('.api-group');
+
+            apiGroups.forEach(group => {
+                const apiItems = group.querySelectorAll('.api-item');
+                const groupItems = group.querySelector('.api-group-items');
+                const groupTitle = group.querySelector('.api-group-title');
+                let hasVisibleItems = false;
+
+                // Filter items within this group
+                apiItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        hasVisibleItems = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Hide/show the entire group based on whether it has visible items
+                if (hasVisibleItems || searchTerm === '') {
+                    group.style.display = 'block';
+                    // Auto-expand groups when searching
+                    if (searchTerm !== '' && hasVisibleItems) {
+                        groupItems.classList.remove('collapsed');
+                        groupTitle.classList.remove('collapsed');
+                    }
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        }
+
+        function showAPIDetails(path, method) {
+            document.querySelectorAll('.api-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.api-item').classList.add('active');
+
+            const endpoint = openApiSpec.paths[path][method.toLowerCase()];
+            const container = document.getElementById('apiDetailsContainer');
+
+            let html = `
+                <div class="api-details active">
+                    <h2>
+                        <span class="method-badge method-${method.toLowerCase()}">${method}</span>
+                        ${path}
+                    </h2>
+                    <p style="margin: 15px 0; color: #666;">${endpoint.summary || ''}</p>
+            `;
+
+            // Path Parameters
+            const pathParams = endpoint.parameters?.filter(p => p.in === 'path') || [];
+            if (pathParams.length > 0) {
+                html += `<div class="detail-section">
+                    <h3>پارامترهای مسیر (Path Parameters)</h3>`;
+                pathParams.forEach(param => {
+                    const paramType = param.schema?.type || 'string';
+                    html += `<div class="param-group">
+                        <label>${param.name} ${param.required ? '(الزامی)' : '(اختیاری)'}</label>
+                        <input type="text" id="path_${param.name}" placeholder="نوع: ${paramType}">
+                        <small style="color: #666; font-size: 0.85em;">مثال: ${paramType === 'integer' ? '123' : 'value'}</small>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            // Query Parameters
+            const queryParams = endpoint.parameters?.filter(p => p.in === 'query') || [];
+            if (queryParams.length > 0) {
+                html += `<div class="detail-section">
+                    <h3>پارامترهای Query</h3>`;
+                queryParams.forEach(param => {
+                    const paramType = param.schema?.type || 'string';
+                    const isArray = param.schema?.type === 'array' || param.schema?.items;
+
+                    // Special handling for statuses parameter
+                    if (param.name === 'statuses') {
+                        const statuses = [
+                            { id: 3739, title: 'جدید' },
+                            { id: 3237, title: 'در حال آماده‌سازی' },
+                            { id: 3238, title: 'ارسال شده' },
+                            { id: 5017, title: 'اطلاعات ارسال نادرست' },
+                            { id: 3572, title: 'نرسیده' },
+                            { id: 3740, title: 'ثبت مشکل شده' },
+                            { id: 4633, title: 'درخواست لغو مشتری' },
+                            { id: 5075, title: 'درخواست توافق تاخیر' },
+                            { id: 3195, title: 'رضایت مشتری' },
+                            { id: 3233, title: 'عودت وجه کامل' },
+                            { id: 3067, title: 'لغو' },
+                            { id: 6440, title: 'درخواست لغو غرفه‌دار' }
+                        ];
+
+                        html += `<div class="param-group">
+                            <label>${param.name} ${param.required ? '(الزامی)' : '(اختیاری)'}</label>
+                            <select multiple id="query_${param.name}" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; min-height: 150px;">`;
+                        statuses.forEach(status => {
+                            html += `<option value="${status.id}">${status.title} (${status.id})</option>`;
+                        });
+                        html += `</select>
+                            <small style="color: #666; font-size: 0.85em;">💡 با Ctrl/Cmd کلیک چند مورد انتخاب کنید</small>
+                        </div>`;
+                        return;
+                    }
+
+                    let placeholder = `نوع: ${paramType}`;
+                    let helpText = '⚠️ فقط مقادیر انگلیسی وارد کنید';
+
+                    if (isArray) {
+                        placeholder = 'مثال: 3237,3238,3239';
+                        helpText = '💡 چند ID: با کاما جدا کنید - فقط اعداد (مثلاً 3237,3238)';
+                    } else if (paramType === 'integer') {
+                        placeholder = 'مثال: 3237';
+                        helpText = '🔢 فقط ID (عدد) وارد کنید - مثلاً 3237';
+                    } else if (paramType === 'boolean') {
+                        placeholder = 'true یا false';
+                        helpText = '✓ مقدار: true یا false';
+                    }
+
+                    html += `<div class="param-group">
+                        <label>${param.name} ${param.required ? '(الزامی)' : '(اختیاری)'}</label>
+                        <input type="text" id="query_${param.name}" placeholder="${placeholder}">
+                        <small style="color: #666; font-size: 0.85em;">${helpText}</small>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            // Request Body
+            if (endpoint.requestBody) {
+                html += `<div class="detail-section">
+                    <h3>بدنه درخواست (Request Body)</h3>
+                    <div class="param-group">
+                        <label>JSON Body</label>
+                        <textarea id="requestBody" placeholder='{"key": "value"}'></textarea>
+                    </div>
+                </div>`;
+            }
+
+            html += `
+                <div style="text-align: center; margin: 30px 0;">
+                    <button class="send-button" onclick="sendRequest('${path}', '${method}')">
+                        ارسال درخواست 🚀
+                    </button>
+                </div>
+
+                <div id="responseSection" style="display: none;">
+                    <div class="response-section">
+                        <h3>پاسخ سرور</h3>
+                        <div id="responseContent" class="response-content"></div>
+                    </div>
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        async function sendRequest(path, method) {
+            const responseSection = document.getElementById('responseSection');
+            const responseContent = document.getElementById('responseContent');
+
+            responseSection.style.display = 'block';
+            const tokenWarning = authToken ? '' : '<div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 10px;">⚠️ توکن وارد نشده - درخواست بدون Authentication ارسال میشه</div>';
+            responseContent.innerHTML = tokenWarning + '<div class="loading">در حال ارسال درخواست...</div>';
+
+            try {
+                // Build URL with path parameters
+                let apiPath = path;
+                const pathParams = document.querySelectorAll('[id^="path_"]');
+                pathParams.forEach(input => {
+                    const paramName = input.id.replace('path_', '');
+                    if (input.value) {
+                        apiPath = apiPath.replace(`{${paramName}}`, encodeURIComponent(input.value));
+                    }
+                });
+
+                // Add query parameters
+                const queryParams = document.querySelectorAll('[id^="query_"]');
+                const queryParts = [];
+                queryParams.forEach(element => {
+                    const paramName = element.id.replace('query_', '');
+
+                    // Handle select elements (multi-select)
+                    if (element.tagName === 'SELECT') {
+                        const selectedOptions = Array.from(element.selectedOptions).map(opt => opt.value);
+                        selectedOptions.forEach(val => {
+                            queryParts.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`);
+                        });
+                    }
+                    // Handle input elements
+                    else if (element.value) {
+                        const values = element.value.split(',').map(v => v.trim()).filter(v => v);
+                        if (values.length > 1) {
+                            // Multiple values - add each as separate parameter
+                            values.forEach(val => {
+                                queryParts.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`);
+                            });
+                        } else {
+                            // Single value
+                            queryParts.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(element.value)}`);
+                        }
+                    }
+                });
+                if (queryParts.length > 0) {
+                    apiPath += '?' + queryParts.join('&');
+                }
+
+                // Use proxy server to avoid CORS
+                const url = 'http://localhost:8080/api' + apiPath;
+
+                // Prepare request options
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                // Add Authorization header if token exists
+                if (authToken) {
+                    options.headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                // Add request body if exists
+                const requestBodyElement = document.getElementById('requestBody');
+                if (requestBodyElement && requestBodyElement.value.trim()) {
+                    try {
+                        options.body = JSON.stringify(JSON.parse(requestBodyElement.value));
+                    } catch (e) {
+                        responseContent.innerHTML = '<div class="error">خطا: فرمت JSON بدنه درخواست نامعتبر است</div>';
+                        return;
+                    }
+                }
+
+                // Send request
+                const startTime = Date.now();
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                let responseData;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    responseData = await response.text();
+                }
+
+                // Display response
+                const statusClass = response.ok ? 'success' : 'error';
+                const actualUrl = url.replace('http://localhost:8080/api', 'https://openapi.basalam.com');
+
+                let output = `<div class="${statusClass}">`;
+                output += `<strong>وضعیت:</strong> ${response.status} ${response.statusText}`;
+                output += showErrorHelp(response.status);
+                output += `\n<strong>زمان پاسخ:</strong> ${duration}ms\n\n`;
+                output += `<strong>URL:</strong> ${actualUrl}\n`;
+                output += `<button onclick="navigator.clipboard.writeText('${actualUrl}')" style="margin: 10px 0; padding: 5px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">📋 کپی URL</button>\n\n`;
+                output += `<strong>پاسخ:</strong>\n`;
+                output += JSON.stringify(responseData, null, 2);
+                output += `</div>`;
+
+                responseContent.innerHTML = output;
+
+            } catch (error) {
+                responseContent.innerHTML = `<div class="error">خطا در ارسال درخواست:\n${error.message}\n\n💡 اگه CORS error میگیری، مطمئن شو که سرور محلی (node server.js) در حال اجراست.</div>`;
+            }
+        }
+
+        function showErrorHelp(status) {
+            if (status === 401) {
+                return '\n\n⚠️ خطای 401: توکن نامعتبر یا منقضی شده است. توکن جدید وارد کنید.';
+            } else if (status === 403) {
+                return '\n\n⚠️ خطای 403: دسترسی ندارید. مطمئن شوید توکن شما دسترسی لازم را دارد.';
+            } else if (status === 404) {
+                return '\n\n⚠️ خطای 404: endpoint یافت نشد یا توکن مشکل دارد. بررسی کنید:\n  - توکن معتبر باشد\n  - پارامترهای path را درست وارد کرده باشید\n  - endpoint در API موجود باشد';
+            }
+            return '';
+        }
+
+        // Load OpenAPI on page load
+        loadOpenAPI();
+    </script>
+</body>
+
+</html>

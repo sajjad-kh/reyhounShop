@@ -1,0 +1,12 @@
+senario injoriye ke mahsol to sabade kharide , useer takmile sefaresho mizane adrese tahvilo entekhab mikone bad noee ersalo moshakhas mikone, bad ax pole vavizi ro mifreste, bad tozihato axasho ezafe mikone va sabte nahaiiye sefaresho mizane.
+to sakhte order 1 step ziyad mishe be stepha be name info, bade pardakht hast, nafar mitone 1 ya chanta ax ro befreste bara admin hamrahe tozihate khodesh,ejbari nist va badan ghabeliyate edit dare to db ax zakhire mishe to order,bade taiide mali tavvasote admin to page orders mitone bebine o onja ham mitone in karo  ke onja vared kone,bade ersale ax nemitone ax ro pak kone faghat mitone ziyad kone, matne ersalisho ham nemitone pak kone faghat mitone ziyad kone, matne ersali manzoram tozihati hast ke hamrahe ax mifreste,admin on axharo download mikone ettelaat ro mibine o tarrahisho anjam mide o bayad bara user befreste ta taiid kone bede taiid user mire bara chap va stepe badish ersale.user age tarhe ersali ro taiid nakone matne made nazar va taghirati ke mikhado be sorate text mige va mijaddad ersal mikone bara admin, dobare admin bayad file amade shode ro ersal kone bara user ta bebine o taiid kone ke bere step bad,admin bayad ghabeliyat bordene order to stape chap , ersal dashte bashe, ersal age shode bayad kode rahgiri shosh hatman biyad ke user bebine.bade ersale mahsol ghabeliyate emtiyaz dadan be mahsol bara user mohayya mishe , rate az 1 ta 5 hast , az 1 ta 3 bayad hatman tozih dashte bashe,ersale avvaliye ax o matn to sabte sefareshe amma taiid tarh va bazgasht o taghirate tarh to namayeshe ordere, taiide tarh ham hamonjast,
+
+ta alan samte front ke order ba ax o tozihate user va ax pardakhti samte back mire, amma data base ok nist. bara save order az noee jadid 
+db man SQlite 
+
+admin 1 file mifreste bara user bade tarrahi amma user mitone chand bar tarhe ersali ro rad kone va 2. admin majbor she dobare tarrahi kone va tarh ersal kone.
+user alave bar zamane sabt mitone to sefareshate khodesham ax o neveshtehasho ezafe kone, yani nemitone hazf kone, faghat mitone add kone.
+user faghat text mitone to responce befreste
+chap faghat status hast
+admin khodesh bade ersal code posti ya shomare peyko mizane to system ke user bebine,bara peyk az 1 roz va post az 4 roz bad mitone emtiyaz bede be mahsolate khodesh
+tarrahi rayegane

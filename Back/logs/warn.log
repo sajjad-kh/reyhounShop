@@ -1,0 +1,114 @@
+{"timestamp":"2025-11-17T13:43:06.346Z","level":"WARN","module":"BasalamShippingClient","message":"Invalid shipping methods data, expected array","type":"object"}
+{"timestamp":"2025-11-17T14:22:12.129Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-17T14:22:43.156Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-17T14:23:10.224Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-17T14:23:39.284Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-17T14:26:21.735Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-17T14:26:37.252Z","level":"WARN","module":"ShippingMethodScheduler","message":"Scheduler is already running"}
+{"timestamp":"2025-11-17T14:26:37.487Z","level":"WARN","module":"ShippingMethodScheduler","message":"Sync already in progress, skipping this run"}
+{"timestamp":"2025-11-18T06:52:08.621Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T06:58:08.392Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T06:58:32.583Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T07:00:06.836Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T07:02:06.729Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T07:06:04.313Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T07:06:19.497Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T07:15:41.093Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T09:57:03.857Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T09:57:30.223Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T10:46:49.267Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2025-11-18T11:47:02.899Z","level":"WARN","module":"ShippingMethodService","message":"No shipping methods received from Basalam"}
+{"timestamp":"2026-05-06T10:16:07.032Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-05-06T10:16:08.062Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-05-06T10:16:10.105Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-05-18T10:11:53.435Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:11:53.610Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:11:53.811Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T10:11:54.030Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T10:11:54.200Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T10:11:54.442Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T10:11:54.547Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T10:11:54.859Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T10:11:55.077Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T10:11:55.285Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T10:13:25.013Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:13:25.223Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:13:25.395Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T10:13:25.578Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T10:13:25.769Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T10:13:26.008Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T10:13:26.293Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T10:13:26.507Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T10:13:27.223Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T10:13:28.368Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T10:14:38.030Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:15:28.838Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:15:29.535Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:15:30.916Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T10:15:31.873Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T10:15:32.860Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T10:15:33.576Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T10:15:34.058Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T10:15:34.555Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T10:15:34.907Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T10:15:35.328Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T10:23:20.401Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:23:20.664Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:23:20.871Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T10:23:21.070Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T10:23:21.240Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T10:23:21.575Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T10:23:21.857Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T10:23:22.193Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T10:23:22.518Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T10:23:23.030Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T10:23:50.359Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:26:11.595Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:26:24.851Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T10:27:11.023Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T10:45:38.073Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T11:22:39.564Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T11:22:40.001Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T11:22:40.331Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T11:22:40.718Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T11:22:41.214Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T11:22:41.978Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T11:22:42.632Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T11:22:43.282Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T11:22:43.875Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T11:22:44.263Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T11:32:33.438Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T11:32:34.298Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T11:32:34.829Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"37525655"}
+{"timestamp":"2026-05-18T11:32:35.550Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"36884322"}
+{"timestamp":"2026-05-18T11:32:36.339Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"24918102"}
+{"timestamp":"2026-05-18T11:32:36.828Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"20955312"}
+{"timestamp":"2026-05-18T11:32:37.268Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"19412970"}
+{"timestamp":"2026-05-18T11:32:37.946Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"12793451"}
+{"timestamp":"2026-05-18T11:32:38.524Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11764177"}
+{"timestamp":"2026-05-18T11:32:39.042Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"11762785"}
+{"timestamp":"2026-05-18T11:33:08.463Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T11:33:40.867Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"43489415"}
+{"timestamp":"2026-05-18T11:33:54.335Z","level":"WARN","module":"BasalamService","message":"No active shipping methods found, cannot sync product","basalamId":"38246996"}
+{"timestamp":"2026-05-18T12:16:32.583Z","level":"WARN","module":"ShippingMethodService","message":"No active shipping methods found in database"}
+{"timestamp":"2026-05-18T12:20:50.810Z","level":"WARN","module":"ShippingMethodService","message":"No active shipping methods found in database"}
+{"timestamp":"2026-05-18T12:24:45.169Z","level":"WARN","module":"ShippingMethodService","message":"No active shipping methods found in database"}
+{"timestamp":"2026-05-24T05:20:45.878Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-05-24T05:20:47.357Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-05-24T05:20:49.493Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-05-26T05:51:38.042Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-05-26T05:51:39.631Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-05-26T05:51:42.251Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-05-31T08:51:13.099Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-05-31T08:51:14.110Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-05-31T08:51:16.124Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-06-01T06:03:59.320Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-06-01T06:04:00.360Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-06-01T06:04:02.409Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-06-01T06:05:11.879Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-06-01T06:05:12.917Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-06-01T06:05:14.958Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-06-09T05:57:05.193Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}
+{"timestamp":"2026-06-09T05:57:06.314Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 2 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":2000}
+{"timestamp":"2026-06-09T05:57:09.674Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 1 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":4000}
+{"timestamp":"2026-06-13T10:57:11.473Z","level":"WARN","module":"BasalamShippingClient","message":"Retrying request, 3 attempts remaining","error":"عدم دریافت پاسخ از سرویس بسلام. لطفاً اتصال اینترنت خود را بررسی کنید","delay":1000}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست تصاویر محصولات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .image-test {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .image-test h3 {
+            color: #666;
+            margin-top: 0;
+        }
+
+        .image-test img {
+            max-width: 300px;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .url {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 5px 0;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .error {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🖼️ تست تصاویر محصولات</h1>
+
+        <div class="image-test">
+            <h3>تصویر 1: محصول باسلام (پازل چوبی)</h3>
+            <div class="url">URL: http://localhost:3000/uploads/products/basalam-11762785-1762869396245.jpg</div>
+            <img src="http://localhost:3000/uploads/products/basalam-11762785-1762869396245.jpg" alt="پازل چوبی"
+                onload="document.getElementById('status1').className='status success'; document.getElementById('status1').textContent='✅ بارگذاری موفق'"
+                onerror="document.getElementById('status1').className='status error'; document.getElementById('status1').textContent='❌ خطا در بارگذاری'">
+            <div id="status1" class="status">⏳ در حال بارگذاری...</div>
+        </div>
+
+        <div class="image-test">
+            <h3>تصویر 2: محصول باسلام (لیوان)</h3>
+            <div class="url">URL: http://localhost:3000/uploads/products/basalam-20955312-1762868771949.jpg</div>
+            <img src="http://localhost:3000/uploads/products/basalam-20955312-1762868771949.jpg" alt="لیوان"
+                onload="document.getElementById('status2').className='status success'; document.getElementById('status2').textContent='✅ بارگذاری موفق'"
+                onerror="document.getElementById('status2').className='status error'; document.getElementById('status2').textContent='❌ خطا در بارگذاری'">
+            <div id="status2" class="status">⏳ در حال بارگذاری...</div>
+        </div>
+
+        <div class="image-test">
+            <h3>تصویر 3: محصول باسلام (ماگ)</h3>
+            <div class="url">URL: http://localhost:3000/uploads/products/basalam-12793451-1762869403407.jpg</div>
+            <img src="http://localhost:3000/uploads/products/basalam-12793451-1762869403407.jpg" alt="ماگ"
+                onload="document.getElementById('status3').className='status success'; document.getElementById('status3').textContent='✅ بارگذاری موفق'"
+                onerror="document.getElementById('status3').className='status error'; document.getElementById('status3').textContent='❌ خطا در بارگذاری'">
+            <div id="status3" class="status">⏳ در حال بارگذاری...</div>
+        </div>
+
+        <div class="image-test">
+            <h3>تصویر 4: محصول داخلی (qwertyu11111)</h3>
+            <div class="url">URL: http://localhost:3000/uploads/products/product-1762867033239-228200989.jpg</div>
+            <img src="http://localhost:3000/uploads/products/product-1762867033239-228200989.jpg" alt="محصول داخلی"
+                onload="document.getElementById('status4').className='status success'; document.getElementById('status4').textContent='✅ بارگذاری موفق'"
+                onerror="document.getElementById('status4').className='status error'; document.getElementById('status4').textContent='❌ خطا در بارگذاری'">
+            <div id="status4" class="status">⏳ در حال بارگذاری...</div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔍 تست تصاویر شروع شد');
+
+        // Test image URLs
+        const imageUrls = [
+            'http://localhost:3000/uploads/products/basalam-11762785-1762869396245.jpg',
+            'http://localhost:3000/uploads/products/basalam-20955312-1762868771949.jpg',
+            'http://localhost:3000/uploads/products/basalam-12793451-1762869403407.jpg',
+            'http://localhost:3000/uploads/products/product-1762867033239-228200989.jpg'
+        ];
+
+        imageUrls.forEach((url, index) => {
+            fetch(url, { method: 'HEAD' })
+                .then(response => {
+                    console.log(`تصویر ${index + 1}:`, {
+                        url,
+                        status: response.status,
+                        ok: response.ok,
+                        headers: Object.fromEntries(response.headers.entries())
+                    });
+                })
+                .catch(error => {
+                    console.error(`خطا در تصویر ${index + 1}:`, error);
+                });
+        });
+    </script>
+</body>
+
+</html>

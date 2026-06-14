@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Frontend application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_API_TIMEOUT: ${VITE_API_TIMEOUT}
+        VITE_JWT_SECRET_KEY: ${VITE_JWT_SECRET_KEY}
+        VITE_TOKEN_EXPIRY: ${VITE_TOKEN_EXPIRY}
+        VITE_STRIPE_PUBLIC_KEY: ${VITE_STRIPE_PUBLIC_KEY}
+        VITE_ZARINPAL_MERCHANT_ID: ${VITE_ZARINPAL_MERCHANT_ID}
+        VITE_PAYIR_API_KEY: ${VITE_PAYIR_API_KEY}
+        VITE_APP_NAME: ${VITE_APP_NAME}
+        VITE_APP_VERSION: ${VITE_APP_VERSION}
+        VITE_ENABLE_PWA: ${VITE_ENABLE_PWA}
+        VITE_ENABLE_DEVTOOLS: ${VITE_ENABLE_DEVTOOLS}
+        VITE_LOG_LEVEL: ${VITE_LOG_LEVEL}
+        VITE_ENABLE_ANALYTICS: ${VITE_ENABLE_ANALYTICS}
+        VITE_ANALYTICS_ID: ${VITE_ANALYTICS_ID}
+        VITE_CDN_URL: ${VITE_CDN_URL}
+    image: glassshop-frontend:latest
+    container_name: glassshop-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    networks:
+      - glassshop-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.glassshop.service=frontend"
+      - "com.glassshop.environment=production"
+
+networks:
+  glassshop-network:
+    driver: bridge
+
+# For production with SSL, you might want to add:
+# volumes:
+#   ssl-certs:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       device: /path/to/ssl/certs
+#       o: bind

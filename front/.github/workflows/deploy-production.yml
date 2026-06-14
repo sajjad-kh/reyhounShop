@@ -1,0 +1,160 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run type checking
+        run: npm run typecheck
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Build for production
+        run: npm run build:production
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_TIMEOUT: ${{ secrets.VITE_API_TIMEOUT }}
+          VITE_JWT_SECRET_KEY: ${{ secrets.VITE_JWT_SECRET_KEY }}
+          VITE_TOKEN_EXPIRY: ${{ secrets.VITE_TOKEN_EXPIRY }}
+          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.VITE_STRIPE_PUBLIC_KEY }}
+          VITE_ZARINPAL_MERCHANT_ID: ${{ secrets.VITE_ZARINPAL_MERCHANT_ID }}
+          VITE_PAYIR_API_KEY: ${{ secrets.VITE_PAYIR_API_KEY }}
+          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
+          VITE_APP_VERSION: ${{ github.sha }}
+          VITE_ENABLE_PWA: true
+          VITE_ENABLE_DEVTOOLS: false
+          VITE_LOG_LEVEL: error
+          VITE_ENABLE_ANALYTICS: true
+          VITE_ANALYTICS_ID: ${{ secrets.VITE_ANALYTICS_ID }}
+          VITE_CDN_URL: ${{ secrets.VITE_CDN_URL }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+      
+      - name: Generate build report
+        run: |
+          echo "Build completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Build time: $(date)" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    name: Deploy to Production
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://glassshop.com
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+      
+      # Example: Deploy to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+      
+      # Example: Deploy to AWS S3 + CloudFront
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: us-east-1
+      
+      # - name: Sync to S3
+      #   run: |
+      #     aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }}/ --delete --cache-control max-age=31536000,public
+      #     aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET }}/index.html --cache-control max-age=0,no-cache,no-store,must-revalidate
+      
+      # - name: Invalidate CloudFront
+      #   run: |
+      #     aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+      
+      - name: Deployment summary
+        run: |
+          echo "Deployment completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: Production" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://glassshop.com" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date)" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify Team
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Send Slack notification
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Production deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful*\n\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Send Slack notification on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Production deployment failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Failed*\n\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\n\nPlease check the workflow logs."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,93 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run type checking
+        run: npm run typecheck
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Build for staging
+        run: npm run build:staging
+        env:
+          VITE_API_BASE_URL: ${{ secrets.STAGING_API_BASE_URL }}
+          VITE_API_TIMEOUT: 12000
+          VITE_JWT_SECRET_KEY: ${{ secrets.STAGING_JWT_SECRET_KEY }}
+          VITE_TOKEN_EXPIRY: 24h
+          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.STAGING_STRIPE_PUBLIC_KEY }}
+          VITE_ZARINPAL_MERCHANT_ID: ${{ secrets.STAGING_ZARINPAL_MERCHANT_ID }}
+          VITE_PAYIR_API_KEY: ${{ secrets.STAGING_PAYIR_API_KEY }}
+          VITE_APP_NAME: GlassShop (Staging)
+          VITE_APP_VERSION: ${{ github.sha }}
+          VITE_ENABLE_PWA: true
+          VITE_ENABLE_DEVTOOLS: true
+          VITE_LOG_LEVEL: info
+          VITE_ENABLE_ANALYTICS: true
+          VITE_ANALYTICS_ID: ${{ secrets.STAGING_ANALYTICS_ID }}
+          VITE_CDN_URL: ${{ secrets.STAGING_CDN_URL }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-staging
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Staging
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.glassshop.com
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-staging
+          path: dist/
+      
+      # Example: Deploy to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--env=staging'
+          working-directory: ./
+      
+      - name: Deployment summary
+        run: |
+          echo "Deployment completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: Staging" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://staging.glassshop.com" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date)" >> $GITHUB_STEP_SUMMARY
