@@ -161,11 +161,19 @@ class BasalamService {
         imageCreated = true;
 
         // Log activity
-        await this.logActivity(userId, 'basalam.image_synced', 'Product', product.id, {
-          basalamId,
-          imageUrl,
-          localPath: localImagePath
+        await this.logActivity({
+          userId,
+          action: ActivityAction.SYSTEM_EVENT,
+          entity: 'Product',
+          entityId: product.id,
+          metadata: {
+            basalamId,
+            imageUrl,
+            localPath: localImagePath,
+            event: 'image_synced'
+          }
         });
+        
       } catch (error) {
         logger.error('Error creating product image record', { 
           basalamId,
@@ -190,11 +198,18 @@ class BasalamService {
       });
 
       // Log sync activity
-      await this.logActivity(userId, 'basalam.product_synced', 'Product', product.id, {
-        basalamId,
-        isUpdate,
-        imageCreated,
-        name: product.name
+      await this.logActivity({
+        userId,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Product',
+        entityId: product.id,
+        metadata: {
+          basalamId,
+          isUpdate,
+          imageCreated,
+          name: product.name,
+          event: 'product_synced'
+        }
       });
 
       return {

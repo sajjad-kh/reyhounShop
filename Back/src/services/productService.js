@@ -51,10 +51,16 @@ class ProductService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'product.created', 'Product', product.id, {
-      name: product.name,
-      price: product.price,
-      categoryId: product.categoryId
+    await this.logActivity({
+      userId,
+      action: ActivityAction.PRODUCT_CREATED,
+      entity: 'Product',
+      entityId: product.id,
+      metadata: {
+        name: product.name,
+        price: product.price,
+        categoryId: product.categoryId
+      }
     });
 
     return product;
@@ -471,8 +477,14 @@ class ProductService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'product.updated', 'Product', product.id, {
-      changes: updateData
+    await this.logActivity({
+      userId,
+      action: ActivityAction.PRODUCT_UPDATED,
+      entity: 'Product',
+      entityId: product.id,
+      metadata: {
+        changes: updateData
+      }
     });
 
     return product;
@@ -521,8 +533,14 @@ class ProductService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'product.deleted', 'Product', productId, {
-      name: product.name
+    await this.logActivity({
+      userId,
+      action: ActivityAction.PRODUCT_DELETED,
+      entity: 'Product',
+      entityId: productId,
+      metadata: {
+        name: product.name
+      }
     });
 
     return true;

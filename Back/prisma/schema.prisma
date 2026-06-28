@@ -372,6 +372,8 @@ model Order {
 
   trackingCode String?
 
+  paymentRef String?
+
   totalPrice     Int
   shippingCost   Int
   discountAmount Int @default(0)
@@ -672,35 +674,124 @@ enum ActorType {
   SYSTEM
 }
 
+enum EntityType {
+  USER
+  PRODUCT
+  ORDER
+  PAYMENT
+  DESIGN
+  REVIEW
+  CATEGORY
+  SHIPPING_METHOD
+  NOTIFICATION
+  SYSTEM
+  Api
+  ACTIVITY_LOG
+  API_LOG
+  ERROR_LOG
+  PERFORMANCE    
+}
+
+enum LogSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ActivityAction {
+
+  AUTH_LOGIN
+  AUTH_LOGOUT
+  AUTH_LOGIN_FAILED
+
+  USER_CREATED
+  USER_UPDATED
+  USER_DEACTIVATED
+  USER_ROLE_CHANGED
+
+  ORDER_CREATED
+  ORDER_UPDATED
+  ORDER_CANCELLED
+  ORDER_STATUS_CHANGED
+
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+
+  PAYMENT_CREATED
+  PAYMENT_SUCCESS
+  PAYMENT_REJECTED
+  PAYMENT_INITIATED
+  PAYMENT_FAILED
+  REFUND_REQUESTED
+
+  DESIGN_UPLOADED
+  DESIGN_APPROVED
+  DESIGN_REVISION
+
+  REVIEW_CREATED
+  REVIEW_APPROVED
+
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  PRODUCT_DELETED
+
+  ADMIN_VIEW_ACTIVITY_LOGS
+  ADMIN_VIEW_API_LOGS
+  ADMIN_VIEW_ERROR_LOGS
+  ADMIN_VIEW_PERFORMANCE_LOGS
+  ADMIN_SEARCH_LOGS
+  ADMIN_VIEW_USER_LOGS
+  ADMIN_VIEW_ANALYTICS
+
+  API_REQUEST
+
+  SYSTEM_EVENT
+}
+
 model ActivityLog {
   id Int @id @default(autoincrement())
 
-  // user relation
   userId Int?
-  user   User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id])
 
-  // order relation
+  targetUserId Int?
+
   orderId Int?
-  order   Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id])
 
-  actorType ActorType @default(SYSTEM)
+  actorType ActorType
 
-  action   String
-  entity   String
-  entityId Int?
+  action ActivityAction
 
-  details Json?
+  entity EntityType
+  entityId String?
 
-  ip        String?
+  severity LogSeverity @default(INFO)
+
+  success Boolean @default(true)
+
+  correlationId String?
+  sessionId String?
+
+  metadata Json?
+
+  ip String?
   userAgent String?
 
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([targetUserId])
   @@index([orderId])
-  @@index([entity])
+
   @@index([action])
+  @@index([entity])
+
+  @@index([severity])
   @@index([createdAt])
+
+  @@index([correlationId])
 }
 
 model ErrorLog {

@@ -116,10 +116,17 @@ class CartService {
     }
 
     // Log activity
-    await this.logActivity(userId, 'cart.item_added', 'CartItem', productId, {
-      productId,
-      quantity,
-      productName: product.name
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'CartItem',
+      entityId: productId,
+      metadata: {
+        productId,
+        quantity,
+        productName: product.name,
+        event: 'item_added'
+      }
     });
 
     return await this.getCartSummary(userId);
@@ -165,11 +172,18 @@ class CartService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'cart.item_updated', 'CartItem', cartItem.productId, {
-      cartItemId,
-      oldQuantity: cartItem.quantity,
-      newQuantity: quantity,
-      productName: cartItem.product.name
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'CartItem',
+      entityId: cartItem.productId,
+      metadata: {
+        cartItemId,
+        oldQuantity: cartItem.quantity,
+        newQuantity: quantity,
+        productName: cartItem.product.name,
+        event: 'item_updated'
+      }
     });
 
     return await this.getCartSummary(userId);
@@ -203,10 +217,17 @@ class CartService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'cart.item_removed', 'CartItem', cartItem.productId, {
-      cartItemId,
-      quantity: cartItem.quantity,
-      productName: cartItem.product.name
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'CartItem',
+      entityId: cartItem.productId,
+      metadata: {
+        cartItemId,
+        quantity: cartItem.quantity,
+        productName: cartItem.product.name,
+        event: 'item_removed'
+      }
     });
 
     return await this.getCartSummary(userId);
@@ -228,7 +249,15 @@ class CartService {
       });
 
       // Log activity
-      await this.logActivity(userId, 'cart.cleared', 'Cart', cart.id);
+      await this.logActivity({
+        userId,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Cart',
+        entityId: cart.id,
+        metadata: {
+          event: 'cart_cleared'
+        }
+      });
     }
 
     return await this.getCartSummary(userId);
@@ -330,9 +359,20 @@ class CartService {
       });
 
       // Log activity
-      await this.logActivity(userId, 'cart.basalam_items_cleared', 'Cart', cart.id, {
-        clearedItemsCount: basalamItemIds.length
+      await this.logActivity({
+        userId,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Cart',
+        entityId: cart.id,
+        metadata: {
+          clearedItemsCount: basalamItemIds.length,
+          feature: 'cart',
+          source: 'basalam',
+          event: 'items_cleared'
+        }
       });
+      
+
     }
 
     return await this.getCartSummary(userId);

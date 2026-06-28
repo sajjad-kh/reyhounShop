@@ -1,7 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const loggingService = require('../services/loggingService');
 
-const prisma = new PrismaClient();
 
 /**
  * API Request Logging Middleware
@@ -35,23 +33,37 @@ const apiRequestLogger = (req, res, next) => {
           responseTime: responseTime
         };
 
+        const endpoint = req.originalUrl || req.url;
+
+        const ignoredEndpoints = [
+          '/api/v1/admin/logs/activity',
+          '/api/v1/monitoring/health', 
+          '/api/v1/monitoring/ping',    
+        ];
+
+        if (ignoredEndpoints.some(path => endpoint.startsWith(path))) {
+          return;
+        }
+
         await loggingService.logApiRequest(requestData);
 
         // Log slow requests as performance issues
         if (responseTime > 1000) {
-          await loggingService.logActivity(
-            'performance.slow_request',
-            'Performance',
-            null,
-            {
-              endpoint: requestData.endpoint,
-              method: requestData.method,
-              responseTime,
-              statusCode: res.statusCode,
-              userId: requestData.userId
-            },
-            req
-          );
+          await loggingService.logActivity({
+              userId: requestData.userId,
+              action: 'SYSTEM_EVENT',
+              entity: 'SYSTEM',
+              actorType: 'SYSTEM',
+              ip: req.ip,
+              userAgent: req.get('User-Agent'),
+              metadata: {
+                  endpoint: requestData.endpoint,
+                  method: requestData.method,
+                  responseTime,
+                  statusCode: res.statusCode,
+              }
+          });
+
         }
       } catch (error) {
         console.error('Failed to log API request:', error);
@@ -80,6 +92,19 @@ const logActivity = async (action, entity, entityId = null, details = null, req 
  */
 const createActivityLogger = (action, entity) => {
   return (req, res, next) => {
+
+    const ignoredEndpoints = [
+      '/api/v1/admin/logs/activity',
+      '/api/v1/monitoring/health', 
+      '/api/v1/monitoring/ping',    
+
+    ];
+
+    const endpoint = req.originalUrl || req.url;
+    if (ignoredEndpoints.some(path => endpoint.startsWith(path))) {
+      return next(); // اضافه کن
+    }
+
     // Store original res.json to capture response data
     const originalJson = res.json;
     
@@ -219,23 +244,21 @@ const performanceLogger = (threshold = 1000) => {
       if (responseTime > threshold) {
         setImmediate(async () => {
           try {
-            await loggingService.logActivity(
-              'performance.slow_request',
-              'Performance',
-              null,
-              {
-                endpoint: req.originalUrl || req.url,
-                method: req.method,
-                responseTime,
-                threshold,
-                statusCode: res.statusCode,
+            await loggingService.logActivity({
+                action: 'SYSTEM_EVENT',
+                entity: 'SYSTEM',
+                actorType: 'SYSTEM',
+                ip: req.ip,
                 userAgent: req.get('User-Agent'),
-                queryParams: req.query,
-                bodySize: req.get('Content-Length') || 0,
-                severity: responseTime > 5000 ? 'high' : responseTime > 2000 ? 'medium' : 'low'
-              },
-              req
-            );
+                metadata: {
+                    endpoint: req.originalUrl || req.url,
+                    method: req.method,
+                    responseTime,
+                    threshold,
+                    statusCode: res.statusCode,
+                    severity: responseTime > 5000 ? 'high' : responseTime > 2000 ? 'medium' : 'low'
+                }
+            });
           } catch (error) {
             console.error('Failed to log performance data:', error);
           }
@@ -258,20 +281,19 @@ const sessionTracker = (req, res, next) => {
   if (req.user) {
     setImmediate(async () => {
       try {
-        await loggingService.logActivity(
-          'session.api_usage',
-          'Session',
-          null,
-          {
+        await loggingService.logActivity({
             userId: req.user.id,
-            endpoint: req.originalUrl || req.url,
-            method: req.method,
-            timestamp: new Date(),
+            action: 'SYSTEM_EVENT',
+            entity: 'SYSTEM',
+            actorType: 'USER',
+            ip: req.ip,
             userAgent: req.get('User-Agent'),
-            ip: req.ip || req.connection.remoteAddress
-          },
-          req
-        );
+            metadata: {
+                endpoint: req.originalUrl || req.url,
+                method: req.method,
+                timestamp: new Date(),
+            }
+        });
       } catch (error) {
         console.error('Failed to log session data:', error);
       }

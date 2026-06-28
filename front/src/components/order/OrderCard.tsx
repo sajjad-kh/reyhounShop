@@ -4,6 +4,9 @@ import { getImageUrl } from '../../utils/constants';
 import { orderService } from '../../services/orderService';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
+
+import yekanNormal from '../../../public/fonts/yekan/Yekan.woff?url';
+
 interface OrderCardProps {
     order: Order;
     onClick: () => void;
@@ -176,6 +179,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
         e.stopPropagation();
         try {
             setIsDownloadingPdf(true);
+            const [yekanNormalB64] = await Promise.all([
+                fetch(yekanNormal)
+                    .then(r => r.arrayBuffer())
+                    .then(buf => btoa(String.fromCharCode(...new Uint8Array(buf)))),
+            ]);
 
             // ۱. ساخت یک المان مخفی برای پرینت فاکتور
             const iframe = document.createElement('iframe');
@@ -209,8 +217,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
                 <head>
                     <title>فاکتور سفارش ${order.trackingCode}</title>
                     <style>
-                        @body { font-family: Tahoma, Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #1e293b; }
-                        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: Tahoma, sans-serif; }
+
+                        @font-face {
+                            font-family: 'Yekan';
+                            src: url('data:font/woff;base64,${yekanNormalB64}') format('woff');
+                            font-weight: normal;
+                        }
+                        * { font-family: 'Yekan', Tahoma, sans-serif !important; }
+
+
+                        body { margin: 0; padding: 20px; background: #fff; color: #1e293b; }
+                        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #cbd5e1; border-radius: 8px; }
                         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
                         .title { font-size: 24px; font-weight: bold; color: #0f172a; }
                         .details { font-size: 13px; color: #475569; line-height: 24px; }
@@ -222,7 +239,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
                             body { padding: 0; }
                             .invoice-box { border: none; padding: 0; }
                         }
-                    </style>
+
+            </style>
                 </head>
                 <body>
                     <div class="invoice-box">
@@ -280,8 +298,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
             // ۴. اجرای پرینتر/دانلود PDF و حذف المان اضافه
             setTimeout(() => {
                 iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-                document.body.removeChild(iframe);
+                iframe.contentDocument?.fonts.ready.then(() => {
+                    iframe.contentWindow?.print();
+                    document.body.removeChild(iframe);
+                });
             }, 500);
 
         } catch (err) {

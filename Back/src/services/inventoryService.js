@@ -139,12 +139,19 @@ class InventoryService {
     });
 
     // Log inventory activity
-    await this.logActivity(userId, 'inventory.stock_updated', 'Product', productId, {
-      previousStock: product.stock,
-      newStock: stock,
-      stockChange,
-      reason: reason || 'Manual update',
-      lowStockAlert: updatedProduct.lowStockAlert
+    await this.logActivity({
+      userId,
+      action: ActivityAction.PRODUCT_UPDATED,
+      entity: 'Product',
+      entityId: productId,
+      metadata: {
+        previousStock: product.stock,
+        newStock: stock,
+        stockChange,
+        reason: reason || 'Manual update',
+        lowStockAlert: updatedProduct.lowStockAlert,
+        event: 'inventory_stock_updated'
+      }
     });
 
     return {
@@ -289,10 +296,17 @@ class InventoryService {
     });
 
     // Log release activity
-    await this.logActivity(null, 'inventory.stock_released', 'Order', orderId, {
-      releases,
-      reason,
-      totalItems: items.length
+    await this.logActivity({
+      userId: null,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Order',
+      entityId: orderId,
+      metadata: {
+        releases,
+        reason,
+        totalItems: items.length,
+        event: 'inventory_stock_released'
+      }
     });
 
     return { releases };
@@ -340,9 +354,16 @@ class InventoryService {
     });
 
     // Log confirmation activity
-    await this.logActivity(null, 'inventory.stock_confirmed', 'Order', orderId, {
-      confirmations,
-      totalItems: items.length
+    await this.logActivity({
+      userId: null,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Order',
+      entityId: orderId,
+      metadata: {
+        confirmations,
+        totalItems: items.length,
+        event: 'inventory_stock_confirmed'
+      }
     });
 
     return { confirmations };

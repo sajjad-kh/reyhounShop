@@ -29,7 +29,7 @@ const AdminLayout: React.FC = () => {
 
     // Check if user is admin
     if (!state.user || state.user.role !== 'ADMIN') {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     const user = state.user;
@@ -73,6 +73,11 @@ const AdminLayout: React.FC = () => {
         {
             path: '/admin/payment-accounts',
             label: 'Payment Accounts',
+            icon: CreditCard,
+        },
+        {
+            path: '/admin/logs',
+            label: 'Logs',
             icon: CreditCard,
         },
     ];

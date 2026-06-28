@@ -46,9 +46,16 @@ class CategoryService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'category.created', 'Category', category.id, {
-      name: category.name,
-      parentId: category.parentId
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Category',
+      entityId: category.id,
+      metadata: {
+        name: category.name,
+        parentId: category.parentId,
+        event: 'category_created'
+      }
     });
 
     return category;
@@ -248,8 +255,15 @@ class CategoryService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'category.updated', 'Category', categoryId, {
-      changes: updateData
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Category',
+      entityId: categoryId,
+      metadata: {
+        changes: updateData,
+        event: 'category_updated'
+      }
     });
 
     return category;
@@ -291,8 +305,15 @@ class CategoryService {
     });
 
     // Log activity
-    await this.logActivity(userId, 'category.deleted', 'Category', categoryId, {
-      name: category.name
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Category',
+      entityId: categoryId,
+      metadata: {
+        name: category.name,
+        event: 'category_deleted'
+      }
     });
 
     return true;

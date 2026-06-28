@@ -5,6 +5,14 @@
 
 const { getPrismaClient } = require('../utils/database');
 const { databaseConfig } = require('../config/database');
+
+const {
+  ActivityAction,
+  EntityType,
+  ActorType,
+  LogSeverity
+} = require('@prisma/client');
+
 const os = require('os');
 const fs = require('fs').promises;
 const path = require('path');
@@ -427,18 +435,20 @@ class MonitoringService {
       const prisma = getPrismaClient();
       await prisma.activityLog.create({
         data: {
-          action: 'monitoring.alert',
-          entity: 'System',
+          actorType: ActorType.SYSTEM,
+          action: ActivityAction.SYSTEM_EVENT,
+          entity: EntityType.SYSTEM,
+          severity: LogSeverity.ERROR,
 
-          details: JSON.stringify({
+          success: false,
+
+          metadata: {
             alertType,
-            ...data,
-            stack: data?.stack || null
-          }),
-
-          createdAt: new Date()
+            ...data
+          }
         }
       });
+
     } catch (error) {
       console.error('Failed to store alert in database:', error);
     }

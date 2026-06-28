@@ -1,5 +1,8 @@
 const { getPrismaClient } = require('../utils/database');
 const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
+
+const {ActivityAction,EntityType,LogSeverity} = require('@prisma/client');
+
 const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 class AuthService {
@@ -71,9 +74,18 @@ class AuthService {
     });
 
     // Log registration activity
-    await this.logActivity(user.id, 'user.registered', 'User', user.id, {
-      email: user.email,
-      name: user.name
+    await this.logActivity({
+      userId: user.id,
+      actorType: 'USER',
+      action: ActivityAction.USER_CREATED,
+      entity: EntityType.USER,
+      entityId: String(user.id),
+      severity: LogSeverity.INFO,
+      success: true,
+      metadata: {
+        email: user.email,
+        name: user.name
+      }
     });
 
     return {
@@ -283,7 +295,15 @@ async processTelegramContact({ chatId, telegramId, username, firstName, lastName
         }
       });
 
-      await this.logActivity(user.id, 'user.telegram_linked', 'User', user.id, { telegramId });
+      await this.logActivity({
+        userId: user.id,
+        action: ActivityAction.USER_UPDATED,
+        entity: EntityType.USER,
+        entityId: user.id,
+        metadata: {
+          telegramId
+        }
+      });
     } else {
       // 4. کاربر کاملاً جدید
       user = await prisma.user.create({
@@ -302,7 +322,16 @@ async processTelegramContact({ chatId, telegramId, username, firstName, lastName
       });
 
       await prisma.cart.create({ data: { userId: user.id } });
-      await this.logActivity(user.id, 'user.registered_via_telegram', 'User', user.id, { telegramId, phone: normalizedPhone });
+      await this.logActivity({
+        userId: user.id,
+        action: ActivityAction.USER_CREATED,
+        entity: EntityType.USER,
+        entityId: user.id,
+        metadata: {
+          telegramId,
+          phone: normalizedPhone
+        }
+      });
     }
   } else {
     // یوزر تلگرامی از قبل بود؛ phone را sync کن اگه نداشت یا فرق داشت
@@ -333,7 +362,18 @@ async processTelegramContact({ chatId, telegramId, username, firstName, lastName
     data: { status: 'APPROVED', userId: user.id, telegramChatId: null } // پاکسازی chatId
   });
 
-  await this.logActivity(user.id, 'user.login_telegram_bot', 'User', user.id, { telegramId, phone: normalizedPhone });
+
+  await this.logActivity({
+    userId: user.id,
+    action: ActivityAction.AUTH_LOGIN,
+    entity: EntityType.USER,
+    entityId: user.id,
+    metadata: {
+      telegramId,
+      phone: normalizedPhone,
+      source: 'telegram'
+    }
+  });
 
   return { success: true, userName: user.name };
 }
@@ -457,11 +497,18 @@ async checkTelegramSession(loginId) {
     });
 
     // Log login activity
-    await this.logActivity(user.id, 'user.login', 'User', user.id, {
-      ip,
-      userAgent,
-      timestamp: new Date()
-    }, ip, userAgent);
+    await this.logActivity({
+      userId: user.id,
+      actorType: 'USER',
+      action: ActivityAction.AUTH_LOGIN,
+      entity: EntityType.USER,
+      entityId: String(user.id),
+      severity: LogSeverity.INFO,
+      metadata: {
+        ip,
+        userAgent
+      }
+    });
 
     return {
       user: userWithoutPassword,
@@ -494,8 +541,15 @@ async checkTelegramSession(loginId) {
     });
 
     // Log 2FA setup activity
-    await this.logActivity(userId, 'user.2fa_setup_initiated', 'User', userId);
-
+    await this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: EntityType.USER,
+      entityId: String(userId),
+      metadata: {
+        type: '2fa_setup_initiated'
+      }
+    });
     return {
       secret: secret.base32,
       qrCode: secret.otpauth_url,
@@ -539,7 +593,19 @@ async checkTelegramSession(loginId) {
       });
 
       // Log 2FA enabled activity
-      await this.logActivity(userId, 'user.2fa_enabled', 'User', userId);
+      await this.logActivity({
+        userId,
+        action: ActivityAction.USER_UPDATED,
+        entity: EntityType.USER,
+        entityId: String(userId),
+        severity: LogSeverity.INFO,
+        metadata: {
+          type: '2fa_enabled'
+        }
+      });
+
+
+
     }
 
     return true;
@@ -583,7 +649,16 @@ async checkTelegramSession(loginId) {
     });
 
     // Log 2FA disabled activity
-    await this.logActivity(userId, 'user.2fa_disabled', 'User', userId);
+    await this.logActivity({
+      userId,
+      action: ActivityAction.USER_UPDATED,
+      entity: EntityType.USER,
+      entityId: String(userId),
+      severity: LogSeverity.INFO,
+      metadata: {
+        type: '2fa_disabled'
+      }
+    });
 
     return true;
   }
@@ -598,27 +673,45 @@ async checkTelegramSession(loginId) {
    * @param {string} ip - IP address
    * @param {string} userAgent - User agent
    */
-  async logActivity(userId, action, entity, entityId, details = {}, ip = null, userAgent = null) {
+  async logActivity({
+    userId = null,
+    targetUserId = null,
+    orderId = null,
+    actorType = 'USER',
+    action,
+    entity,
+    entityId = null,
+    severity = 'INFO',
+    success = true,
+    correlationId = null,
+    sessionId = null,
+    metadata = {},
+    ip = null,
+    userAgent = null
+  }) {
     try {
       await getPrismaClient().activityLog.create({
         data: {
           userId,
+          targetUserId,
+          orderId,
+          actorType,
           action,
           entity,
-          entityId,
-          details,
+          entityId: entityId ? String(entityId) : null,
+          severity,
+          success,
+          correlationId,
+          sessionId,
+          metadata,
           ip,
           userAgent
         }
       });
     } catch (error) {
       console.error('Failed to log activity:', error);
-      // Don't throw error to avoid breaking main functionality
     }
   }
-
-
-
 
 }
 

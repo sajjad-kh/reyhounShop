@@ -53,11 +53,21 @@ class NotificationService {
       }
 
       // Log notification activity
-      await this.logActivity(order.user.id, 'notification.sent', 'Order', orderId, {
-        type: 'status_change',
-        oldStatus,
-        newStatus,
-        channels: ['email', ...(this.shouldSendSMS(newStatus) ? ['sms'] : [])]
+      await this.logActivity({
+        userId: order.user.id,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Order',
+        entityId: orderId,
+        metadata: {
+          event: 'notification_sent',
+          type: 'status_change',
+          oldStatus,
+          newStatus,
+          channels: [
+            'email',
+            ...(this.shouldSendSMS(newStatus) ? ['sms'] : [])
+          ]
+        }
       });
 
     } catch (error) {
@@ -221,22 +231,21 @@ class NotificationService {
    */
   async storeNotificationRecord(notificationData) {
     try {
-      // In a real implementation, this would store in a notifications table
-      // For now, we'll use the activity log
-      await this.logActivity(
-        notificationData.userId,
-        'notification.delivered',
-        notificationData.relatedEntityType,
-        notificationData.relatedEntityId,
-        {
+      await this.logActivity({
+        userId: notificationData.userId,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: notificationData.relatedEntityType,
+        entityId: notificationData.relatedEntityId,
+        metadata: {
+          event: 'notification_delivered',
           type: notificationData.type,
           channel: notificationData.channel,
           recipient: notificationData.recipient,
           status: notificationData.status,
           subject: notificationData.subject,
-          contentLength: notificationData.content.length
+          contentLength: notificationData.content?.length
         }
-      );
+      });
     } catch (error) {
       console.error('Failed to store notification record:', error);
     }
@@ -487,11 +496,18 @@ class NotificationService {
       });
 
       // Log activity
-      await this.logActivity(notification.userId, 'notification.processed', 'Notification', notificationId, {
-        type: notification.type,
-        channel: notification.channel,
-        status: success ? 'SENT' : 'FAILED',
-        failureReason
+      await this.logActivity({
+        userId: notification.userId,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Notification',
+        entityId: notificationId,
+        metadata: {
+          event: 'notification_processed',
+          type: notification.type,
+          channel: notification.channel,
+          status: success ? 'SENT' : 'FAILED',
+          failureReason
+        }
       });
 
     } catch (error) {

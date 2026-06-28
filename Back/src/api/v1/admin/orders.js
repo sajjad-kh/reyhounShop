@@ -1070,7 +1070,7 @@ router.post(
             orderId,
             actorType: 'ADMIN',
             action: file
-              ? 'SUBMIT_DESIGN'
+              ? 'DESIGN_UPLOADED'
               : 'SEND_ADMIN_MESSAGE',
             entity: 'ORDER_DESIGN',
             entityId: version?.id,

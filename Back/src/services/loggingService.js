@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
+const { PrismaClient, ActivityAction, EntityType, ActorType } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
@@ -12,32 +11,32 @@ class LoggingService {
    * @param {string} action - The action performed (e.g., 'product.view', 'order.create')
    * @param {string} entity - The entity type (e.g., 'Product', 'Order')
    * @param {number|null} entityId - The ID of the entity
-   * @param {Object|null} details - Additional details about the action
-   * @param {Object|null} req - Express request object for context
+   * @param {Object|null} metadata - Additional details about the action
+   * @param {string|null} userId - User ID
+   * @param {string|null} actorType - Actor type (USER, ADMIN, SYSTEM)
+   * @param {string|null} ip - IP address
+   * @param {string|null} userAgent - User agent string
    * @returns {Promise<Object>} The created activity log entry
    */
-  async logActivity(action, entity, entityId = null, details = null, req = null) {
+  async logActivity({ action, entity, entityId = null, metadata = null, userId = null,
+                      actorType = null, ip = null, userAgent = null } = {}) {
     try {
       const logData = {
         action,
         entity,
         entityId,
-        details: details ? JSON.stringify(details) : null,
-        createdAt: new Date()
+        actorType: actorType || 'SYSTEM',
+        metadata: metadata || null,
+        createdAt: new Date(),
+        ip: ip || null,
+        userAgent: userAgent || null,
       };
 
-      // Add user context if available
-      if (req && req.user) {
-        logData.userId = req.user.id;
-        logData.ip = req.ip || req.connection.remoteAddress || null;
-        logData.userAgent = req.get('User-Agent') || null;
+      if (userId) {
+        logData.user = { connect: { id: userId } };
       }
 
-      const activityLog = await prisma.activityLog.create({
-        data: logData
-      });
-
-      return activityLog;
+      return await prisma.activityLog.create({ data: logData });
     } catch (error) {
       console.error('Failed to log activity:', error);
       throw error;
@@ -46,40 +45,48 @@ class LoggingService {
 
   /**
    * Log product view activity
+   * @param {number} userId - The user ID
    * @param {number} productId - The product ID
    * @param {Object} req - Express request object
    */
-  async logProductView(productId, req) {
-    return this.logActivity(
-      'product.view',
-      'Product',
-      productId,
-      {
-        timestamp: new Date(),
-        source: 'product_page'
+  async logProductView(userId, productId, req) {
+    return this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Product',
+      entityId: productId,
+      metadata: {
+        event: 'product_view',
+        source: 'product_page',
+        timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
    * Log product search activity
+   * @param {number} userId - The user ID
    * @param {string} searchQuery - The search query
    * @param {number} resultCount - Number of results returned
    * @param {Object} req - Express request object
    */
-  async logProductSearch(searchQuery, resultCount, req) {
-    return this.logActivity(
-      'product.search',
-      'Product',
-      null,
-      {
+  async logProductSearch(userId, searchQuery, resultCount, req) {
+    return this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Product',
+      entityId: null,
+      metadata: {
+        event: 'product_search',
         query: searchQuery,
         resultCount,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
@@ -90,11 +97,12 @@ class LoggingService {
    * @param {Object} req - Express request object
    */
   async logPurchase(orderId, totalAmount, items, req) {
-    return this.logActivity(
-      'order.purchase',
-      'Order',
-      orderId,
-      {
+    return this.logActivity({
+      userId: req?.user?.id || null,
+      action: ActivityAction.ORDER_CREATED,
+      entity: 'Order',
+      entityId: orderId,
+      metadata: {
         totalAmount,
         itemCount: items.length,
         items: items.map(item => ({
@@ -102,50 +110,61 @@ class LoggingService {
           quantity: item.quantity,
           price: item.price
         })),
+        event: 'order_purchase',
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
    * Log account changes
-   * @param {string} changeType - Type of change (e.g., 'profile_update', 'password_change')
    * @param {number} userId - The user ID
+   * @param {string} changeType - Type of change (e.g., 'profile_update', 'password_change')
    * @param {Object} changes - Object describing what changed
    * @param {Object} req - Express request object
    */
-  async logAccountChange(changeType, userId, changes, req) {
-    return this.logActivity(
-      `account.${changeType}`,
-      'User',
+  async logAccountChange(userId, changeType, changes, req) {
+    return this.logActivity({
       userId,
-      {
+      action: ActivityAction.USER_UPDATED,
+      entity: 'User',
+      entityId: userId,
+      metadata: {
+        changeType,
         changes,
+        event: `account_${changeType}`,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
    * Log cart activity
+   * @param {number} userId - The user ID
    * @param {string} action - Cart action (add, remove, update, clear)
    * @param {number} productId - Product ID
    * @param {number} quantity - Quantity
    * @param {Object} req - Express request object
    */
-  async logCartActivity(action, productId, quantity, req) {
-    return this.logActivity(
-      `cart.${action}`,
-      'Cart',
-      productId,
-      {
+  async logCartActivity(userId, action, productId, quantity, req) {
+    return this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Cart',
+      entityId: productId,
+      metadata: {
+        cartAction: action,
         quantity,
+        event: `cart_${action}`,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
@@ -156,16 +175,25 @@ class LoggingService {
    * @param {Object} req - Express request object
    */
   async logAuthEvent(event, userId = null, details = {}, req) {
-    return this.logActivity(
-      `auth.${event}`,
-      'User',
+    const actionMap = {
+      login: ActivityAction.AUTH_LOGIN,
+      logout: ActivityAction.AUTH_LOGOUT,
+      login_failed: ActivityAction.AUTH_LOGIN_FAILED
+    };
+
+    return this.logActivity({
       userId,
-      {
+      action: actionMap[event] || ActivityAction.SYSTEM_EVENT,
+      entity: 'User',
+      entityId: userId,
+      metadata: {
+        authEvent: event,
         ...details,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
@@ -176,34 +204,47 @@ class LoggingService {
    * @param {Object} req - Express request object
    */
   async logReviewActivity(action, reviewId, productId, req) {
-    return this.logActivity(
-      `review.${action}`,
-      'Review',
-      reviewId,
-      {
+    const actionMap = {
+      created: ActivityAction.REVIEW_CREATED,
+      approved: ActivityAction.REVIEW_APPROVED
+    };
+
+    return this.logActivity({
+      userId: req?.user?.id || null,
+      action: actionMap[action] || ActivityAction.SYSTEM_EVENT,
+      entity: 'Review',
+      entityId: reviewId,
+      metadata: {
         productId,
+        reviewAction: action,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
    * Log wishlist activity
+   * @param {number} userId - The user ID
    * @param {string} action - Wishlist action (add, remove)
    * @param {number} productId - Product ID
    * @param {Object} req - Express request object
    */
-  async logWishlistActivity(action, productId, req) {
-    return this.logActivity(
-      `wishlist.${action}`,
-      'Wishlist',
-      productId,
-      {
+  async logWishlistActivity(userId, action, productId, req) {
+    return this.logActivity({
+      userId,
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: 'Wishlist',
+      entityId: productId,
+      metadata: {
+        wishlistAction: action,
+        event: `wishlist_${action}`,
         timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
@@ -215,17 +256,20 @@ class LoggingService {
    * @param {Object} req - Express request object
    */
   async logAdminActivity(action, entity, entityId, details, req) {
-    return this.logActivity(
-      `admin.${action}`,
+    return this.logActivity({
+      userId: req?.user?.id || null,
+      action: ActivityAction.SYSTEM_EVENT,
       entity,
       entityId,
-      {
+      metadata: {
+        adminAction: action,
         ...details,
-        adminId: req.user?.id,
         timestamp: new Date()
       },
-      req
-    );
+      actorType: 'ADMIN',
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
@@ -235,75 +279,84 @@ class LoggingService {
    * @param {Object} req - Express request object
    */
   async logSecurityEvent(event, details = {}, req) {
-    return this.logActivity(
-      `security.${event}`,
-      'Security',
-      null,
-      {
+    const authEvents = {
+      login: ActivityAction.AUTH_LOGIN,
+      login_failed: ActivityAction.AUTH_LOGIN_FAILED,
+      logout: ActivityAction.AUTH_LOGOUT
+    };
+
+    return this.logActivity({
+      userId: req?.user?.id || null,
+      action: authEvents[event] || ActivityAction.SYSTEM_EVENT,
+      entity: 'Security',
+      entityId: null,
+      actorType: 'SYSTEM',
+      metadata: {
+        securityEvent: event,
         ...details,
-        timestamp: new Date(),
-        severity: details.severity || 'medium'
+        timestamp: new Date()
       },
-      req
-    );
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent']
+    });
   }
 
   /**
    * Get activity logs with filtering
    * @param {Object} filters - Filter options
-   * @returns {Promise<Array>} Array of activity logs
+   * @returns {Promise<Object>} logs, total, and stats
    */
   async getActivityLogs(filters = {}) {
-    try {
-      const where = {};
-      
-      if (filters.userId) {
-        where.userId = filters.userId;
-      }
-      
-      if (filters.action) {
-        where.action = {
-          contains: filters.action
-        };
-      }
-      
-      if (filters.entity) {
-        where.entity = filters.entity;
-      }
-      
-      if (filters.startDate || filters.endDate) {
-        where.createdAt = {};
-        if (filters.startDate) {
-          where.createdAt.gte = new Date(filters.startDate);
-        }
-        if (filters.endDate) {
-          where.createdAt.lte = new Date(filters.endDate);
-        }
-      }
+    const where = {};
 
-      const logs = await prisma.activityLog.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: filters.limit || 100,
-        skip: filters.offset || 0
-      });
+    if (filters.userId) where.userId = Number(filters.userId);
+    if (filters.entity) where.entity = filters.entity;
+    if (filters.actorType) where.actorType = filters.actorType;
+    if (filters.severity) where.severity = filters.severity;
+    if (filters.action) where.action = filters.action;
 
-      return logs;
-    } catch (error) {
-      console.error('Failed to get activity logs:', error);
-      throw error;
+    // FIX: پشتیبانی از فیلتر success که frontend می‌فرسته
+    if (filters.success !== undefined) {
+      where.success = filters.success === 'true' || filters.success === true;
     }
+
+    if (filters.search) {
+      where.OR = [
+        { entity: { contains: filters.search } },
+        { action: { contains: filters.search } },
+        { user: { name: { contains: filters.search } } },
+        { user: { email: { contains: filters.search } } },
+      ];
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      where.createdAt = {};
+      if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+      if (filters.dateTo) where.createdAt.lte = new Date(filters.dateTo + 'T23:59:59');
+    }
+
+    // FIX: prisma() → prisma (بدون پرانتز)
+    // FIX: stats اضافه شد — روی کل داده بدون pagination برای کارت‌های frontend
+    const [logs, total, errors, warnings, ok, fail] = await Promise.all([
+      prisma.activityLog.findMany({
+        where,
+        include: { user: { select: { id: true, email: true, name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: Number(filters.limit) || 20,
+        skip: Number(filters.offset) || 0,
+      }),
+      prisma.activityLog.count({ where }),
+      prisma.activityLog.count({ where: { ...where, severity: 'ERROR' } }),
+      prisma.activityLog.count({ where: { ...where, severity: 'WARNING' } }),
+      prisma.activityLog.count({ where: { ...where, success: true } }),
+      prisma.activityLog.count({ where: { ...where, success: false } }),
+    ]);
+
+    return {
+      logs,
+      total,
+      stats: { total, errors, warnings, ok, fail },
+    };
   }
 
   /**
@@ -313,32 +366,43 @@ class LoggingService {
    */
   async logApiRequest(requestData) {
     try {
-      const log = await prisma.activityLog.create({
+      const {
+        method,
+        endpoint,
+        status,
+        ip,
+        userAgent,
+        responseTime,
+        userId,
+        correlationId
+      } = requestData;
+
+      await prisma.activityLog.create({
         data: {
-          action: 'api.request',
-          entity: 'Api',
+          actorType: 'SYSTEM',
+          action: 'API_REQUEST',
+          entity: 'SYSTEM',
 
-          userId: requestData.userId || null,
+          user: userId
+            ? {
+                connect: { id: userId }
+              }
+            : undefined,
 
-          details: JSON.stringify({
-            method: requestData.method,
-            endpoint: requestData.endpoint,
-            status: requestData.status,
-            ip: requestData.ip,
-            userAgent: requestData.userAgent || null,
-            responseTime: requestData.responseTime || null,
-            timestamp: new Date()
-          }),
+          correlationId,
 
-          createdAt: new Date()
+          metadata: {
+            method,
+            endpoint,
+            status,
+            ip,
+            userAgent,
+            responseTime
+          }
         }
       });
-
-      return log;
     } catch (error) {
       console.error('Failed to log API request:', error);
-      // مهم: اینجا throw نکن
-      return null;
     }
   }
 
@@ -350,29 +414,11 @@ class LoggingService {
   async getApiLogs(filters = {}) {
     try {
       const where = {
-        action: 'api.request'
+        action: 'API_REQUEST'
       };
 
       if (filters.userId) {
         where.userId = Number(filters.userId);
-      }
-
-      if (filters.method) {
-        where.details = {
-          contains: `"method":"${filters.method}"`
-        };
-      }
-
-      if (filters.endpoint) {
-        where.details = {
-          contains: `"endpoint":"${filters.endpoint}"`
-        };
-      }
-
-      if (filters.status) {
-        where.details = {
-          contains: `"status":${filters.status}`
-        };
       }
 
       if (filters.startDate || filters.endDate) {
@@ -403,7 +449,7 @@ class LoggingService {
       return {
         logs,
         totalCount,
-        analytics: null // اگر خواستی بعداً اضافه می‌کنیم
+        analytics: null
       };
 
     } catch (error) {
@@ -417,86 +463,46 @@ class LoggingService {
    * @param {Object} filters - Filter options
    * @returns {Promise<Object>} Analytics data
    */
+  // FIX: prisma.apiLog → prisma.activityLog در همه جا
   async getApiAnalytics(filters = {}) {
     try {
-      const where = {};
-      
-      if (filters.startDate || filters.endDate) {
-        where.timestamp = {};
-        if (filters.startDate) {
-          where.timestamp.gte = new Date(filters.startDate);
-        }
-        if (filters.endDate) {
-          where.timestamp.lte = new Date(filters.endDate);
-        }
-      }
+      const where = {
+        action: 'API_REQUEST',
+        ...(filters.startDate || filters.endDate ? {
+          createdAt: {
+            ...(filters.startDate && { gte: new Date(filters.startDate) }),
+            ...(filters.endDate && { lte: new Date(filters.endDate) }),
+          }
+        } : {})
+      };
 
-      const [
-        totalRequests,
-        averageResponseTime,
-        slowRequests,
-        errorRequests,
-        topEndpoints,
-        statusDistribution
-      ] = await Promise.all([
-        prisma.apiLog.count({ where }),
-        prisma.apiLog.aggregate({
+      const [totalRequests, errorRequests, topEndpoints] = await Promise.all([
+        prisma.activityLog.count({ where }),
+        prisma.activityLog.count({
           where: {
             ...where,
-            responseTime: { not: null }
-          },
-          _avg: {
-            responseTime: true
+            metadata: { path: ['status'], gte: 400 }
           }
         }),
-        prisma.apiLog.count({
-          where: {
-            ...where,
-            responseTime: { gt: 1000 }
-          }
-        }),
-        prisma.apiLog.count({
-          where: {
-            ...where,
-            status: { gte: 400 }
-          }
-        }),
-        prisma.apiLog.groupBy({
-          by: ['endpoint'],
+        prisma.activityLog.groupBy({
+          by: ['entity'],
           where,
-          _count: {
-            endpoint: true
-          },
-          orderBy: {
-            _count: {
-              endpoint: 'desc'
-            }
-          },
-          take: 10
+          _count: { entity: true },
+          orderBy: { _count: { entity: 'desc' } },
+          take: 10,
         }),
-        prisma.apiLog.groupBy({
-          by: ['status'],
-          where,
-          _count: {
-            status: true
-          }
-        })
       ]);
 
       return {
         totalRequests,
-        averageResponseTime: averageResponseTime._avg.responseTime || 0,
-        slowRequests,
         errorRequests,
-        errorRate: totalRequests > 0 ? (errorRequests / totalRequests * 100).toFixed(2) : 0,
-        topEndpoints: topEndpoints.map(item => ({
-          endpoint: item.endpoint,
-          count: item._count.endpoint
+        errorRate: totalRequests > 0
+          ? ((errorRequests / totalRequests) * 100).toFixed(2)
+          : 0,
+        topEndpoints: topEndpoints.map(i => ({
+          endpoint: i.entity,
+          count: i._count.entity
         })),
-        statusDistribution: statusDistribution.map(item => ({
-          status: item.status,
-          count: item._count.status
-        }))
       };
     } catch (error) {
       console.error('Failed to get API analytics:', error);
@@ -510,32 +516,33 @@ class LoggingService {
    * @param {Object} filters - Additional filters
    * @returns {Promise<Array>} Array of slow requests
    */
+  // FIX: prisma.apiLog → prisma.activityLog + timestamp → createdAt
+  // responseTime داخل metadata ذخیره شده — فیلتر در app layer انجام می‌شه
   async getSlowQueries(threshold = 1000, filters = {}) {
     try {
-      const where = {
-        responseTime: { gte: threshold },
-        ...filters
-      };
+      const where = { action: 'API_REQUEST' };
 
       if (filters.startDate || filters.endDate) {
-        where.timestamp = {};
+        where.createdAt = {};
         if (filters.startDate) {
-          where.timestamp.gte = new Date(filters.startDate);
+          where.createdAt.gte = new Date(filters.startDate);
         }
         if (filters.endDate) {
-          where.timestamp.lte = new Date(filters.endDate);
+          where.createdAt.lte = new Date(filters.endDate);
         }
       }
 
-      const slowQueries = await prisma.apiLog.findMany({
+      const logs = await prisma.activityLog.findMany({
         where,
-        orderBy: {
-          responseTime: 'desc'
-        },
-        take: filters.limit || 50
+        orderBy: { createdAt: 'desc' },
+        take: (filters.limit || 50) * 4, // بیشتر بگیر تا بعد از فیلتر کافی باشه
       });
 
-      return slowQueries;
+      // فیلتر روی metadata.responseTime در app layer
+      return logs
+        .filter(l => (l.metadata?.responseTime ?? 0) >= threshold)
+        .sort((a, b) => (b.metadata?.responseTime ?? 0) - (a.metadata?.responseTime ?? 0))
+        .slice(0, filters.limit || 50);
     } catch (error) {
       console.error('Failed to get slow queries:', error);
       throw error;
@@ -548,50 +555,41 @@ class LoggingService {
    * @param {Object} filters - Filter options
    * @returns {Promise<Object>} User session data
    */
+  // FIX: prisma.apiLog → prisma.activityLog + timestamp → createdAt
   async getUserSessionAnalytics(userId, filters = {}) {
     try {
-      const where = { userId };
-      
+      const where = { userId: Number(userId), action: 'API_REQUEST' };
+
       if (filters.startDate || filters.endDate) {
-        where.timestamp = {};
+        where.createdAt = {};
         if (filters.startDate) {
-          where.timestamp.gte = new Date(filters.startDate);
+          where.createdAt.gte = new Date(filters.startDate);
         }
         if (filters.endDate) {
-          where.timestamp.lte = new Date(filters.endDate);
+          where.createdAt.lte = new Date(filters.endDate);
         }
       }
 
       const [
         totalRequests,
         uniqueSessions,
-        averageResponseTime,
         mostUsedEndpoints
       ] = await Promise.all([
-        prisma.apiLog.count({ where }),
-        prisma.apiLog.findMany({
+        prisma.activityLog.count({ where }),
+        prisma.activityLog.findMany({
           where,
           distinct: ['ip'],
           select: { ip: true }
         }),
-        prisma.apiLog.aggregate({
-          where: {
-            ...where,
-            responseTime: { not: null }
-          },
-          _avg: {
-            responseTime: true
-          }
-        }),
-        prisma.apiLog.groupBy({
-          by: ['endpoint'],
+        prisma.activityLog.groupBy({
+          by: ['entity'],
           where,
           _count: {
-            endpoint: true
+            entity: true
           },
           orderBy: {
             _count: {
-              endpoint: 'desc'
+              entity: 'desc'
             }
           },
           take: 5
@@ -601,10 +599,9 @@ class LoggingService {
       return {
         totalRequests,
         uniqueSessions: uniqueSessions.length,
-        averageResponseTime: averageResponseTime._avg.responseTime || 0,
         mostUsedEndpoints: mostUsedEndpoints.map(item => ({
-          endpoint: item.endpoint,
-          count: item._count.endpoint
+          endpoint: item.entity,
+          count: item._count.entity
         }))
       };
     } catch (error) {
@@ -615,12 +612,11 @@ class LoggingService {
 
   /**
    * Log error with comprehensive details and categorization
-   * @param {Error} error - The error object
-   * @param {Object} req - Express request object
-   * @param {Object} additionalContext - Additional context information
+   * @param {Object} errorData - Error data object
    * @returns {Promise<Object>} The created error log entry
    */
-  async logError(error, errorData = {}) {
+  // FIX: return اضافه شد + try/catch درست شد
+  async logError(errorData = {}) {
     const {
       message,
       stack,
@@ -632,23 +628,25 @@ class LoggingService {
       userAgent
     } = errorData;
 
-
-    await prisma.errorLog.create({
-      data: {
-        message: message || 'Unknown error',
-        stack: stack || null,
-        endpoint: endpoint || null,
-        method: method || null,
-        ip: ip || null,
-        userId: userId || null,
-        statusCode: statusCode || null,
-        userAgent: userAgent || null
-      }
-    });
-
-
-
-
+    try {
+      const log = await prisma.errorLog.create({
+        data: {
+          message: message || 'Unknown error',
+          stack: stack || null,
+          endpoint: endpoint || null,
+          method: method || null,
+          ip: ip || null,
+          userId: userId || null,
+          statusCode: statusCode || null,
+          userAgent: userAgent || null,
+          createdAt: new Date(),
+        }
+      });
+      return log;
+    } catch (error) {
+      console.error('Failed to log error:', error);
+      throw error;
+    }
   }
 
   /**
@@ -712,30 +710,30 @@ class LoggingService {
    */
   async sendErrorAlert(errorLog, severity, req) {
     try {
-      // Log the alert activity
-      await this.logActivity(
-        'alert.error_critical',
-        'Alert',
-        errorLog.id,
-        {
+      await this.logActivity({
+        userId: errorLog.userId || null,
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: 'Alert',
+        entityId: errorLog.id,
+        metadata: {
+          event: 'error_critical',
           severity: severity.level,
           category: severity.category,
           message: errorLog.message,
           endpoint: errorLog.endpoint,
-          userId: errorLog.userId,
           alertTime: new Date()
         },
-        req
-      );
+        ip: req?.ip,
+        userAgent: req?.headers?.['user-agent']
+      });
 
-      // Here you could integrate with external alerting systems
-      // like Slack, email notifications, or monitoring services
       console.error(`CRITICAL ERROR ALERT: ${errorLog.message}`, {
         id: errorLog.id,
         endpoint: errorLog.endpoint,
         userId: errorLog.userId,
-        timestamp: errorLog.timestamp
+        timestamp: errorLog.createdAt
       });
+
     } catch (alertError) {
       console.error('Failed to send error alert:', alertError);
     }
@@ -746,54 +744,32 @@ class LoggingService {
    * @param {Object} filters - Filter options
    * @returns {Promise<Object>} Error logs and analytics
    */
+  // FIX: timestamp → createdAt در where و orderBy
   async getErrorLogs(filters = {}) {
     try {
       const where = {};
-      
+
       if (filters.userId) {
         where.userId = filters.userId;
       }
-      
+
       if (filters.endpoint) {
         where.endpoint = {
           contains: filters.endpoint
         };
       }
-      
+
       if (filters.statusCode) {
-        where.statusCode = filters.statusCode;
+        where.statusCode = Number(filters.statusCode);
       }
-      
-      if (filters.severity) {
-        // Filter by severity through activity logs
-        const activityLogs = await prisma.activityLog.findMany({
-          where: {
-            action: 'error.occurred',
-            details: {
-              path: ['severity'],
-              equals: filters.severity
-            }
-          },
-          select: { entityId: true }
-        });
-        
-        if (activityLogs.length > 0) {
-          where.id = {
-            in: activityLogs.map(log => log.entityId).filter(Boolean)
-          };
-        } else {
-          // No errors with this severity
-          where.id = -1;
-        }
-      }
-      
+
       if (filters.startDate || filters.endDate) {
-        where.timestamp = {};
+        where.createdAt = {};
         if (filters.startDate) {
-          where.timestamp.gte = new Date(filters.startDate);
+          where.createdAt.gte = new Date(filters.startDate);
         }
         if (filters.endDate) {
-          where.timestamp.lte = new Date(filters.endDate);
+          where.createdAt.lte = new Date(filters.endDate);
         }
       }
 
@@ -801,7 +777,7 @@ class LoggingService {
         prisma.errorLog.findMany({
           where,
           orderBy: {
-            timestamp: 'desc'
+            createdAt: 'desc'
           },
           take: filters.limit || 100,
           skip: filters.offset || 0
@@ -826,17 +802,18 @@ class LoggingService {
    * @param {Object} filters - Filter options
    * @returns {Promise<Object>} Error analytics
    */
+  // FIX: timestamp → createdAt در where
   async getErrorAnalytics(filters = {}) {
     try {
       const where = {};
-      
+
       if (filters.startDate || filters.endDate) {
-        where.timestamp = {};
+        where.createdAt = {};
         if (filters.startDate) {
-          where.timestamp.gte = new Date(filters.startDate);
+          where.createdAt.gte = new Date(filters.startDate);
         }
         if (filters.endDate) {
-          where.timestamp.lte = new Date(filters.endDate);
+          where.createdAt.lte = new Date(filters.endDate);
         }
       }
 
@@ -844,7 +821,6 @@ class LoggingService {
         totalErrors,
         errorsByStatus,
         errorsByEndpoint,
-        recentCriticalErrors,
         errorTrends
       ] = await Promise.all([
         prisma.errorLog.count({ where }),
@@ -873,22 +849,6 @@ class LoggingService {
           },
           take: 10
         }),
-        prisma.activityLog.findMany({
-          where: {
-            action: 'error.occurred',
-            details: {
-              path: ['severity'],
-              equals: 'critical'
-            },
-            createdAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-            }
-          },
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 10
-        }),
         this.getErrorTrends(filters)
       ]);
 
@@ -902,7 +862,6 @@ class LoggingService {
           endpoint: item.endpoint,
           count: item._count.endpoint
         })),
-        recentCriticalErrors: recentCriticalErrors.length,
         errorTrends
       };
     } catch (error) {
@@ -916,36 +875,37 @@ class LoggingService {
    * @param {Object} filters - Filter options
    * @returns {Promise<Array>} Error trends data
    */
+  // FIX: timestamp → createdAt در where
   async getErrorTrends(filters = {}) {
     try {
       const endDate = filters.endDate ? new Date(filters.endDate) : new Date();
       const startDate = filters.startDate ? new Date(filters.startDate) : new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
+
       // Get daily error counts
       const trends = [];
       const currentDate = new Date(startDate);
-      
+
       while (currentDate <= endDate) {
         const dayStart = new Date(currentDate);
         const dayEnd = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
-        
+
         const errorCount = await prisma.errorLog.count({
           where: {
-            timestamp: {
+            createdAt: {
               gte: dayStart,
               lt: dayEnd
             }
           }
         });
-        
+
         trends.push({
           date: dayStart.toISOString().split('T')[0],
           count: errorCount
         });
-        
+
         currentDate.setDate(currentDate.getDate() + 1);
       }
-      
+
       return trends;
     } catch (error) {
       console.error('Failed to get error trends:', error);

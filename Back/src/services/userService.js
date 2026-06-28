@@ -1,5 +1,6 @@
 const { getPrismaClient } = require('../utils/database');
 const { hashPassword, comparePassword } = require('../utils/auth');
+const { ActivityAction } = require('@prisma/client');
 
 class UserService {
   /**
@@ -124,9 +125,15 @@ class UserService {
     });
 
     // Log profile update activity
-    await this.logActivity(userId, 'user.profile_updated', 'User', userId, {
-      updatedFields: Object.keys(updateFields).filter(field => field !== 'password'),
-      hasPasswordChange: !!newPassword
+    await this.logActivity({
+      userId,
+      action: ActivityAction.USER_UPDATED,
+      entity: 'User',
+      entityId: userId,
+      metadata: {
+        updatedFields: Object.keys(updateFields).filter(field => field !== 'password'),
+        hasPasswordChange: !!newPassword
+      }
     });
 
     return updatedUser;
@@ -139,38 +146,70 @@ class UserService {
    * @returns {Promise<Object>} Created address
    */
   async addAddress(userId, addressData) {
-    const { title, fullName, phone, address, city, province, postalCode, lat, lng, isDefault } = addressData;
+      const { title, fullName, phone, address, city, province, postalCode, lat, lng, isDefault } = addressData;
 
-    // If this is set as default, unset other default addresses
-    if (isDefault) {
-      await getPrismaClient().address.updateMany({
-        where: { userId },
-        data: { isDefault: false }
-      });
-    }
+      try {
+          if (isDefault) {
+              await getPrismaClient().address.updateMany({
+                  where: { userId },
+                  data: { isDefault: false }
+              });
+          }
 
-    const newAddress = await getPrismaClient().address.create({
-      data: {
-        userId,
-        title,
-        fullName: fullName || null,
-        phone: phone || null,
-        address,
-        city,
-        province,
-        postalCode,
-        isDefault: isDefault || false
+          const newAddress = await getPrismaClient().address.create({
+              data: {
+                  userId,
+                  title,
+                  fullName: fullName || null,
+                  phone: phone || null,
+                  address,
+                  city,
+                  province,
+                  postalCode,
+                  isDefault: isDefault || false
+              }
+          });
+
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: newAddress.id,
+              metadata: {
+                  title,
+                  city,
+                  province,
+                  event: 'address_added',
+                  method: 'POST',
+                  endpoint: '/addresses',
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          return newAddress;
+
+      } catch (error) {
+          // log with error details
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: null,
+              actorType: 'USER',
+              metadata: {
+                  title,
+                  city,
+                  province,
+                  event: 'address_added',
+                  method: 'POST',
+                  endpoint: '/addresses',
+                  error: error.message,
+                  errorType: error.constructor.name,
+                  code: error.code || null,
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          throw error;
       }
-    });
-
-    // Log address creation activity (non-blocking)
-    this.logActivity(userId, 'user.address_added', 'Address', newAddress.id, {
-      title,
-      city,
-      province
-    }).catch(err => console.error('Failed to log activity:', err));
-
-    return newAddress;
   }
 
   /**
@@ -181,46 +220,75 @@ class UserService {
    * @returns {Promise<Object>} Updated address
    */
   async updateAddress(userId, addressId, updateData) {
-    // Check if address belongs to user
-    const existingAddress = await getPrismaClient().address.findFirst({
-      where: { id: addressId, userId }
-    });
+      const { title, address, city, province, postalCode, lat, lng, isDefault } = updateData;
 
-    if (!existingAddress) {
-      throw new Error('ADDRESS_NOT_FOUND');
-    }
+      try {
+          const existingAddress = await getPrismaClient().address.findFirst({
+              where: { id: addressId, userId }
+          });
 
-    const { title, address, city, province, postalCode, lat, lng, isDefault } = updateData;
+          if (!existingAddress) {
+              throw new Error('ADDRESS_NOT_FOUND');
+          }
 
-    // If this is set as default, unset other default addresses
-    if (isDefault) {
-      await getPrismaClient().address.updateMany({
-        where: { userId, id: { not: addressId } },
-        data: { isDefault: false }
-      });
-    }
+          if (isDefault) {
+              await getPrismaClient().address.updateMany({
+                  where: { userId, id: { not: addressId } },
+                  data: { isDefault: false }
+              });
+          }
 
-    const updatedAddress = await getPrismaClient().address.update({
-      where: { id: addressId },
-      data: {
-        title: title !== undefined ? title : existingAddress.title,
-        address: address !== undefined ? address : existingAddress.address,
-        city: city !== undefined ? city : existingAddress.city,
-        province: province !== undefined ? province : existingAddress.province,
-        postalCode: postalCode !== undefined ? postalCode : existingAddress.postalCode,
-        lat: lat !== undefined ? lat : existingAddress.lat,
-        lng: lng !== undefined ? lng : existingAddress.lng,
-        isDefault: isDefault !== undefined ? isDefault : existingAddress.isDefault
+          const updatedAddress = await getPrismaClient().address.update({
+              where: { id: addressId },
+              data: {
+                  title: title !== undefined ? title : existingAddress.title,
+                  address: address !== undefined ? address : existingAddress.address,
+                  city: city !== undefined ? city : existingAddress.city,
+                  province: province !== undefined ? province : existingAddress.province,
+                  postalCode: postalCode !== undefined ? postalCode : existingAddress.postalCode,
+                  lat: lat !== undefined ? lat : existingAddress.lat,
+                  lng: lng !== undefined ? lng : existingAddress.lng,
+                  isDefault: isDefault !== undefined ? isDefault : existingAddress.isDefault
+              }
+          });
+
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: addressId,
+              metadata: {
+                  title: updatedAddress.title,
+                  city: updatedAddress.city,
+                  event: 'address_updated',
+                  method: 'PUT',
+                  endpoint: `/addresses/${addressId}`,
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          return updatedAddress;
+
+      } catch (error) {
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: addressId,
+              actorType: 'USER',
+              metadata: {
+                  title,
+                  city,
+                  event: 'address_updated',
+                  method: 'PUT',
+                  endpoint: `/addresses/${addressId}`,
+                  error: error.message,
+                  errorType: error.constructor.name,
+                  code: error.code || null,
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          throw error;
       }
-    });
-
-    // Log address update activity (non-blocking)
-    this.logActivity(userId, 'user.address_updated', 'Address', addressId, {
-      title: updatedAddress.title,
-      city: updatedAddress.city
-    }).catch(err => console.error('Failed to log activity:', err));
-
-    return updatedAddress;
   }
 
   /**
@@ -230,68 +298,76 @@ class UserService {
    * @returns {Promise<boolean>} Deletion result
    */
   async deleteAddress(userId, addressId) {
-    try {
-      console.log(`🗑️ Attempting to delete address ${addressId} for user ${userId}`);
-      
-      // Check if address belongs to user
-      const existingAddress = await getPrismaClient().address.findFirst({
-        where: { id: addressId, userId }
-      });
-
-      if (!existingAddress) {
-        console.log(`❌ Address ${addressId} not found for user ${userId}`);
-        throw new Error('ADDRESS_NOT_FOUND');
-      }
-
-      console.log(`✅ Found address:`, existingAddress);
-
-      // Check if address is used in any orders
-      const ordersWithAddress = await getPrismaClient().order.findFirst({
-        where: { addressId }
-      });
-
-      if (ordersWithAddress) {
-        console.log(`❌ Address ${addressId} is in use by order ${ordersWithAddress.id}`);
-        throw new Error('ADDRESS_IN_USE');
-      }
-
-      console.log(`🗑️ Deleting address ${addressId} from database...`);
-      await getPrismaClient().address.delete({
-        where: { id: addressId }
-      });
-      console.log(`✅ Address ${addressId} deleted from database`);
-
-      // If deleted address was default, set another address as default
-      if (existingAddress.isDefault) {
-        const firstAddress = await getPrismaClient().address.findFirst({
-          where: { userId },
-          orderBy: { createdAt: 'asc' }
-        });
-
-        if (firstAddress) {
-          await getPrismaClient().address.update({
-            where: { id: firstAddress.id },
-            data: { isDefault: true }
-          });
-        }
-      }
-
-      // Log address deletion activity (non-blocking)
       try {
-        await this.logActivity(userId, 'user.address_deleted', 'Address', addressId, {
-          title: existingAddress.title,
-          city: existingAddress.city
-        });
-      } catch (logError) {
-        console.error('Failed to log activity (non-critical):', logError);
-      }
+          const existingAddress = await getPrismaClient().address.findFirst({
+              where: { id: addressId, userId }
+          });
 
-      console.log(`✅ Address ${addressId} deleted successfully for user ${userId}`);
-      return true;
-    } catch (error) {
-      console.error('Delete address error:', error);
-      throw error;
-    }
+          if (!existingAddress) {
+              throw new Error('ADDRESS_NOT_FOUND');
+          }
+
+          const ordersWithAddress = await getPrismaClient().order.findFirst({
+              where: { addressId }
+          });
+
+          if (ordersWithAddress) {
+              throw new Error('ADDRESS_IN_USE');
+          }
+
+          await getPrismaClient().address.delete({
+              where: { id: addressId }
+          });
+
+          if (existingAddress.isDefault) {
+              const firstAddress = await getPrismaClient().address.findFirst({
+                  where: { userId },
+                  orderBy: { createdAt: 'asc' }
+              });
+
+              if (firstAddress) {
+                  await getPrismaClient().address.update({
+                      where: { id: firstAddress.id },
+                      data: { isDefault: true }
+                  });
+              }
+          }
+
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: addressId,
+              metadata: {
+                  title: existingAddress.title,
+                  city: existingAddress.city,
+                  event: 'address_deleted',
+                  method: 'DELETE',
+                  endpoint: `/addresses/${addressId}`,
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          return true;
+
+      } catch (error) {
+          this.logActivity({
+              userId,
+              action: ActivityAction.USER_UPDATED,
+              entity: 'Address',
+              entityId: addressId,
+              actorType: 'USER',
+              metadata: {
+                  event: 'address_deleted',
+                  method: 'DELETE',
+                  endpoint: `/addresses/${addressId}`,
+                  error: error.message,
+                  errorType: error.constructor.name,
+                  code: error.code || null,
+              }
+          }).catch(err => console.error('Failed to log activity:', err));
+
+          throw error;
+      }
   }
 
   /**
@@ -352,21 +428,23 @@ class UserService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
-    try {
-      await getPrismaClient().activityLog.create({
-        data: {
-          userId,
-          action,
-          entity,
-          entityId,
-          details
-        }
-      });
-    } catch (error) {
-      console.error('Failed to log activity:', error);
-      // Don't throw error to avoid breaking main functionality
-    }
+  async logActivity({ userId, action, entity, entityId, metadata = {}, actorType = 'USER' } = {}) {
+      try {
+          await getPrismaClient().activityLog.create({
+              data: {
+                  userId,
+                  action,
+                  entity,
+                  entityId: entityId ? String(entityId) : null,
+                  actorType,
+                  metadata,
+                  severity: severity || (metadata?.error ? 'ERROR' : 'INFO'), 
+
+              }
+          });
+      } catch (error) {
+          console.error('Failed to log activity:', error);
+      }
   }
 }
 

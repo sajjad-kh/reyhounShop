@@ -1,8 +1,9 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requireRole } = require('../../../middleware/auth');
+const { PrismaClient,ActivityAction } = require('@prisma/client');
+const {  authenticateToken, requireRole } = require('../../../middleware/auth');
 const loggingService = require('../../../services/loggingService');
 const { createActivityLogger } = require('../../../middleware/logging');
+
 
 const prisma = new PrismaClient();
 
@@ -12,7 +13,7 @@ const router = express.Router();
  * GET /api/v1/admin/logs/activity
  * Get activity logs with filtering and search
  */
-router.get('/activity', requireRole(['ADMIN']), createActivityLogger('admin.view_activity_logs', 'ActivityLog'), async (req, res) => {
+router.get('/activity',  authenticateToken, requireRole(['ADMIN']), createActivityLogger(ActivityAction.ADMIN_VIEW_ACTIVITY_LOGS, 'ACTIVITY_LOG'), async (req, res) => {
   try {
     const {
       userId,
@@ -61,7 +62,7 @@ router.get('/activity', requireRole(['ADMIN']), createActivityLogger('admin.view
  * GET /api/v1/admin/logs/api
  * Get API logs with analytics and filtering
  */
-router.get('/api', requireRole(['ADMIN']), createActivityLogger('admin.view_api_logs', 'ApiLog'), async (req, res) => {
+router.get('/api', requireRole(['ADMIN']), createActivityLogger('ADMIN_VIEW_API_LOGS', 'API_LOG'), async (req, res) => {
   try {
     const {
       userId,
@@ -119,7 +120,7 @@ router.get('/api', requireRole(['ADMIN']), createActivityLogger('admin.view_api_
  * GET /api/v1/admin/logs/errors
  * Get error logs with categorization and analytics
  */
-router.get('/errors', requireRole(['ADMIN']), createActivityLogger('admin.view_error_logs', 'ErrorLog'), async (req, res) => {
+router.get('/errors', requireRole(['ADMIN']), createActivityLogger('ADMIN_VIEW_ERROR_LOGS', 'ERROR_LOG'), async (req, res) => {
   try {
     const {
       userId,
@@ -177,7 +178,7 @@ router.get('/errors', requireRole(['ADMIN']), createActivityLogger('admin.view_e
  * GET /api/v1/admin/logs/performance
  * Get performance metrics and slow queries
  */
-router.get('/performance', requireRole(['ADMIN']), createActivityLogger('admin.view_performance_logs', 'Performance'), async (req, res) => {
+router.get('/performance', requireRole(['ADMIN']), createActivityLogger('ADMIN_VIEW_PERFORMANCE_LOGS', 'SYSTEM'), async (req, res) => {
   try {
     const {
       threshold = 1000,
@@ -225,7 +226,7 @@ router.get('/performance', requireRole(['ADMIN']), createActivityLogger('admin.v
  * GET /api/v1/admin/logs/search
  * Advanced log search across all log types
  */
-router.get('/search', requireRole(['ADMIN']), createActivityLogger('admin.search_logs', 'Log'), async (req, res) => {
+router.get('/search', requireRole(['ADMIN']), createActivityLogger('ADMIN_SEARCH_LOGS', 'SYSTEM'), async (req, res) => {
   try {
     const {
       query,
@@ -298,7 +299,7 @@ router.get('/search', requireRole(['ADMIN']), createActivityLogger('admin.search
  * GET /api/v1/admin/logs/user/:userId
  * Get all logs for a specific user
  */
-router.get('/user/:userId', requireRole(['ADMIN']), createActivityLogger('admin.view_user_logs', 'User'), async (req, res) => {
+router.get('/user/:userId', requireRole(['ADMIN']), createActivityLogger('ADMIN_VIEW_USER_LOGS', 'USER'), async (req, res) => {
   try {
     const { userId } = req.params;
     const {
@@ -367,7 +368,7 @@ router.get('/user/:userId', requireRole(['ADMIN']), createActivityLogger('admin.
  * GET /api/v1/admin/logs/analytics
  * Get comprehensive logging analytics dashboard
  */
-router.get('/analytics', requireRole(['ADMIN']), createActivityLogger('admin.view_log_analytics', 'Analytics'), async (req, res) => {
+router.get('/analytics', requireRole(['ADMIN']), createActivityLogger('ADMIN_VIEW_ANALYTICS', 'SYSTEM'), async (req, res) => {
   try {
     const {
       startDate,
@@ -441,7 +442,7 @@ router.get('/analytics', requireRole(['ADMIN']), createActivityLogger('admin.vie
  * DELETE /api/v1/admin/logs/cleanup
  * Clean up old logs based on retention policy
  */
-router.delete('/cleanup', requireRole(['ADMIN']), createActivityLogger('admin.cleanup_logs', 'Log'), async (req, res) => {
+router.delete('/cleanup', requireRole(['ADMIN']), createActivityLogger('SYSTEM_EVENT', 'SYSTEM'), async (req, res) => {
   try {
     const {
       type = 'all', // activity, api, error, all

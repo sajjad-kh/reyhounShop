@@ -99,7 +99,10 @@ const authenticateToken = async (req, res, next) => {
  * Checks if user has required role(s) to access resource
  */
 const requireRole = (roles) => {
+
   return (req, res, next) => {
+    // console.log('AUTH HEADER:', req.headers.authorization);
+    // console.log('REQ USER:', req.user);
     if (!req.user) {
       return res.status(401).json({
         error: {

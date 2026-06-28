@@ -23,6 +23,7 @@ import {
     ProductManagement,
     OrderManagement,
     UserManagement,
+    Logs
 } from '../pages/admin';
 import BasalamPage from '../pages/admin/BasalamPage';
 import { BasalamCheckoutPage } from '../pages/basalam/BasalamCheckoutPage';
@@ -242,6 +243,10 @@ export const adminRoutes: RouteObject[] = [
             {
                 path: 'payment-accounts',
                 element: <PaymentAccountsPage />,
+            },
+            {
+                path: 'Logs',
+                element: <Logs />,
             }
         ],
     },

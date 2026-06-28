@@ -3,6 +3,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const getPrismaClient = () => prisma;
 
+const {
+  ActivityAction,
+  EntityType,
+  LogSeverity,
+} = require('@prisma/client');
+
 const cartService = require('./cartService');
 const shippingMethodService = require('./shippingMethodService');
 const OrderFormatter = require('../formatters/orderFormatter');
@@ -212,6 +218,23 @@ class OrderService {
         }
       });
 
+
+      await tx.activityLog.create({
+        data: {
+          userId: Number(userId),
+          actorType: 'USER',
+          action: ActivityAction.DESIGN_APPROVED,
+          entity: EntityType.ORDER,
+          entityId: String(orderId),
+          severity: LogSeverity.INFO,
+          metadata: {
+            orderStatus: OrderStatus.DESIGN_APPROVED,
+            versionId: latest.id
+          }
+        }
+      });
+
+
       // ✅ FIX: correct enum usage
       await tx.orderStatusHistory.create({
         data: {
@@ -244,7 +267,7 @@ class OrderService {
   // =========================================================
   // ADMIN REVIEW PAYMENT PROOF
   // =========================================================
-  async adminReviewPaymentProof(orderId, data) {
+  async adminReviewPaymentProof(orderId, data, adminId) {
     const prisma = getPrismaClient();
 
     const order = await prisma.order.findUnique({
@@ -273,6 +296,19 @@ class OrderService {
           paymentRejectionReason: null
         }
       });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: adminId, // اگر داری
+          targetUserId: order.userId,
+          actorType: 'ADMIN',
+          action: ActivityAction.PAYMENT_SUCCESS,
+          entity: EntityType.ORDER,
+          entityId: String(orderId),
+          severity: LogSeverity.INFO
+        }
+      });
+
     } else {
       if (!data.rejectionReason?.trim()) {
         throw new Error('REJECTION_REASON_REQUIRED');
@@ -283,6 +319,20 @@ class OrderService {
         data: {
           paymentStatus: PaymentStatus.FAILED,
           paymentRejectionReason: data.rejectionReason
+        }
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: order.userId,
+          actorType: 'ADMIN',
+          action: ActivityAction.PAYMENT_FAILED,
+          entity: EntityType.ORDER,
+          entityId: String(orderId),
+          severity: LogSeverity.WARNING,
+          metadata: {
+            reason: data.rejectionReason
+          }
         }
       });
     }
@@ -527,6 +577,22 @@ class OrderService {
         }
       });
 
+      await tx.activityLog.create({
+        data: {
+          userId: Number(userId),
+          actorType: 'USER',
+          action: ActivityAction.ORDER_CREATED,
+          entity: EntityType.ORDER,
+          entityId: String(order.id),
+          severity: LogSeverity.INFO,
+          metadata: {
+            totalPrice: totalPrice + shippingCost,
+            shippingCost,
+            itemCount: mergedItems.length
+          }
+        }
+      });
+
 
       // clear purchased items from cart
 
@@ -602,6 +668,21 @@ class OrderService {
         });
       }
 
+      await tx.activityLog.create({
+        data: {
+          userId: Number(userId),
+          actorType: 'USER',
+          action: ActivityAction.DESIGN_REVISION,
+          entity: EntityType.ORDER,
+          entityId: String(orderId),
+          severity: LogSeverity.INFO,
+          metadata: {
+            hasMessage: !!message,
+            attachmentCount: attachments.length
+          }
+        }
+      });
+
       return {
         success: true,
         message: "درخواست تغییر با موفقیت ثبت شد",
@@ -640,6 +721,23 @@ class OrderService {
           }
         });
 
+        await tx.activityLog.create({
+          data: {
+            userId: adminId,
+            targetUserId: order.userId,
+            actorType: 'ADMIN',
+            action: ActivityAction.ORDER_STATUS_CHANGED,
+            entity: EntityType.ORDER,
+            entityId: String(orderId),
+            severity: LogSeverity.INFO,
+            metadata: {
+              from: order.status,
+              to: OrderStatus.SHIPPED,
+              trackingCode
+            }
+          }
+        });
+
       await tx.orderStatusHistory.create({
         data: {
           orderId,
@@ -657,50 +755,6 @@ class OrderService {
           channel: 'EMAIL',
           title: 'سفارش ارسال شد',
           message: `سفارش شما ارسال شد. کد رهگیری: ${trackingCode}`
-        }
-      });
-
-      return updated;
-    });
-  }
-
-  async confirmDelivery({
-    orderId,
-    userId
-  }) {
-    const prisma = getPrismaClient();
-
-    return prisma.$transaction(async tx => {
-
-      const order = await tx.order.findFirst({
-        where: {
-          id: Number(orderId),
-          userId: Number(userId)
-        }
-      });
-
-      if (!order)
-        throw new Error('ORDER_NOT_FOUND');
-
-      if (order.status !== OrderStatus.SHIPPED)
-        throw new Error('INVALID_ORDER_STATUS');
-
-      const updated = await tx.order.update({
-        where: {
-          id: Number(orderId)
-        },
-        data: {
-          status: OrderStatus.DELIVERED
-        }
-      });
-
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId: Number(orderId),
-          changedById: Number(userId),
-          fromStatus: OrderStatus.SHIPPED,
-          toStatus: OrderStatus.DELIVERED,
-          note: 'Confirmed by customer'
         }
       });
 
@@ -750,6 +804,22 @@ class OrderService {
               OrderStatus.DELIVERED
           }
         });
+
+        await tx.activityLog.create({
+          data: {
+            userId: Number(userId),
+            actorType: 'USER',
+            action: ActivityAction.ORDER_STATUS_CHANGED,
+            entity: EntityType.ORDER,
+            entityId: String(orderId),
+            severity: LogSeverity.INFO,
+            metadata: {
+              from: OrderStatus.SHIPPED,
+              to: OrderStatus.DELIVERED
+            }
+          }
+        });
+
 
       await tx.orderStatusHistory.create({
         data: {
