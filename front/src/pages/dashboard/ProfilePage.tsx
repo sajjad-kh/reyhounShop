@@ -55,7 +55,6 @@ const StarIcon = () => (
 interface ProfileFormData {
     name: string;
     phone: string;
-    birthDate: string;
 }
 
 interface PasswordFormData {
@@ -133,11 +132,6 @@ export const ProfilePage: React.FC = () => {
             errors.phone = phoneValidation.error;
         }
 
-        const birthDateValidation = validateBirthDate(profileData.birthDate);
-        if (!birthDateValidation.isValid) {
-            errors.birthDate = birthDateValidation.error;
-        }
-
         setProfileErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -153,7 +147,13 @@ export const ProfilePage: React.FC = () => {
 
         try {
             // TODO: Implement profile update API call
-            // await userService.updateProfile(profileData);
+            const nameValidation = validateName(profileData.name);
+            const phoneValidation = validatePhone(profileData.phone);
+
+            await authService.updateProfile({
+                name: nameValidation.sanitized!,
+                phone: phoneValidation.sanitized,
+            });
 
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));

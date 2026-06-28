@@ -241,7 +241,9 @@ router.put('/profile', authenticateToken, validate(profileUpdateSchema), async (
     res.status(500).json({
       error: {
         code: 'PROFILE_UPDATE_FAILED',
-        message: 'Failed to update profile'
+        message: err.message
+        // message: 'Failed to update profile'
+        
       }
     });
   }

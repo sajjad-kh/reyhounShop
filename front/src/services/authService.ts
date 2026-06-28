@@ -3,6 +3,7 @@ import {
     AuthResponse,
     LoginRequest,
     RegisterRequest,
+    UpdateProfileRequest,
     ChangePasswordRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
@@ -383,6 +384,41 @@ export class AuthService {
 
         return new Error('An unexpected error occurred');
     }
+    /**
+     * Update user profile
+     */
+    async updateProfile(profileData: UpdateProfileRequest): Promise<User> {
+        try {
+            const response = await api.put<User>(
+                API_ENDPOINTS.USER.PROFILE,
+                sanitizeObject(profileData)
+            );
+
+            if (!response.success || !response.data) {
+                throw new Error('Profile update failed');
+            }
+
+            this.setUserData(response.data);
+
+            window.dispatchEvent(
+                new CustomEvent('authStateChanged', {
+                    detail: {
+                        user: response.data,
+                        isAuthenticated: true,
+                    },
+                })
+            );
+
+            return response.data;
+        } catch (error) {
+            throw this.handleAuthError(error);
+        }
+    }
+        
+
+
+
+
 }
 
 // Export singleton instance

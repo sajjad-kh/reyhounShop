@@ -69,12 +69,14 @@ export const validateConfirmPassword = (password: string, confirmPassword: strin
 };
 
 export const validateName = (name: string): ValidationResult => {
-    if (!name) {
+    // Sanitize and normalize input
+    const sanitized = sanitizeText(name)
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    if (!sanitized) {
         return { isValid: false, error: 'Name is required' };
     }
-
-    // Sanitize name input
-    const sanitized = sanitizeText(name).trim();
 
     if (sanitized.length < 2) {
         return { isValid: false, error: 'Name must be at least 2 characters long' };
@@ -84,27 +86,37 @@ export const validateName = (name: string): ValidationResult => {
         return { isValid: false, error: 'Name must be less than 50 characters' };
     }
 
-    // Only allow letters, spaces, hyphens, and apostrophes
-    const nameRegex = /^[a-zA-Z\s\-']+$/;
+    // Allow letters from all languages, spaces, hyphens, and apostrophes
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+
     if (!nameRegex.test(sanitized)) {
-        return { isValid: false, error: 'Name can only contain letters, spaces, hyphens, and apostrophes' };
+        return {
+            isValid: false,
+            error: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+        };
     }
 
     return { isValid: true, sanitized };
 };
 
 export const validatePhone = (phone: string): ValidationResult => {
-    if (!phone) {
+    if (!phone?.trim()) {
         return { isValid: true }; // Phone is optional
     }
 
-    // Sanitize phone input
-    const sanitized = sanitizeInput(phone).replace(/[\s\-\(\)]/g, '');
+    // Sanitize and normalize input
+    const sanitized = sanitizeInput(phone)
+        .trim()
+        .replace(/[\s\-().]/g, '');
 
-    // Validate phone format (international format)
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    // E.164 format: optional '+' followed by 7-15 digits, first digit cannot be 0
+    const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+
     if (!phoneRegex.test(sanitized)) {
-        return { isValid: false, error: 'Please enter a valid phone number' };
+        return {
+            isValid: false,
+            error: 'Please enter a valid phone number',
+        };
     }
 
     return { isValid: true, sanitized };

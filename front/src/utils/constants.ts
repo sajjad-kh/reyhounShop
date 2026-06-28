@@ -61,10 +61,10 @@ export const API_ENDPOINTS = {
 
     // User
     USER: {
-        PROFILE: '/user/profile',
+        PROFILE: '/users/profile',
         ADDRESSES: '/users/addresses',
-        WISHLIST: '/user/wishlist',
-        LOYALTY_POINTS: '/user/loyalty-points',
+        WISHLIST: '/users/wishlist',
+        LOYALTY_POINTS: '/users/loyalty-points',
     },
 
     // Admin

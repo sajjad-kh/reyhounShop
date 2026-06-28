@@ -20,7 +20,6 @@ class UserService {
         isActive: true,
         is2FAEnabled: true,
         loyaltyPoints: true,
-        // birthDate: true,
         createdAt: true,
         updatedAt: true,
         addresses: {
@@ -56,7 +55,7 @@ class UserService {
    * @returns {Promise<Object>} Updated user profile
    */
   async updateProfile(userId, updateData) {
-    const { name, phone, birthDate, currentPassword, newPassword } = updateData;
+    const { name, phone, currentPassword, newPassword } = updateData;
 
     // Check if user exists
     const existingUser = await getPrismaClient().user.findUnique({
@@ -85,9 +84,10 @@ class UserService {
     const updateFields = {};
 
     // Update basic profile fields
-    if (name !== undefined) updateFields.name = name;
+    if (name !== undefined) {
+        updateFields.name = name.trim();
+    }
     if (phone !== undefined) updateFields.phone = phone || null;
-    if (birthDate !== undefined) updateFields.birthDate = birthDate ? new Date(birthDate) : null;
 
     // Handle password change
     if (newPassword) {
@@ -110,17 +110,16 @@ class UserService {
       where: { id: userId },
       data: updateFields,
       select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        role: true,
-        isActive: true,
-        is2FAEnabled: true,
-        loyaltyPoints: true,
-        birthDate: true,
-        createdAt: true,
-        updatedAt: true
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          is2FAEnabled: true,
+          loyaltyPoints: true,
+          createdAt: true,
+          updatedAt: true
       }
     });
 
@@ -428,24 +427,31 @@ class UserService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity({ userId, action, entity, entityId, metadata = {}, actorType = 'USER' } = {}) {
-      try {
-          await getPrismaClient().activityLog.create({
-              data: {
-                  userId,
-                  action,
-                  entity,
-                  entityId: entityId ? String(entityId) : null,
-                  actorType,
-                  metadata,
-                  severity: severity || (metadata?.error ? 'ERROR' : 'INFO'), 
-
-              }
-          });
-      } catch (error) {
-          console.error('Failed to log activity:', error);
-      }
-  }
+    async logActivity({
+        userId,
+        action,
+        entity,
+        entityId,
+        metadata = {},
+        actorType = 'USER',
+        severity
+    } = {}) {
+        try {
+            await getPrismaClient().activityLog.create({
+                data: {
+                    userId,
+                    action,
+                    entity,
+                    entityId: entityId ? String(entityId) : null,
+                    actorType,
+                    metadata,
+                    severity: severity || (metadata?.error ? 'ERROR' : 'INFO')
+                }
+            });
+        } catch (error) {
+            console.error('Failed to log activity:', error);
+        }
+    }
 }
 
 module.exports = new UserService();
