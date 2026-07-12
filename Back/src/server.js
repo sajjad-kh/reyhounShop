@@ -169,24 +169,6 @@ app.get('/health/detailed', async (req, res) => {
 const { specs, swaggerUi, swaggerUiOptions } = require('./config/swagger');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerUiOptions));
 
-// API routes
-const v1Routes = require('./api/v1');
-const v2Routes = require('./api/v2');
-app.use('/api/v1', v1Routes);
-app.use('/api/v2', v2Routes);
-
-// 404 handler
-app.use(notFoundHandler);
-
-// Error logging middleware
-app.use(errorLogger);
-
-// Error monitoring middleware
-app.use(errorMonitoring);
-
-// Global error handler
-app.use(globalErrorHandler);
-
 // Initialize database connection and start server
 const startServer = async () => {
   try {
@@ -203,6 +185,18 @@ const startServer = async () => {
 
     app.use('/api/v1', v1Routes);
     app.use('/api/v2', v2Routes);
+
+    // 404 handler (must be registered AFTER routes)
+    app.use(notFoundHandler);
+
+    // Error logging middleware
+    app.use(errorLogger);
+
+    // Error monitoring middleware
+    app.use(errorMonitoring);
+
+    // Global error handler (must be LAST)
+    app.use(globalErrorHandler);
 
     // ================= START BACKGROUND SERVICES =================
     // بدون setTimeout های غیرضروری (تمیزتر و قابل کنترل‌تر)
