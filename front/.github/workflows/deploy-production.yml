@@ -37,9 +37,6 @@ jobs:
           VITE_API_TIMEOUT: ${{ secrets.VITE_API_TIMEOUT }}
           VITE_JWT_SECRET_KEY: ${{ secrets.VITE_JWT_SECRET_KEY }}
           VITE_TOKEN_EXPIRY: ${{ secrets.VITE_TOKEN_EXPIRY }}
-          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.VITE_STRIPE_PUBLIC_KEY }}
-          VITE_ZARINPAL_MERCHANT_ID: ${{ secrets.VITE_ZARINPAL_MERCHANT_ID }}
-          VITE_PAYIR_API_KEY: ${{ secrets.VITE_PAYIR_API_KEY }}
           VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_ENABLE_PWA: true

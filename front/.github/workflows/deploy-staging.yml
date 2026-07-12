@@ -41,9 +41,6 @@ jobs:
           VITE_API_TIMEOUT: 12000
           VITE_JWT_SECRET_KEY: ${{ secrets.STAGING_JWT_SECRET_KEY }}
           VITE_TOKEN_EXPIRY: 24h
-          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.STAGING_STRIPE_PUBLIC_KEY }}
-          VITE_ZARINPAL_MERCHANT_ID: ${{ secrets.STAGING_ZARINPAL_MERCHANT_ID }}
-          VITE_PAYIR_API_KEY: ${{ secrets.STAGING_PAYIR_API_KEY }}
           VITE_APP_NAME: GlassShop (Staging)
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_ENABLE_PWA: true

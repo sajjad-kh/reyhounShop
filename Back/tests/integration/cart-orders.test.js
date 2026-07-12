@@ -264,7 +264,7 @@ describe('Cart and Order Management API Integration Tests', () => {
           .set('Authorization', `Bearer ${userToken}`)
           .send({
             addressId: userAddress.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           })
           .expect(201);
 
@@ -280,7 +280,7 @@ describe('Cart and Order Management API Integration Tests', () => {
           .post('/api/v1/orders')
           .send({
             addressId: userAddress.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           })
           .expect(401);
 
@@ -304,7 +304,7 @@ describe('Cart and Order Management API Integration Tests', () => {
           .set('Authorization', `Bearer ${userToken}`)
           .send({
             addressId: userAddress.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           })
           .expect(400);
 
@@ -321,7 +321,7 @@ describe('Cart and Order Management API Integration Tests', () => {
           .set('Authorization', `Bearer ${userToken}`)
           .send({
             addressId: userAddress.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           });
 
         testOrder = response.body.order;
@@ -358,7 +358,7 @@ describe('Cart and Order Management API Integration Tests', () => {
           .set('Authorization', `Bearer ${userToken}`)
           .send({
             addressId: userAddress.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           });
 
         testOrder = response.body.order;

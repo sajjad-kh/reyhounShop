@@ -129,7 +129,7 @@ router.get('/', (req, res) => {
         initiate: 'POST /api/v1/payments/initiate',
         verify: 'POST /api/v1/payments/verify',
         callback: 'GET /api/v1/payments/callback/:gateway',
-        webhook: 'POST /api/v1/payments/webhook/stripe',
+        webhook: 'GET /api/v1/payments/callback/:gateway',
         status: 'GET /api/v1/payments/status/:orderId'
       },
       discounts: {

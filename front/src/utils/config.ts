@@ -12,17 +12,6 @@ interface AppConfig {
         jwtSecretKey: string;
         tokenExpiry: string;
     };
-    payment: {
-        stripe: {
-            publicKey: string;
-        };
-        zarinpal: {
-            merchantId: string;
-        };
-        payir: {
-            apiKey: string;
-        };
-    };
     app: {
         name: string;
         version: string;
@@ -66,15 +55,8 @@ export const config: AppConfig = {
         tokenExpiry: getEnvVar('VITE_TOKEN_EXPIRY', '24h'),
     },
     payment: {
-        stripe: {
-            publicKey: getEnvVar('VITE_STRIPE_PUBLIC_KEY', ''),
-        },
-        zarinpal: {
-            merchantId: getEnvVar('VITE_ZARINPAL_MERCHANT_ID', ''),
-        },
-        payir: {
-            apiKey: getEnvVar('VITE_PAYIR_API_KEY', ''),
-        },
+        // سیستم پرداخت مانوال (آپلود رسید بانکی) استفاده می‌شود.
+        // ماژول پرداخت جدید بعداً اضافه خواهد شد.
     },
     app: {
         name: getEnvVar('VITE_APP_NAME', 'Glassmorphism E-commerce'),
@@ -111,18 +93,7 @@ export const validateConfig = (): void => {
         throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
 
-    // Warn about missing payment keys in production
-    if (config.build.isProduction) {
-        if (!config.payment.stripe.publicKey) {
-            console.warn('Warning: Stripe public key not configured');
-        }
-        if (!config.payment.zarinpal.merchantId) {
-            console.warn('Warning: Zarinpal merchant ID not configured');
-        }
-        if (!config.payment.payir.apiKey) {
-            console.warn('Warning: PayIR API key not configured');
-        }
-    }
+    // هشدار در مورد کلیدهای پرداخت در محیط production در صورت نیاز اضافه شود
 };
 
 /**

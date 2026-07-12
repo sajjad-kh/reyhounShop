@@ -211,7 +211,7 @@
           "role": {
             "type": "string",
             "enum": [
-              "USER",
+              "CUSTOMER",
               "ADMIN"
             ],
             "description": "User role"
@@ -324,7 +324,7 @@
           },
           "userId": {
             "type": "integer",
-            "description": "User ID who placed the order"
+            "description": "User ID"
           },
           "status": {
             "type": "string",
@@ -336,12 +336,12 @@
               "CANCELLED",
               "DELAYED"
             ],
-            "description": "Current order status"
+            "description": "Order status"
           },
           "totalAmount": {
-            "type": "integer",
+            "type": "number",
             "format": "decimal",
-            "description": "Total order amount in cents"
+            "description": "Total order amount"
           },
           "trackingCode": {
             "type": "string",
@@ -354,56 +354,6 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "discountAmount": {
-            "type": "integer",
-            "description": "Total discount applied in cents"
-          },
-          "shippingAmount": {
-            "type": "integer",
-            "description": "Shipping cost in cents"
-          },
-          "addressId": {
-            "type": "integer",
-            "description": "Shipping address ID"
-          },
-          "discountCode": {
-            "type": "string",
-            "description": "Applied discount code"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderItem"
-            }
-          },
-          "address": {
-            "$ref": "#/components/schemas/Address",
-            "type": "object"
-          },
-          "user": {
-            "$ref": "#/components/schemas/User",
-            "type": "object"
-          },
-          "paymentStatus": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "SUCCESS",
-              "FAILED"
-            ]
-          },
-          "totalPrice": {
-            "type": "integer"
-          },
-          "shippingCost": {
-            "type": "integer"
-          },
-          "itemCount": {
-            "type": "integer"
-          },
-          "subtotal": {
-            "type": "integer"
           }
         }
       },
@@ -439,6 +389,25 @@
             "type": "string",
             "format": "date",
             "description": "User's birth date (optional)"
+          }
+        }
+      },
+      "UserBaleLogin": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "Temporary login session id"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Bale user chat id"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
           }
         }
       },
@@ -774,181 +743,6 @@
           }
         }
       },
-      "OrderItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "orderId": {
-            "type": "integer"
-          },
-          "productId": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer"
-          },
-          "price": {
-            "type": "integer",
-            "description": "Price per item in cents at time of order"
-          },
-          "product": {
-            "$ref": "#/components/schemas/Product",
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "integer"
-              },
-              "name": {
-                "type": "string"
-              },
-              "mainImage": {
-                "type": "string"
-              }
-            }
-          },
-          "total": {
-            "type": "integer"
-          }
-        }
-      },
-      "OrderCreate": {
-        "type": "object",
-        "required": [
-          "addressId"
-        ],
-        "properties": {
-          "addressId": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "Shipping address ID"
-          },
-          "discountCode": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 50,
-            "description": "Optional discount code to apply"
-          }
-        }
-      },
-      "OrderStatusUpdate": {
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "PROCESSING",
-              "SHIPPED",
-              "DELIVERED",
-              "CANCELLED",
-              "DELAYED"
-            ],
-            "description": "New order status"
-          },
-          "trackingCode": {
-            "type": "string",
-            "description": "Optional tracking code (for SHIPPED status)"
-          }
-        }
-      },
-      "Address": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "userId": {
-            "type": "integer"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "company": {
-            "type": "string"
-          },
-          "address1": {
-            "type": "string"
-          },
-          "address2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "postalCode": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "title": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "province": {
-            "type": "string"
-          },
-          "lat": {
-            "type": "number"
-          },
-          "lng": {
-            "type": "number"
-          }
-        }
-      },
-      "PaginatedOrders": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Order"
-            }
-          },
-          "pagination": {
-            "type": "object",
-            "properties": {
-              "page": {
-                "type": "integer"
-              },
-              "limit": {
-                "type": "integer"
-              },
-              "total": {
-                "type": "integer"
-              },
-              "totalPages": {
-                "type": "integer"
-              },
-              "hasNext": {
-                "type": "boolean"
-              },
-              "hasPrev": {
-                "type": "boolean"
-              }
-            }
-          }
-        }
-      },
       "ProductCreate": {
         "type": "object",
         "required": [
@@ -1115,6 +909,90 @@
           }
         }
       },
+      "ShippingMethod": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Shipping method ID"
+          },
+          "basalamId": {
+            "type": "integer",
+            "description": "Basalam API shipping method ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Shipping method name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Shipping method description"
+          },
+          "baseCost": {
+            "type": "integer",
+            "description": "Base shipping cost"
+          },
+          "additionalCost": {
+            "type": "integer",
+            "description": "Additional cost per extra item"
+          },
+          "additionalDimensionsCost": {
+            "type": "integer",
+            "description": "Additional cost for large dimensions"
+          },
+          "isPrivate": {
+            "type": "boolean",
+            "description": "Whether shipping method is private"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether shipping method is active"
+          },
+          "lastSyncedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last sync timestamp"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ShippingMethodStats": {
+        "type": "object",
+        "properties": {
+          "totalOrders": {
+            "type": "integer",
+            "description": "Total number of orders"
+          },
+          "statistics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "shippingMethodId": {
+                  "type": "integer"
+                },
+                "shippingMethodName": {
+                  "type": "string"
+                },
+                "orderCount": {
+                  "type": "integer"
+                },
+                "percentage": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          }
+        }
+      },
       "UserProfile": {
         "type": "object",
         "properties": {
@@ -1145,6 +1023,38 @@
             "items": {
               "$ref": "#/components/schemas/Address"
             }
+          }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "isDefault": {
+            "type": "boolean"
           }
         }
       },
@@ -1527,6 +1437,35 @@
             "description": "Internal server error"
           }
         }
+      }
+    },
+    "/api/v1/auth/bale/login": {
+      "post": {
+        "summary": "Start Bale login flow",
+        "tags": [
+          "Authentication"
+        ],
+        "responses": {
+          "200": {
+            "description": "Login link generated"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/bale/status/:loginId/{loginId}": {
+      "get": {
+        "summary": "Check Bale login status",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/bale/callback": {
+      "post": {
+        "summary": "Bale bot callback (internal)",
+        "tags": [
+          "Authentication"
+        ]
       }
     },
     "/api/v1/auth/disable-2fa": {
@@ -3974,845 +3913,6 @@
         }
       }
     },
-    "/api/v1/orders": {
-      "post": {
-        "summary": "Create new order from cart",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "addressId"
-                ],
-                "properties": {
-                  "addressId": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "discountCode": {
-                    "type": "string",
-                    "maxLength": 50
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Order created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Order"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input, empty cart, or insufficient stock"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Address not found"
-          }
-        }
-      },
-      "get": {
-        "summary": "Get user's order history",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "status",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "PROCESSING",
-                "SHIPPED",
-                "DELIVERED",
-                "CANCELLED",
-                "DELAYED"
-              ]
-            },
-            "description": "Filter by order status"
-          },
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            },
-            "description": "Page number"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 50,
-              "default": 10
-            },
-            "description": "Items per page"
-          },
-          {
-            "in": "query",
-            "name": "sortBy",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "createdAt",
-                "totalPrice",
-                "status"
-              ],
-              "default": "createdAt"
-            },
-            "description": "Sort field"
-          },
-          {
-            "in": "query",
-            "name": "sortOrder",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "desc"
-            },
-            "description": "Sort order"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Orders retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "orders": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/Order"
-                          }
-                        },
-                        "pagination": {
-                          "type": "object"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/v1/orders/{id}": {
-      "get": {
-        "summary": "Get order details by ID",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Order ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order details retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Order"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Order not found"
-          }
-        }
-      }
-    },
-    "/api/v1/orders/{id}/cancel": {
-      "put": {
-        "summary": "Cancel order",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Order ID"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "reason": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Order cancelled successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Order"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Order cannot be cancelled"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Order not found"
-          }
-        }
-      }
-    },
-    "/api/v1/orders/{id}/status": {
-      "put": {
-        "summary": "Update order status (Admin only)",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Order ID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "status"
-                ],
-                "properties": {
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "PENDING",
-                      "PROCESSING",
-                      "SHIPPED",
-                      "DELIVERED",
-                      "CANCELLED",
-                      "DELAYED"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Order status updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Order"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid status or transition"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Admin access required"
-          },
-          "404": {
-            "description": "Order not found"
-          }
-        }
-      }
-    },
-    "/api/v1/orders/track/{trackingCode}": {
-      "get": {
-        "summary": "Track order by tracking code",
-        "tags": [
-          "Orders"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "trackingCode",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Order tracking code"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order tracking information retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "order": {
-                          "$ref": "#/components/schemas/Order"
-                        },
-                        "timeline": {
-                          "type": "array",
-                          "items": {
-                            "type": "object"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Order not found"
-          }
-        }
-      }
-    },
-    "/api/v1/orders/summary": {
-      "get": {
-        "summary": "Get user's order summary statistics",
-        "tags": [
-          "Orders"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order summary retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "totalOrders": {
-                          "type": "integer"
-                        },
-                        "totalSpent": {
-                          "type": "integer"
-                        },
-                        "statusCounts": {
-                          "type": "object"
-                        },
-                        "recentOrders": {
-                          "type": "array"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/v1/payments/initiate": {
-      "post": {
-        "summary": "Initiate payment for an order",
-        "tags": [
-          "Payments"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "orderId",
-                  "gateway",
-                  "callbackUrl"
-                ],
-                "properties": {
-                  "orderId": {
-                    "type": "integer",
-                    "description": "Order ID to process payment for"
-                  },
-                  "gateway": {
-                    "type": "string",
-                    "enum": [
-                      "zarinpal",
-                      "stripe",
-                      "payir"
-                    ],
-                    "description": "Payment gateway to use"
-                  },
-                  "currency": {
-                    "type": "string",
-                    "enum": [
-                      "usd",
-                      "eur"
-                    ],
-                    "description": "Currency for Stripe payments"
-                  },
-                  "callbackUrl": {
-                    "type": "string",
-                    "format": "uri",
-                    "description": "URL to redirect after payment"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment initiated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "gateway": {
-                      "type": "string"
-                    },
-                    "paymentRef": {
-                      "type": "string"
-                    },
-                    "paymentUrl": {
-                      "type": "string"
-                    },
-                    "clientSecret": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Order not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/api/v1/payments/verify": {
-      "post": {
-        "summary": "Verify payment completion",
-        "tags": [
-          "Payments"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "orderId",
-                  "gateway",
-                  "paymentRef"
-                ],
-                "properties": {
-                  "orderId": {
-                    "type": "integer",
-                    "description": "Order ID"
-                  },
-                  "gateway": {
-                    "type": "string",
-                    "enum": [
-                      "zarinpal",
-                      "stripe",
-                      "payir"
-                    ],
-                    "description": "Payment gateway used"
-                  },
-                  "paymentRef": {
-                    "type": "string",
-                    "description": "Payment reference from gateway"
-                  },
-                  "authority": {
-                    "type": "string",
-                    "description": "Zarinpal authority (for Zarinpal)"
-                  },
-                  "token": {
-                    "type": "string",
-                    "description": "Payment token (for Pay.ir)"
-                  },
-                  "status": {
-                    "type": "string",
-                    "description": "Payment status from callback"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment verification result",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "orderId": {
-                      "type": "integer"
-                    },
-                    "paymentRef": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data or verification failed"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Order not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/api/v1/payments/callback/{gateway}": {
-      "get": {
-        "summary": "Handle payment gateway callback (redirect)",
-        "tags": [
-          "Payments"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "gateway",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "zarinpal",
-                "payir"
-              ]
-            },
-            "description": "Payment gateway name"
-          },
-          {
-            "in": "query",
-            "name": "Authority",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Zarinpal authority"
-          },
-          {
-            "in": "query",
-            "name": "Status",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Zarinpal status"
-          },
-          {
-            "in": "query",
-            "name": "token",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Pay.ir token"
-          },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Pay.ir status"
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Redirect to frontend with payment result"
-          },
-          "400": {
-            "description": "Invalid callback data"
-          }
-        }
-      }
-    },
-    "/api/v1/payments/webhook/stripe": {
-      "post": {
-        "summary": "Handle Stripe webhook events",
-        "tags": [
-          "Payments"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "description": "Stripe webhook payload"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Webhook processed successfully"
-          },
-          "400": {
-            "description": "Invalid webhook signature or payload"
-          },
-          "500": {
-            "description": "Webhook processing error"
-          }
-        }
-      }
-    },
-    "/api/v1/payments/status/{orderId}": {
-      "get": {
-        "summary": "Get payment status for an order",
-        "tags": [
-          "Payments"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "orderId",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Order ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Payment status retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "paymentStatus": {
-                      "type": "string",
-                      "enum": [
-                        "PENDING",
-                        "SUCCESS",
-                        "FAILED"
-                      ]
-                    },
-                    "paymentRef": {
-                      "type": "string"
-                    },
-                    "orderStatus": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Order not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
     "/api/v1/products": {
       "post": {
         "summary": "Create a new product",
@@ -5317,6 +4417,81 @@
         }
       }
     },
+    "/api/v1/products/popular-searches": {
+      "get": {
+        "summary": "Get popular search terms",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 8
+            },
+            "description": "Number of popular searches to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Popular search terms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/categories": {
+      "get": {
+        "summary": "Get all product categories",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "Categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/products/{id}": {
       "get": {
         "summary": "Get product by ID",
@@ -5667,6 +4842,60 @@
           },
           "404": {
             "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}/images/from-url": {
+      "post": {
+        "summary": "Upload product images from URL",
+        "tags": [
+          "Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": {
+                    "type": "string",
+                    "description": "URL of the image to download"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Image uploaded successfully"
+          },
+          "400": {
+            "description": "Invalid URL or download failed"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
           }
         }
       }
@@ -6228,6 +5457,587 @@
           },
           "404": {
             "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}/shipping-methods": {
+      "get": {
+        "summary": "Get shipping methods for a product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shipping methods retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods": {
+      "get": {
+        "summary": "Get all active shipping methods",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "basalam",
+                "internal"
+              ]
+            },
+            "description": "Filter by source (basalam or internal)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shipping methods retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShippingMethod"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new internal shipping method (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "baseCost",
+                  "additionalCost"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "baseCost": {
+                    "type": "integer"
+                  },
+                  "additionalCost": {
+                    "type": "integer"
+                  },
+                  "additionalDimensionsCost": {
+                    "type": "integer"
+                  },
+                  "isPrivate": {
+                    "type": "boolean"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Shipping method created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods/{id}": {
+      "get": {
+        "summary": "Get shipping method by ID",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Shipping method ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shipping method retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ShippingMethod"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shipping method ID"
+          },
+          "404": {
+            "description": "Shipping method not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a shipping method (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "baseCost": {
+                    "type": "integer"
+                  },
+                  "additionalCost": {
+                    "type": "integer"
+                  },
+                  "additionalDimensionsCost": {
+                    "type": "integer"
+                  },
+                  "isPrivate": {
+                    "type": "boolean"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shipping method updated successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Shipping method not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a shipping method (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shipping method deleted successfully"
+          },
+          "400": {
+            "description": "Invalid shipping method ID"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Shipping method not found"
+          },
+          "409": {
+            "description": "Cannot delete - shipping method is in use"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods/sync": {
+      "post": {
+        "summary": "Sync shipping methods from Basalam API (Admin only)",
+        "description": "Fetches shipping methods from Basalam API and syncs them with local database.\n\n**Authentication:** Requires admin role authentication.\n\n**Configuration:** This endpoint uses the Basalam API token configured in environment variables.\nThe BASALAM_API_TOKEN environment variable must be set before using this endpoint.\nNo token needs to be provided in the request body.\n\n**Behavior:** Returns all active shipping methods after successful synchronization.\nIf the Basalam API is unavailable, the endpoint may return cached data with a warning.\n",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shipping methods synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "syncedCount": {
+                          "type": "integer"
+                        },
+                        "methods": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ShippingMethod"
+                          }
+                        },
+                        "usedCache": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods/stats": {
+      "get": {
+        "summary": "Get shipping method usage statistics (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Start date for statistics (ISO 8601 format)"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "End date for statistics (ISO 8601 format)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ShippingMethodStats"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date range"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods/scheduler/status": {
+      "get": {
+        "summary": "Get scheduler status (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduler status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "isSyncing": {
+                          "type": "boolean"
+                        },
+                        "lastSyncResult": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "duration": {
+                              "type": "integer"
+                            },
+                            "methodCount": {
+                              "type": "integer"
+                            },
+                            "error": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "schedule": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-methods/scheduler/trigger": {
+      "post": {
+        "summary": "Manually trigger a sync (Admin only)",
+        "tags": [
+          "Shipping Methods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sync triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "duration": {
+                          "type": "integer"
+                        },
+                        "methodCount": {
+                          "type": "integer"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "409": {
+            "description": "Sync already in progress"
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       }
@@ -7340,6 +7150,128 @@
         }
       }
     },
+    "/api/v1/admin/basalam/sync-product": {
+      "post": {
+        "summary": "Sync a product from Basalam marketplace (Admin)",
+        "tags": [
+          "Admin Basalam"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "basalamId",
+                  "name",
+                  "price",
+                  "stock",
+                  "categoryId"
+                ],
+                "properties": {
+                  "basalamId": {
+                    "type": "string",
+                    "description": "Unique identifier from Basalam"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Product name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Product description"
+                  },
+                  "price": {
+                    "type": "number",
+                    "description": "Product price"
+                  },
+                  "discountPrice": {
+                    "type": "number",
+                    "description": "Discounted price (optional)"
+                  },
+                  "stock": {
+                    "type": "number",
+                    "description": "Available stock quantity"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "description": "URL of product image on Basalam (optional)"
+                  },
+                  "categoryId": {
+                    "type": "integer",
+                    "description": "Category ID for the product"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "number"
+                        },
+                        "stock": {
+                          "type": "number"
+                        },
+                        "images": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/v1/admin/dashboard": {
       "get": {
         "summary": "Get admin dashboard statistics and metrics",
@@ -7933,6 +7865,251 @@
         }
       }
     },
+    "/api/v1/admin/orders/{orderId}/status": {
+      "patch": {
+        "summary": "Update order status only",
+        "tags": [
+          "Admin Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "PROCESSING",
+                      "SHIPPED",
+                      "DELIVERED",
+                      "CANCELLED",
+                      "DELAYED"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order status updated successfully"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{orderId}/resend-proof": {
+      "post": {
+        "summary": "Resend payment proof for order (User)",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "description": "Optional message from user when resending payment proof"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment proof resent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "trackingCode": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "PAYMENT_REVIEW"
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "example": "PENDING"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "VALIDATION_ERROR"
+                        },
+                        "details": {
+                          "type": "array"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden (order does not belong to user)"
+          },
+          "404": {
+            "description": "Order not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/design": {
+      "post": {
+        "summary": "Upload design file for order",
+        "tags": [
+          "Admin Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "description": "Optional message for customer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Design uploaded successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Order not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/v1/admin/payments": {
       "get": {
         "summary": "Get all payments with filtering",
@@ -7983,12 +8160,7 @@
             "in": "query",
             "name": "gateway",
             "schema": {
-              "type": "string",
-              "enum": [
-                "ZARINPAL",
-                "STRIPE",
-                "PAYIR"
-              ]
+              "type": "string"
             },
             "description": "Payment gateway filter"
           },
@@ -8145,12 +8317,7 @@
             "in": "query",
             "name": "gateway",
             "schema": {
-              "type": "string",
-              "enum": [
-                "zarinpal",
-                "stripe",
-                "payir"
-              ]
+              "type": "string"
             },
             "description": "Filter by payment gateway"
           }
@@ -8252,6 +8419,245 @@
           },
           "404": {
             "description": "Payment not found"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products": {
+      "get": {
+        "summary": "Get all products with pagination (Admin)",
+        "tags": [
+          "Admin Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new product (Admin)",
+        "tags": [
+          "Admin Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "price",
+                  "stock",
+                  "categoryId"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "discountPrice": {
+                    "type": "number"
+                  },
+                  "stock": {
+                    "type": "integer"
+                  },
+                  "categoryId": {
+                    "type": "integer"
+                  },
+                  "lowStockAlert": {
+                    "type": "integer"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Product images (max 5)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}": {
+      "put": {
+        "summary": "Update a product (Admin)",
+        "tags": [
+          "Admin Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a product (Admin)",
+        "tags": [
+          "Admin Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product deleted successfully"
+          },
+          "404": {
+            "description": "Product not found"
+          },
+          "409": {
+            "description": "Product has active orders"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/bulk-delete": {
+      "post": {
+        "summary": "Bulk delete products (Admin)",
+        "tags": [
+          "Admin Products"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ids"
+                ],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Products deleted successfully"
+          },
+          "400": {
+            "description": "Validation error"
           }
         }
       }

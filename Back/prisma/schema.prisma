@@ -38,12 +38,6 @@ enum PaymentStatus {
   FAILED
 }
 
-enum PaymentGateway {
-  ZARINPAL
-  STRIPE
-  PAYIR
-}
-
 enum DiscountType {
   PERCENT
   FIXED
@@ -576,7 +570,7 @@ model Payment {
   amount Int
   status PaymentStatus @default(PENDING)
 
-  gateway PaymentGateway
+  gateway String
 
   gatewayRef    String?
   transactionId String?

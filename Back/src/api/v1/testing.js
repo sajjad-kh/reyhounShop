@@ -317,11 +317,11 @@ router.get('/scenarios', (req, res) => {
               description: 'Initiate payment process',
               requestBody: {
                 orderId: 1,
-                gateway: 'stripe',
+                gateway: 'MANUAL',
                 amount: 8000
               },
               expectedStatus: 200,
-              notes: 'Test payment gateway integration'
+              notes: 'Test manual payment initiation'
             },
             {
               step: 4,

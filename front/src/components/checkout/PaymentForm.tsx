@@ -7,22 +7,10 @@ interface PaymentFormProps {
 
 const paymentMethods = [
     {
-        id: 'stripe',
-        name: 'Credit/Debit Card',
-        description: 'Pay securely with Stripe',
-        icon: '💳',
-    },
-    {
-        id: 'zarinpal',
-        name: 'Zarinpal',
-        description: 'Iranian payment gateway',
-        icon: '🇮🇷',
-    },
-    {
-        id: 'payir',
-        name: 'Pay.ir',
-        description: 'Fast and secure payment',
-        icon: '💰',
+        id: 'manual',
+        name: 'پرداخت مانوال (واریز بانکی)',
+        description: 'واریز مبلغ به شبا / کارت و آپلود رسید پرداخت',
+        icon: '🏦',
     },
 ];
 
@@ -97,10 +85,11 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                             />
                         </svg>
                         <div>
-                            <p className="text-blue-400 text-sm font-medium">Secure Payment</p>
+                            <p className="text-blue-400 text-sm font-medium">پرداخت امن</p>
                             <p className="text-white/60 text-sm mt-1">
-                                Your payment information is encrypted and secure. You will be
-                                redirected to the payment gateway to complete your purchase.
+                                مبلغ را به شبا / کارت اعلام‌شده واریز کرده و
+                                تصویر رسید پرداخت را آپلود کنید. تایید پرداخت
+                                توسط ادمین انجام می‌شود.
                             </p>
                         </div>
                     </div>

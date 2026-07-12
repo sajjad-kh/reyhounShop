@@ -195,23 +195,16 @@ router.get(
 
 /**
  * =========================
- * LEGACY CALLBACKS (NO-OP)
+ * LEGACY CALLBACK (NO-OP)
  * =========================
+ * Payment gateways are removed; the system uses manual bank-transfer
+ * with payment-proof upload. This callback simply redirects to the
+ * manual payment result page for backwards compatibility.
  */
 router.get('/callback/:gateway', (req, res) => {
   return res.redirect(
     `${process.env.FRONTEND_URL}/payment-result?mode=manual`
   );
-});
-
-/**
- * Stripe webhook disabled
- */
-router.post('/webhook/stripe', (req, res) => {
-  return res.json({
-    success: true,
-    message: 'Manual payment mode active - webhook ignored'
-  });
 });
 
 module.exports = router;

@@ -129,23 +129,9 @@ module.exports = {
     }
   },
 
-  // Payment Gateway Configuration
+  // Payment Configuration (manual / bank-transfer with receipt upload)
   payments: {
-    zarinpal: {
-      merchantId: process.env.ZARINPAL_MERCHANT_ID,
-      sandbox: process.env.ZARINPAL_SANDBOX === 'true',
-      callbackUrl: `${process.env.FRONTEND_URL}/payment/callback/zarinpal`
-    },
-    stripe: {
-      secretKey: process.env.STRIPE_SECRET_KEY,
-      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-      apiVersion: process.env.STRIPE_API_VERSION || '2023-10-16'
-    },
-    payir: {
-      apiKey: process.env.PAYIR_API_KEY,
-      sandbox: process.env.PAYIR_SANDBOX === 'true',
-      callbackUrl: `${process.env.FRONTEND_URL}/payment/callback/payir`
-    }
+    mode: 'MANUAL'
   },
 
   // Email Configuration

@@ -226,7 +226,7 @@ model Payment {
   id            Int               @id @default(autoincrement())
   orderId       Int
   order         Order             @relation(fields: [orderId], references: [id])
-  gateway       PaymentGateway
+  gateway       String
   amount        Float
   currency      String            @default("IRR")
   status        PaymentStatus     @default(PENDING)
@@ -304,12 +304,6 @@ enum PaymentStatus {
 enum DiscountType {
   PERCENT
   FIXED
-}
-
-enum PaymentGateway {
-  ZARINPAL
-  STRIPE
-  PAYIR
 }
 
 enum PaymentTransactionType {

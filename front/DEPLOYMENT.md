@@ -38,10 +38,8 @@ VITE_API_TIMEOUT=15000
 VITE_JWT_SECRET_KEY=your-production-jwt-secret
 VITE_TOKEN_EXPIRY=24h
 
-# Payment Gateways
-VITE_STRIPE_PUBLIC_KEY=pk_live_your_stripe_key
-VITE_ZARINPAL_MERCHANT_ID=your-production-merchant-id
-VITE_PAYIR_API_KEY=your-production-api-key
+# Payment (Manual bank-transfer mode - gateways removed)
+# درگاه‌های پرداخت حذف شدند؛ سیستم از پرداخت مانوال استفاده می‌کند.
 
 # App Configuration
 VITE_APP_NAME=GlassShop
@@ -470,7 +468,6 @@ jobs:
         run: npm run build:production
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.VITE_STRIPE_PUBLIC_KEY }}
       
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20

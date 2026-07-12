@@ -102,7 +102,7 @@ describe('Admin Panel API Integration Tests', () => {
       .set('Authorization', `Bearer ${userToken}`)
       .send({
         addressId: addressResponse.body.address.id,
-        paymentMethod: 'ZARINPAL'
+        paymentMethod: 'MANUAL'
       });
 
     testOrder = orderResponse.body.order;

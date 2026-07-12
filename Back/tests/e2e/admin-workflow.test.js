@@ -103,7 +103,7 @@ describe('End-to-End: Admin Product and Order Management Workflow', () => {
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         addressId: addressId,
-        paymentMethod: 'ZARINPAL'
+        paymentMethod: 'MANUAL'
       });
 
     expect(orderResponse.status).toBe(201);

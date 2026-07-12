@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '../utils/constants';
 export interface PaymentMethod {
     id: string;
     name: string;
-    type: 'STRIPE' | 'ZARINPAL' | 'PAYIR';
+    type: string;
     enabled: boolean;
 }
 

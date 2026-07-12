@@ -2,7 +2,7 @@ const { logActivity } = require('../utils/logger');
 
 /**
  * Payment-specific error handler middleware
- * Handles payment gateway errors and provides appropriate responses
+ * Handles payment errors and provides appropriate responses
  */
 const paymentErrorHandler = (error, req, res, next) => {
   console.error('Payment Error:', error);
@@ -22,66 +22,6 @@ const paymentErrorHandler = (error, req, res, next) => {
         body: req.body
       }
     ).catch(console.error);
-  }
-
-  // Handle specific payment gateway errors
-  if (error.type === 'StripeCardError') {
-    return res.status(400).json({
-      success: false,
-      error: 'Card payment failed',
-      details: error.message,
-      code: error.code
-    });
-  }
-
-  if (error.type === 'StripeInvalidRequestError') {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid payment request',
-      details: error.message
-    });
-  }
-
-  if (error.type === 'StripeAPIError') {
-    return res.status(502).json({
-      success: false,
-      error: 'Payment gateway error',
-      message: 'Please try again later'
-    });
-  }
-
-  if (error.type === 'StripeConnectionError') {
-    return res.status(503).json({
-      success: false,
-      error: 'Payment service unavailable',
-      message: 'Please try again later'
-    });
-  }
-
-  if (error.type === 'StripeAuthenticationError') {
-    return res.status(500).json({
-      success: false,
-      error: 'Payment configuration error',
-      message: 'Please contact support'
-    });
-  }
-
-  // Handle Zarinpal errors
-  if (error.message && error.message.includes('Zarinpal')) {
-    return res.status(400).json({
-      success: false,
-      error: 'Payment gateway error',
-      details: error.message
-    });
-  }
-
-  // Handle Pay.ir errors
-  if (error.message && error.message.includes('Pay.ir')) {
-    return res.status(400).json({
-      success: false,
-      error: 'Payment gateway error',
-      details: error.message
-    });
   }
 
   // Handle payment timeout errors
@@ -188,8 +128,6 @@ const paymentRetryHandler = (maxRetries = 3, baseDelay = 1000) => {
         const isRetryable = 
           error.code === 'ECONNABORTED' ||
           error.code === 'ETIMEDOUT' ||
-          error.type === 'StripeConnectionError' ||
-          error.type === 'StripeAPIError' ||
           (error.message && error.message.includes('network'));
 
         if (isRetryable && attempt < maxRetries) {

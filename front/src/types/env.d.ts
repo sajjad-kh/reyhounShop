@@ -14,11 +14,6 @@ interface ImportMetaEnv {
     readonly VITE_JWT_SECRET_KEY: string;
     readonly VITE_TOKEN_EXPIRY: string;
 
-    // Payment Gateways
-    readonly VITE_STRIPE_PUBLIC_KEY: string;
-    readonly VITE_ZARINPAL_MERCHANT_ID: string;
-    readonly VITE_PAYIR_API_KEY: string;
-
     // App Configuration
     readonly VITE_APP_NAME: string;
     readonly VITE_APP_VERSION: string;

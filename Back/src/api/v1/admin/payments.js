@@ -19,7 +19,7 @@ const refundSchema = Joi.object({
 const paymentStatsSchema = Joi.object({
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
-  gateway: Joi.string().valid('zarinpal', 'stripe', 'payir').optional()
+  gateway: Joi.string().optional()
 });
 
 /**
@@ -56,7 +56,6 @@ const paymentStatsSchema = Joi.object({
  *         name: gateway
  *         schema:
  *           type: string
- *           enum: [ZARINPAL, STRIPE, PAYIR]
  *         description: Payment gateway filter
  *       - in: query
  *         name: orderId
@@ -311,7 +310,6 @@ router.post('/refund', authenticateToken, requireRole(['ADMIN']), validate(refun
  *         name: gateway
  *         schema:
  *           type: string
- *           enum: [zarinpal, stripe, payir]
  *         description: Filter by payment gateway
  *     responses:
  *       200:

@@ -250,7 +250,7 @@ describe('End-to-End: Error Handling and Edge Case Scenarios', () => {
       .set('Authorization', `Bearer ${testToken}`)
       .send({
         addressId: addressResponse.body.address.id,
-        paymentMethod: 'ZARINPAL',
+        paymentMethod: 'MANUAL',
         discountCode: 'EXPIRED-CODE'
       });
 
@@ -367,7 +367,7 @@ describe('End-to-End: Error Handling and Edge Case Scenarios', () => {
           .set('Authorization', `Bearer ${token2}`)
           .send({
             addressId: address2Response.body.address.id,
-            paymentMethod: 'ZARINPAL'
+            paymentMethod: 'MANUAL'
           })
       );
     }
@@ -406,7 +406,7 @@ describe('End-to-End: Error Handling and Edge Case Scenarios', () => {
       .set('Authorization', `Bearer ${testToken}`)
       .send({
         addressId: addressResponse.body.address.id,
-        paymentMethod: 'ZARINPAL'
+        paymentMethod: 'MANUAL'
       });
 
     const orderId = orderResponse.body.order.id;
@@ -430,7 +430,7 @@ describe('End-to-End: Error Handling and Edge Case Scenarios', () => {
       .set('Authorization', `Bearer ${testToken}`)
       .send({
         orderId: orderId,
-        gateway: 'ZARINPAL',
+        gateway: 'MANUAL',
         amount: orderResponse.body.order.totalAmount
       });
 

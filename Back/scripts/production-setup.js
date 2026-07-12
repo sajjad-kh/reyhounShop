@@ -62,9 +62,6 @@ class ProductionSetup {
     ];
 
     const optionalVars = [
-      'ZARINPAL_MERCHANT_ID',
-      'STRIPE_SECRET_KEY',
-      'PAYIR_API_KEY',
       'CLOUDINARY_CLOUD_NAME',
       'KAVENEGAR_API_KEY',
       'REDIS_URL',
