@@ -297,82 +297,75 @@ export const LoginPage: React.FC = () => {
 
                 {/* Login Form */}
                 <GlassCard className="p-8">
-                    {/* Bale Login Section */}
+                    {/* Social Login Section */}
                     <div className="mb-6">
-                        <GlassCard className="p-6 border border-blue-500/20">
-                            <div className="text-center space-y-3">
-                                
-                                <h2 className="text-lg font-semibold text-text-primary">
-                                    Login with Bale
-                                </h2>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <GlassCard
+                                hover
+                                role="button"
+                                tabIndex={0}
+                                onClick={handleBaleLogin}
+                                onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleBaleLogin();
+                                    }
+                                }}
+                                className={`flex flex-1 items-center justify-center gap-3 rounded-xl border border-blue-500/20 px-4 py-3 transition-all ${baleLoading ? 'opacity-70' : 'hover:border-blue-400/50 hover:bg-blue-500/5'}`}
+                            >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/15 text-xl">🔵</span>
+                                <span className="font-medium text-text-primary">
+                                    {baleLoading ? 'در حال اتصال...' : 'ادامه با بله'}
+                                </span>
+                            </GlassCard>
 
-                                <p className="text-sm text-text-secondary">
-                                    Sign in instantly using your Bale account
-                                </p>
+                            <GlassCard
+                                hover
+                                role="button"
+                                tabIndex={0}
+                                onClick={handleTelegramLogin}
+                                onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleTelegramLogin();
+                                    }
+                                }}
+                                className={`flex flex-1 items-center justify-center gap-3 rounded-xl border border-sky-500/20 px-4 py-3 transition-all ${tgLoading ? 'opacity-70' : 'hover:border-sky-400/50 hover:bg-sky-500/5'}`}
+                            >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/15 text-xl">✈️</span>
+                                <span className="font-medium text-text-primary">
+                                    {tgLoading ? 'در حال اتصال...' : 'ادامه با تلگرام'}
+                                </span>
+                            </GlassCard>
+                        </div>
 
-                                <GlassButton
-                                    type="button"
-                                    variant="primary"
-                                    size="lg"
-                                    className="w-full"
-                                    loading={baleLoading}
-                                    onClick={handleBaleLogin}
-                                    ripple
-                                >
-                                    {baleLoading ? 'Connecting...' : '🔵 Continue with Bale'}
-                                </GlassButton>
-
-
-                                {showQR && (
-                                    <div className="text-center space-y-3 mt-4">
-                                        <p className="text-text-secondary text-sm">با موبایل اسکن کنید:</p>
-                                        <div className="flex justify-center bg-white p-3 rounded-xl">
-                                            <QRCodeSVG value={loginUrl} size={180} />
-                                        </div>
-                                        <p className="text-text-muted text-xs">بعد از اسکن، صفحه خودکار redirect می‌شود</p>
-                                    </div>
-                                )}
-
-
+                        {showQR && (
+                            <div className="mt-4 rounded-xl border border-blue-500/20 bg-glass-light p-4 text-center space-y-3">
+                                <p className="text-text-secondary text-sm">با موبایل اسکن کنید:</p>
+                                <div className="flex justify-center bg-white p-3 rounded-xl">
+                                    <QRCodeSVG value={loginUrl} size={180} />
+                                </div>
+                                <p className="text-text-muted text-xs">بعد از اسکن، صفحه خودکار redirect می‌شود</p>
                             </div>
-                        </GlassCard>
-                    </div>
+                        )}
 
-                    <div className="mb-6">
-                        <GlassCard className="p-6 border border-sky-500/20">
-                            <div className="text-center space-y-3">
-                                <h2 className="text-lg font-semibold text-text-primary">
-                                    Login with Telegram
-                                </h2>
-                                <p className="text-sm text-text-secondary">
-                                    ورود سریع با اکانت تلگرام (شماره تماس لازم است)
+                        {tgQR && (
+                            <div className="mt-4 rounded-xl border border-sky-500/20 bg-glass-light p-4 text-center space-y-3">
+                                <p className="text-text-secondary text-sm">با موبایل اسکن کنید:</p>
+                                <div className="flex justify-center bg-white p-3 rounded-xl">
+                                    <QRCodeSVG value={tgUrl} size={180} />
+                                </div>
+                                <p className="text-text-muted text-xs">
+                                    بعد از اسکن، ربات شماره تماس‌تون رو ازتون می‌خواد
                                 </p>
-
-                                <GlassButton
-                                    type="button"
-                                    variant="primary"
-                                    size="lg"
-                                    className="w-full"
-                                    loading={tgLoading}
-                                    onClick={handleTelegramLogin}
-                                    ripple
-                                >
-                                    {tgLoading ? 'در حال اتصال...' : '✈️ Continue with Telegram'}
-                                </GlassButton>
-
-                                {tgQR && (
-                                    <div className="text-center space-y-3 mt-4">
-                                        <p className="text-text-secondary text-sm">با موبایل اسکن کنید:</p>
-                                        <div className="flex justify-center bg-white p-3 rounded-xl">
-                                            <QRCodeSVG value={tgUrl} size={180} />
-                                        </div>
-                                        <p className="text-text-muted text-xs">
-                                            بعد از اسکن، ربات شماره تماس‌تون رو ازتون می‌خواد
-                                        </p>
-                                    </div>
-                                )}
                             </div>
-                        </GlassCard>
+                        )}
+
+                        <div className="my-6 flex items-center gap-4">
+                            <span className="h-px flex-1 bg-white/15" />
+                            <span className="text-text-muted text-xs">یا</span>
+                            <span className="h-px flex-1 bg-white/15" />
+                        </div>
                     </div>
 
 
