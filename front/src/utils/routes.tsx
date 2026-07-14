@@ -23,7 +23,8 @@ import {
     ProductManagement,
     OrderManagement,
     UserManagement,
-    Logs
+    Logs,
+    TourManagement
 } from '../pages/admin';
 import BasalamPage from '../pages/admin/BasalamPage';
 import { BasalamCheckoutPage } from '../pages/basalam/BasalamCheckoutPage';
@@ -247,7 +248,11 @@ export const adminRoutes: RouteObject[] = [
             {
                 path: 'Logs',
                 element: <Logs />,
-            }
+            },
+            {
+                path: 'tours',
+                element: <TourManagement />,
+            },
         ],
     },
 ];

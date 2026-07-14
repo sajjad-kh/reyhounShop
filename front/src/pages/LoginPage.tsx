@@ -76,23 +76,19 @@ export const LoginPage: React.FC = () => {
 
     // Redirect if already authenticated
     useEffect(() => {
-        console.log('🔍 Login redirect check:', {
-            isAuthenticated: state.isAuthenticated,
-            user: state.user,
-            role: state.user?.role,
-            from: location.state?.from?.pathname
-        });
-
         if (state.isAuthenticated && state.user) {
-            // If there's a specific page they were trying to access, go there
-            if (location.state?.from?.pathname) {
-                console.log('📍 Redirecting to requested page:', location.state.from.pathname);
-                navigate(location.state.from.pathname, { replace: true });
+            const requested = location.state?.from?.pathname as string | undefined;
+            const isAdmin = state.user.role === 'ADMIN';
+            const isAdminRoute = !!requested && requested.startsWith('/admin');
+
+            // Only honor the "return to requested page" when the logged-in user
+            // is actually allowed there. A regular user must never land on an
+            // admin route — e.g. a stale ?from=/admin left behind from a previous
+            // admin visit would otherwise bounce them into the admin panel.
+            if (requested && (isAdmin || !isAdminRoute)) {
+                navigate(requested, { replace: true });
             } else {
-                // Otherwise, redirect based on role
-                const defaultPath = state.user.role === 'ADMIN' ? '/admin' : '/';
-                console.log('📍 Redirecting user:', state.user.email, 'Role:', state.user.role, 'To:', defaultPath);
-                navigate(defaultPath, { replace: true });
+                navigate(isAdmin ? '/admin' : '/', { replace: true });
             }
         }
     }, [state.isAuthenticated, state.user, navigate, location]);

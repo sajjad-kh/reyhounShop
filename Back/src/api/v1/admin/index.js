@@ -10,6 +10,7 @@ const reviewRoutes = require('./reviews');
 const notificationRoutes = require('./notifications');
 const logsRoutes = require('./logs');
 const basalamRoutes = require('./basalam');
+const tourRoutes = require('./tours');
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.use('/reviews', reviewRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/logs', logsRoutes);
 router.use('/basalam', basalamRoutes);
+router.use('/tours', tourRoutes);
 
 // Admin API root endpoint
 router.get('/', (req, res) => {

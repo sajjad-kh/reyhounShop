@@ -11,6 +11,12 @@ export const OrderHistoryPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // When opened inside the tour element-picker, show a dummy/placeholder
+    // card so admins always have an element to select as the tour target,
+    // even if the account has no real orders.
+    const isPicker =
+        new URLSearchParams(window.location.search).get('tourPicker') === '1';
+
     useEffect(() => {
         const fetchOrders = async () => {
             try {
@@ -57,7 +63,7 @@ export const OrderHistoryPage: React.FC = () => {
                 </div>
 
                 {/* Orders List */}
-                {orders.length === 0 ? (
+                {orders.length === 0 && !isPicker ? (
                     <div className="glass-card p-12 text-center">
                         <svg
                             className="w-24 h-24 text-white/20 mx-auto mb-4"
@@ -82,6 +88,19 @@ export const OrderHistoryPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
+                        {isPicker && (
+                            <div
+                                data-tour-sample
+                                className="glass-card p-6 border-2 border-dashed border-white/40 cursor-pointer"
+                            >
+                                <div className="text-white font-semibold mb-1">
+                                    نمونه سفارش (برای انتخاب در راهنما)
+                                </div>
+                                <div className="text-white/60 text-sm">
+                                    روی این المان کلیک کنید تا به عنوان هدف تور انتخاب شود.
+                                </div>
+                            </div>
+                        )}
                         {orders.map((order) => (
                             <OrderCard
                                 key={order.id}

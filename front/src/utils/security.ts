@@ -284,6 +284,22 @@ export const getTokenExpirationTime = (token: string): number | null => {
  */
 export const preventClickjacking = (): void => {
     if (window.self !== window.top) {
+        // Allow being framed by our own trusted admin tour-picker iframe.
+        // Only skip when this page is explicitly opened as the picker AND the
+        // parent shares our origin (so a third-party clickjacking frame, which
+        // is cross-origin, still gets busted).
+        const isTourPicker =
+            new URLSearchParams(window.location.search).get('tourPicker') === '1';
+        let parentSameOrigin = false;
+        try {
+            parentSameOrigin = window.parent.location.origin === window.location.origin;
+        } catch {
+            parentSameOrigin = false;
+        }
+        if (isTourPicker && parentSameOrigin) {
+            return;
+        }
+
         // Page is in an iframe - break out of it
         try {
             window.top!.location.href = window.self.location.href;

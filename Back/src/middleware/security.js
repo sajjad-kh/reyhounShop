@@ -61,18 +61,29 @@ const apiRateLimiter = createRateLimiter();
  * Security Headers Middleware
  * Configures Helmet with appropriate security headers
  */
+// Origins allowed to talk to / frame this backend (mirrors CORS allowlist).
+const trustedOrigins = (() => {
+  const origins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+  if (process.env.BASE_URL) origins.push(process.env.BASE_URL);
+  if (process.env.PUBLIC_URL) origins.push(process.env.PUBLIC_URL);
+  return Array.from(new Set(origins));
+})();
+
 const securityHeaders = helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:", "http://localhost:3000"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5173"],
+      connectSrc: ["'self'", ...trustedOrigins],
       mediaSrc: ["'self'"],
       objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'"],
+      frameAncestors: ["'self'"],
       baseUri: ["'self'"],
       formAction: ["'self'"]
     },
@@ -84,7 +95,7 @@ const securityHeaders = helmet({
     preload: true
   } : false,
   noSniff: true,
-  frameguard: { action: 'deny' },
+  frameguard: { action: 'sameorigin' },
   xssFilter: true,
   referrerPolicy: { policy: 'same-origin' }
 });

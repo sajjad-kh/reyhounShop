@@ -14,6 +14,7 @@ import {
 } from '../../utils/validation';
 import { checkPasswordStrength } from '../../utils/passwordStrength';
 import { cn } from '../../utils';
+import { HelpCircle } from 'lucide-react';
 
 // Icons
 const UserIcon = () => (
@@ -263,7 +264,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* User Info Card */}
-            <GlassCard className="p-6">
+                <GlassCard className="p-6" data-tour="profile-user-card">
                 <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 glass-card rounded-full flex items-center justify-center">
                         <UserIcon />
@@ -279,10 +280,21 @@ export const ProfilePage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-glass-border pt-4">
+                    <GlassButton
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => window.dispatchEvent(new CustomEvent('tour:reset'))}
+                    >
+                        <HelpCircle className="w-4 h-4" />
+                        مشاهده راهنمای همه صفحات
+                    </GlassButton>
+                </div>
             </GlassCard>
 
             {/* Tabs */}
-            <div className="flex space-x-1 glass-card p-1 rounded-xl w-fit">
+            <div className="flex space-x-1 glass-card p-1 rounded-xl w-fit" data-tour="profile-tabs">
                 <button
                     onClick={() => setActiveTab('profile')}
                     className={cn(
@@ -393,6 +405,7 @@ export const ProfilePage: React.FC = () => {
                                 variant="accent"
                                 loading={isUpdatingProfile}
                                 ripple
+                                data-tour="profile-save"
                             >
                                 {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
                             </GlassButton>

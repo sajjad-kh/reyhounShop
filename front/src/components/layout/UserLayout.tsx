@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { STORAGE_KEYS } from '../../utils/constants';
 import { secureStorage } from '../../utils/security';
+import { TourLauncher } from '../tour/TourLauncher';
 
 export const UserLayout: React.FC = () => {
     const { state, logout } = useAuth();
@@ -199,6 +200,9 @@ export const UserLayout: React.FC = () => {
             <main className="pt-20">
                 <Outlet />
             </main>
+
+            {/* Global tour / guide launcher for all user sections */}
+            <TourLauncher />
 
         </div>
     );

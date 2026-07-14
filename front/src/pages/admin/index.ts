@@ -5,3 +5,4 @@ export { default as UserManagement } from './UserManagement';
 export { default as ShippingMethodStats } from './ShippingMethodStats';
 export { default as Review } from './AdminReview';
 export { default as Logs } from './AdminLogs';
+export { default as TourManagement } from './TourManagement';

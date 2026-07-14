@@ -11,7 +11,7 @@ import {
     X,
     LogOut,
     Store,
-    Truck ,Star,CreditCard 
+    Truck ,Star,CreditCard, MousePointerClick
 } from 'lucide-react';
 
 
@@ -79,6 +79,11 @@ const AdminLayout: React.FC = () => {
             path: '/admin/logs',
             label: 'Logs',
             icon: CreditCard,
+        },
+        {
+            path: '/admin/tours',
+            label: 'Tour Guide',
+            icon: MousePointerClick,
         },
     ];
 
