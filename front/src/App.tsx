@@ -1,4 +1,3 @@
-import './index.css';
 import { Router } from './components/Router';
 import ErrorBoundary from './components/ErrorBoundary';
 import { TourPicker } from './components/tour/TourPicker';
