@@ -1,4 +1,5 @@
 const { getPrismaClient } = require('../utils/database');
+const { ActivityAction } = require('@prisma/client');
 
 class NotificationService {
   /**
@@ -383,15 +384,21 @@ class NotificationService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
+  async logActivity({ userId, action, entity, entityId, metadata, details, actorType } = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM', 'Security': 'SYSTEM'
+    };
     try {
       await this.getPrisma().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           action,
-          entity,
+          entity: entityMap[entity] || entity,
           entityId,
-          details
+          metadata: details ?? metadata ?? {},
+          actorType: actorType ?? 'SYSTEM'
         }
       });
     } catch (error) {
@@ -434,6 +441,20 @@ class NotificationService {
           metadata
         }
       });
+
+      if (channel !== 'IN_APP') {
+        await this.getPrisma().notification.create({
+          data: {
+            userId,
+            type,
+            channel: 'IN_APP',
+            title,
+            message,
+            status: 'SENT',
+            metadata
+          }
+        });
+      }
 
       // If scheduled for immediate delivery, process it
       if (!scheduledAt || scheduledAt <= new Date()) {

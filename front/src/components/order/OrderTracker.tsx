@@ -8,11 +8,11 @@ interface OrderTrackerProps {
 }
 
 const orderSteps = [
-    { status: 'PENDING', label: 'سفارش ثبت شده', icon: '📦' },
-    { status: 'CONFIRMED', label: 'تأیید شده', icon: '✓' },
-    { status: 'PROCESSING', label: 'در حال پردازش', icon: '⚙️' },
-    { status: 'SHIPPED', label: 'ارسال شده', icon: '🚚' },
-    { status: 'DELIVERED', label: 'تحویل داده شده', icon: '🎉' },
+    { key: 'payment', label: 'پرداخت', icon: '💳', statuses: ['PENDING_PAYMENT', 'PAYMENT_REVIEW'] },
+    { key: 'info', label: 'تکمیل اطلاعات', icon: '📝', statuses: ['INFO'] },
+    { key: 'design', label: 'طراحی و چاپ', icon: '🎨', statuses: ['DESIGNING', 'DESIGN_REVIEW', 'DESIGN_APPROVED', 'PRINTING'] },
+    { key: 'shipping', label: 'ارسال', icon: '🚚', statuses: ['PACKAGING', 'SHIPPED'] },
+    { key: 'delivery', label: 'تحویل', icon: '🎉', statuses: ['DELIVERED'] },
 ];
 
 export const OrderTracker: React.FC<OrderTrackerProps> = ({
@@ -24,10 +24,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
     const st = String(status);
 
     // ================= PAYMENT ERROR =================
-    if (
-        st === 'PAYMENT_REJECTED' ||
-        (ps === 'FAILED' && (paymentRejectionReason || '').trim())
-    ) {
+    if (ps === 'FAILED') {
         return (
             <div className="glass-card p-5 bg-orange-500/10 border border-orange-500/30 rounded-xl">
                 <div className="text-right">
@@ -50,15 +47,14 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
         );
     }
 
-    // ================= CANCEL / RETURN =================
-    const isCancelled = st === 'CANCELLED';
-    const isReturned = st === 'RETURNED';
+    // ================= CANCEL =================
+    const isCancelled = st === 'CANCELLED' || st === 'ORDER_CANCELLED';
 
-    if (isCancelled || isReturned) {
+    if (isCancelled) {
         return (
             <div className="glass-card p-6 bg-red-500/10 border border-red-500/30">
                 <div className="text-center text-red-400 font-bold">
-                    {isCancelled ? 'سفارش لغو شده' : 'سفارش مرجوع شده'}
+                    سفارش لغو شده
                 </div>
             </div>
         );
@@ -68,17 +64,10 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
         ps === 'SUCCESS' || ps === 'COMPLETED';
 
     const currentIndex = orderSteps.findIndex(
-        (step) => step.status === st
+        (step) => step.statuses.includes(st)
     );
 
     const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-
-    const isCompleted = (index: number) => index < safeIndex;
-
-    const isStepDone = (stepStatus: string, index: number) => {
-        if (st === 'DELIVERED') return index <= safeIndex;
-        return index < safeIndex;
-    };
 
     return (
         <div className="space-y-4">
@@ -98,11 +87,11 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
 
                 {orderSteps.map((step, index) => {
 
-                    const completed = isStepDone(step.status, index);
-                    const active = step.status === st;
+                    const completed = index < safeIndex;
+                    const active = step.statuses.includes(st);
 
                     return (
-                        <React.Fragment key={step.status}>
+                        <React.Fragment key={step.key}>
                             <div className="flex flex-col items-center flex-1">
 
                             <div

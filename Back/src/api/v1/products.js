@@ -1828,6 +1828,16 @@ router.post('/:id/reviews',
         });
       }
 
+      if (error.message === 'REVIEW_LOCKED') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'REVIEW_LOCKED',
+            message: 'This review has been approved and can no longer be edited'
+          }
+        });
+      }
+
       if (error.message === 'You can only review purchased products') {
         return res.status(403).json({
           success: false,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../components/ui/GlassCard';
 import { GlassButton } from '../components/ui/GlassButton';
 import { GlassInput } from '../components/ui/GlassInput';
@@ -14,7 +14,6 @@ import {
     // validateBirthDate
 } from '../utils/validation';
 import { checkPasswordStrength } from '../utils/passwordStrength';
-import { cn } from '../utils';
 
 // Icons
 const UserIcon = () => (
@@ -82,6 +81,8 @@ interface FormErrors {
 export const RegisterPage: React.FC = () => {
     const { state, register, clearError } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const referralCode = searchParams.get('ref');
 
     const [formData, setFormData] = useState<FormData>({
         name: '',
@@ -186,6 +187,7 @@ export const RegisterPage: React.FC = () => {
                 password: formData.password,
                 ...(formData.phone && { phone: formData.phone }),
                 // ...(formData.birthDate && { birthDate: formData.birthDate }),
+                ...(referralCode && { ref: referralCode }),
             };
 
             await register(userData);

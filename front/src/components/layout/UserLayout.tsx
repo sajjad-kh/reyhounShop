@@ -5,6 +5,7 @@ import { useCart } from '../../hooks/useCart';
 import { useCart as useBasalamCart } from '../../hooks/basalam/useCart';
 import { LogOut, ShoppingCart, Package } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import NotificationBell from '../notification/NotificationBell';
 
 import { STORAGE_KEYS } from '../../utils/constants';
 import { secureStorage } from '../../utils/security';
@@ -167,6 +168,9 @@ export const UserLayout: React.FC = () => {
                                         )
                                     )}
                                 </button>
+
+                                {/* ================= NOTIFICATION BELL ================= */}
+                                <NotificationBell />
                             </>
                         )}
 

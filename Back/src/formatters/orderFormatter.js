@@ -15,6 +15,7 @@ class OrderFormatter {
 
     return {
       id: order.id,
+      orderCode: order.orderCode,
       trackingCode: order.trackingCode,
       status: order.status,
       paymentStatus: order.paymentStatus,
@@ -22,6 +23,8 @@ class OrderFormatter {
       totalPrice: order.totalPrice || 0,
       shippingCost: order.shippingCost || 0,
       discountAmount: order.discountAmount || 0,
+      loyaltyPointsUsed: order.loyaltyPointsUsed || 0,
+      loyaltyDiscount: order.loyaltyDiscount || 0,
 
       paymentProofUrl: paymentReceipt
         ? normalize(paymentReceipt.url)

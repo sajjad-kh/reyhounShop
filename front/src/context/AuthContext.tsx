@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { User } from '../types/auth';
 import { authService } from '../services/authService';
+import { api } from '../utils/api';
+import { secureStorage } from '../utils/security';
+import { STORAGE_KEYS } from '../utils/constants';
 
 // Auth State Interface
 interface AuthState {
@@ -23,7 +27,7 @@ interface AuthContextType {
     state: AuthState;
     login: (email: string, password: string) => Promise<void>;
     loginWithBale: (token: string, user: any) => Promise<void>;
-    register: (userData: { email: string; password: string; name: string; phone?: string; birthDate?: string }) => Promise<void>;
+    register: (userData: { email: string; password: string; name: string; phone?: string; birthDate?: string; ref?: string }) => Promise<void>;
     logout: () => Promise<void>;
     clearError: () => void;
 }
@@ -96,12 +100,12 @@ interface AuthProviderProps {
 // Auth Provider Component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [state, dispatch] = useReducer(authReducer, initialState);
+    const queryClient = useQueryClient();
 
 
     const loginWithBale = async (token: string, user: any): Promise<void> => {
-        dispatch({ type: 'AUTH_START' });
         await authService.loginWithBaleToken(token, user);
-        dispatch({ type: 'AUTH_SUCCESS', payload: user });
+        window.location.replace('/');
     };
 
     // Initialize auth state on mount
@@ -147,8 +151,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { user, isAuthenticated } = event.detail;
 
             if (isAuthenticated && user) {
+                api.clearCache();
                 dispatch({ type: 'AUTH_SUCCESS', payload: user });
             } else {
+                api.clearCache();
+                queryClient.clear();
                 dispatch({ type: 'AUTH_LOGOUT' });
             }
         };
@@ -160,21 +167,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
     }, []);
 
-    // Login function
+    // Login function — after storing token, force full reload for clean state
     const login = async (email: string, password: string): Promise<void> => {
         try {
-            dispatch({ type: 'AUTH_START' });
             const authResponse = await authService.login({ email, password });
 
             if (authResponse.requires2FA) {
-                // Handle 2FA flow - for now, we'll throw an error to be handled by the component
                 throw new Error('2FA_REQUIRED');
             }
 
-            dispatch({ type: 'AUTH_SUCCESS', payload: authResponse.user });
+            // Redirect admins to the admin panel; everyone else to home
+            const user = authService.getUserData();
+            const redirectPath = user?.role === 'ADMIN' ? '/admin' : '/';
+
+            // Force full page reload — guarantees no stale React/Query state
+            window.location.replace(redirectPath);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Login failed';
-            dispatch({ type: 'AUTH_ERROR', payload: errorMessage });
             throw error;
         }
     };
@@ -185,28 +194,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password: string;
         name: string;
         phone?: string;
-        birthDate?: string
+        birthDate?: string;
+        ref?: string;
     }): Promise<void> => {
         try {
-            dispatch({ type: 'AUTH_START' });
-            const authResponse = await authService.register(userData);
-            dispatch({ type: 'AUTH_SUCCESS', payload: authResponse.user });
+            await authService.register(userData);
+            // Force full page reload — guarantees no stale React/Query state
+            window.location.replace('/');
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-            dispatch({ type: 'AUTH_ERROR', payload: errorMessage });
             throw error;
         }
     };
 
-    // Logout function
-    const logout = async (): Promise<void> => {
+    // Logout function — synchronous cleanup, then full page reload
+    const logout = (): void => {
+        // 1. Clear ALL storage synchronously (before anything else)
         try {
-            await authService.logout();
-            dispatch({ type: 'AUTH_LOGOUT' });
-        } catch (error) {
-            // Even if logout fails on server, clear local state
-            dispatch({ type: 'AUTH_LOGOUT' });
-        }
+            secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            secureStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+            localStorage.clear();
+        } catch (_) {}
+
+        // 2. Clear in-memory caches
+        api.clearCache();
+        queryClient.clear();
+
+        // 3. Try server-side logout in background (fire-and-forget)
+        authService.logout().catch(() => {});
+
+        // 4. Force full page reload with cache-bust to wipe ALL state
+        window.location.replace('/login?_=' + Date.now());
     };
 
     // Clear error function

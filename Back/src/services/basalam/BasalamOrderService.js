@@ -49,7 +49,7 @@ class BasalamOrderService {
       });
 
       // Create initial status history entry
-      await BasalamOrderRepository.addStatusHistory(order.id, 'pending_payment', 'Order created');
+      await BasalamOrderRepository.addStatusHistory(order.id, 'pending_payment', 'سفارش ایجاد شد');
 
       return {
         orderId: order.id,

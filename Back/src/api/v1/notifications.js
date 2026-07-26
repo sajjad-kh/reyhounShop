@@ -6,6 +6,162 @@ const loggingService = require('../../services/loggingService');
 const router = express.Router();
 
 /**
+ * Get user's in-app notifications
+ */
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const skip = (page - 1) * limit;
+
+    const prisma = getPrismaClient();
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        where: {
+          userId: req.user.id,
+          channel: 'IN_APP'
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.notification.count({
+        where: {
+          userId: req.user.id,
+          channel: 'IN_APP'
+        }
+      })
+    ]);
+
+    const needsLookup = notifications.filter(n => {
+      let meta = n.metadata;
+      if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch { meta = null; }
+      }
+      return !(meta && typeof meta === 'object' && 'orderId' in meta);
+    });
+
+    if (needsLookup.length > 0) {
+      const codeRegex = /سفارش\s+#?([\w\d]+)/g;
+      const codes = [];
+      for (const n of needsLookup) {
+        let m;
+        while ((m = codeRegex.exec(n.message)) !== null) {
+          codes.push({ code: m[1], notifId: n.id });
+        }
+        codeRegex.lastIndex = 0;
+      }
+
+      if (codes.length > 0) {
+        const uniqueCodes = [...new Set(codes.map(c => c.code))];
+        const numericIds = uniqueCodes.filter(c => /^\d+$/.test(c)).map(Number);
+        const alphaCodes = uniqueCodes.filter(c => !/^\d+$/.test(c));
+
+        const foundOrders = await prisma.order.findMany({
+          where: {
+            OR: [
+              ...(numericIds.length > 0 ? [{ id: { in: numericIds } }] : []),
+              ...(alphaCodes.length > 0 ? [{ orderCode: { in: alphaCodes } }] : [])
+            ]
+          },
+          select: { id: true, orderCode: true }
+        });
+
+        const codeToId = {};
+        for (const o of foundOrders) {
+          codeToId[String(o.id)] = o.id;
+          if (o.orderCode) codeToId[o.orderCode] = o.id;
+        }
+
+        for (const n of notifications) {
+          let meta = n.metadata;
+          if (typeof meta === 'string') {
+            try { meta = JSON.parse(meta); } catch { meta = null; }
+          }
+          if (meta && typeof meta === 'object' && 'orderId' in meta) continue;
+
+          const match = n.message?.match(/سفارش\s+#?([\w\d]+)/);
+          if (match && codeToId[match[1]] != null) {
+            n.metadata = { ...((typeof n.metadata === 'string' ? JSON.parse(n.metadata || '{}') : n.metadata) || {}), orderId: codeToId[match[1]] };
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notifications'
+    });
+  }
+});
+
+/**
+ * Get unread notification count
+ */
+router.get('/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const prisma = getPrismaClient();
+    const count = await prisma.notification.count({
+      where: {
+        userId: req.user.id,
+        channel: 'IN_APP',
+        readAt: null
+      }
+    });
+
+    res.json({
+      success: true,
+      data: { count }
+    });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch unread count'
+    });
+  }
+});
+
+/**
+ * Mark all notifications as read
+ */
+router.post('/read-all', authenticateToken, async (req, res) => {
+  try {
+    const prisma = getPrismaClient();
+    await prisma.notification.updateMany({
+      where: {
+        userId: req.user.id,
+        channel: 'IN_APP',
+        readAt: null
+      },
+      data: { readAt: new Date() }
+    });
+
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking all as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all as read'
+    });
+  }
+});
+
+/**
  * Get user notification preferences
  */
 router.get('/preferences', authenticateToken, async (req, res) => {
@@ -133,13 +289,14 @@ router.get('/stats', authenticateToken, async (req, res) => {
 });
 
 /**
- * Mark notification as read (for future use)
+ * Mark notification as read
  */
 router.put('/:id/read', authenticateToken, async (req, res) => {
   try {
     const notificationId = parseInt(req.params.id);
+    const prisma = getPrismaClient();
 
-    const notification = await getPrismaClient().notification.findFirst({
+    const notification = await prisma.notification.findFirst({
       where: {
         id: notificationId,
         userId: req.user.id
@@ -153,12 +310,10 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
       });
     }
 
-    // For now, we'll just log this action since the schema doesn't have a 'read' field
-    // In a future update, we could add a 'readAt' field to the Notification model
-    await loggingService.logActivity('notification.read', 'Notification', notificationId, {
-      type: notification.type,
-      channel: notification.channel
-    }, req);
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { readAt: new Date() }
+    });
 
     res.json({
       success: true,

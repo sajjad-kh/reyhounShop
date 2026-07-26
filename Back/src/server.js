@@ -222,6 +222,14 @@ const startServer = async () => {
       console.error('Shipping scheduler failed:', e.message);
     }
 
+    try {
+      const loyaltyScheduler = require('./services/loyaltyScheduler');
+      loyaltyScheduler.start();
+      console.log('🎁 Loyalty scheduler started');
+    } catch (e) {
+      console.error('Loyalty scheduler failed:', e.message);
+    }
+
     // ================= START SERVER =================
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

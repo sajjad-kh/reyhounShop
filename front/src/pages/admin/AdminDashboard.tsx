@@ -14,6 +14,7 @@ import {
     Filler,
 } from 'chart.js';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { adminService } from '../../services/adminService';
 import { AdminAnalytics } from '../../types/admin';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from 'lucide-react';
@@ -59,16 +60,7 @@ const AdminDashboard: React.FC = () => {
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-primary p-6">
-                <div className="max-w-7xl mx-auto">
-                    <GlassCard className="p-8 text-center">
-                        <div className="glass-spinner w-12 h-12 mx-auto mb-4" />
-                        <p className="text-text-secondary">Loading analytics...</p>
-                    </GlassCard>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner fullScreen label="در حال بارگذاری..." />;
     }
 
     if (error || !analytics) {

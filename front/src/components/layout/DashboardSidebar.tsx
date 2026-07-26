@@ -72,6 +72,12 @@ const sidebarItems: SidebarItem[] = [
         icon: <LocationIcon />,
         path: '/dashboard/addresses',
     },
+    {
+        id: 'loyalty',
+        label: 'وفاداری',
+        icon: <StarIcon />,
+        path: '/dashboard/loyalty',
+    },
 
     // // 🔥 FIXED ONLY THIS PART
     // {

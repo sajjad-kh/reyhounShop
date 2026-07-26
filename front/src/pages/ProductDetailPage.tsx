@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GlassCard } from '../components/ui/GlassCard';
-import { GlassButton } from '../components/ui/GlassButton';
 import { ImageGallery } from '../components/ui/ImageGallery';
 import { ReviewsSection } from '../components/ui/ReviewsSection';
 import { productService } from '../services/productService';
 import { Product } from '../types/product';
 import { cn } from '../utils';
-import { useCart } from '../context/CartContext';
-import { useCart as useBasalamCart } from '../hooks/basalam/useCart';
-
 import { cartService } from '../services/cartService';
+import { toast } from '../utils/toast';
+import { ArrowLeft, ShoppingCart, Minus, Plus, Package, Truck, Shield, Star } from 'lucide-react';
 
 export const ProductDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -21,7 +18,6 @@ export const ProductDetailPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
-    const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
 
     const fetchProduct = async (productId: number) => {
         try {
@@ -58,41 +54,35 @@ export const ProductDetailPage: React.FC = () => {
         }
     }, [id]);
 
-    const { addToCart } = useCart();
-    const { addItem: addBasalamItem } = useBasalamCart();
-
     const handleAddToCart = async () => {
         if (!product) return;
-
         try {
             await cartService.addToCart({
                 productId: product.id,
                 quantity: Number(quantity),
             });
-
-            console.log("✅ Added to cart");
+            toast.success('محصول به سبد خرید اضافه شد');
         } catch (error) {
-            console.error("❌ Add to cart failed:", error);
+            console.error("Add to cart failed:", error);
+            toast.error('خطا در افزودن به سبد خرید');
         }
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-primary">
-                <div className="container mx-auto px-4 py-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                        <GlassCard className="aspect-square animate-pulse">
-                            <div className="w-full h-full bg-glass-medium rounded-xl"></div>
-                        </GlassCard>
-                        <GlassCard className="space-y-6 animate-pulse">
-                            <div className="space-y-4">
-                                <div className="h-4 bg-glass-medium rounded w-1/4"></div>
-                                <div className="h-8 bg-glass-medium rounded w-3/4"></div>
-                                <div className="h-6 bg-glass-medium rounded w-1/2"></div>
-                                <div className="h-20 bg-glass-medium rounded"></div>
-                                <div className="h-12 bg-glass-medium rounded w-1/3"></div>
-                            </div>
-                        </GlassCard>
+            <div className="min-h-screen bg-[#080B14]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 mb-12">
+                        {/* Image skeleton */}
+                        <div className="aspect-square rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse" />
+                        {/* Info skeleton */}
+                        <div className="space-y-5 animate-pulse">
+                            <div className="h-3 bg-white/[0.05] rounded w-1/4" />
+                            <div className="h-6 bg-white/[0.05] rounded w-3/4" />
+                            <div className="h-4 bg-white/[0.05] rounded w-1/3" />
+                            <div className="h-20 bg-white/[0.05] rounded" />
+                            <div className="h-12 bg-white/[0.05] rounded w-1/2" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,25 +91,29 @@ export const ProductDetailPage: React.FC = () => {
 
     if (error || !product) {
         return (
-            <div className="min-h-screen bg-gradient-primary">
-                <div className="container mx-auto px-4 py-8">
-                    <GlassCard className="text-center py-12">
-                        <div className="text-accent-error mb-4">
-                            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+            <div className="min-h-screen bg-[#080B14]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+                            <Package className="w-7 h-7 text-red-400" />
                         </div>
-                        <h1 className="text-2xl font-bold text-text-primary mb-2">Product Not Found</h1>
-                        <p className="text-text-secondary mb-6">{error}</p>
-                        <div className="space-x-4">
-                            <GlassButton onClick={() => navigate('/products')}>
-                                Browse Products
-                            </GlassButton>
-                            <GlassButton variant="secondary" onClick={() => navigate(-1)}>
-                                Go Back
-                            </GlassButton>
+                        <h1 className="text-lg font-bold text-white mb-1.5">محصول یافت نشد</h1>
+                        <p className="text-xs text-white/40 mb-5">{error}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => navigate('/products?category=3')}
+                                className="px-4 py-2 rounded-xl bg-white/5 border border-white/8 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                            >
+                                مشاهده محصولات
+                            </button>
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="px-4 py-2 rounded-xl bg-white/5 border border-white/8 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                            >
+                                بازگشت
+                            </button>
                         </div>
-                    </GlassCard>
+                    </div>
                 </div>
             </div>
         );
@@ -129,56 +123,72 @@ export const ProductDetailPage: React.FC = () => {
     const discountPercentage = hasDiscount
         ? Math.round(((product.price - product.discountPrice!) / product.price) * 100)
         : 0;
+    const averageRating = product.averageRating ?? 0;
+    const reviewCount = product.reviewCount ?? 0;
 
     return (
-        <div className="min-h-screen bg-gradient-primary">
-            <div className="container mx-auto px-4 py-8">
-                {/* Breadcrumb */}
-                <nav className="flex items-center space-x-2 text-sm text-text-muted mb-8">
-                    <button onClick={() => navigate('/')} className="hover:text-text-secondary transition-colors">
-                        Home
-                    </button>
-                    <span>/</span>
-                    <button onClick={() => navigate('/products')} className="hover:text-text-secondary transition-colors">
-                        Products
-                    </button>
-                    <span>/</span>
-                    <button
-                        onClick={() => navigate(`/products?category=${product.category.id}`)}
-                        className="hover:text-text-secondary transition-colors"
-                    >
-                        {product.category.name}
-                    </button>
-                    <span>/</span>
-                    <span className="text-text-secondary">{product.name}</span>
-                </nav>
+        <div className="min-h-screen bg-[#080B14]">
+            {/* Header */}
+            <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#080B14]/90 backdrop-blur-xl">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate('/products')}
+                            className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 hover:border-white/15 transition-all duration-200"
+                        >
+                            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                        <div className="min-w-0">
+                            <h1 className="text-sm sm:text-base font-bold text-white truncate">{product.name}</h1>
+                            <p className="text-[10px] sm:text-[11px] text-white/40 truncate">
+                                {product.category?.name}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                {/* Product Details */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                    <ImageGallery
-                        images={product.images}
-                        productName={product.name}
-                    />
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 mb-10 lg:mb-16">
+                    {/* Image Gallery */}
+                    <div className="lg:sticky lg:top-24 lg:self-start">
+                        <ImageGallery
+                            images={product.images}
+                            productName={product.name}
+                        />
+                    </div>
 
-                    <GlassCard className="space-y-6">
-                        <div className="text-sm text-accent-primary uppercase tracking-wide font-medium">
-                            {product.category.name}
+                    {/* Product Info */}
+                    <div className="space-y-5 sm:space-y-6">
+                        {/* Category */}
+                        <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-1 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-[10px] sm:text-[11px] font-semibold text-accent-primary">
+                                {product.category?.name}
+                            </span>
+                            {hasDiscount && (
+                                <span className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] sm:text-[11px] font-semibold text-red-400">
+                                    %{discountPercentage} تخفیف
+                                </span>
+                            )}
                         </div>
 
-                        <h1 className="text-3xl font-bold text-text-primary leading-tight">
+                        {/* Name */}
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
                             {product.name}
-                        </h1>
+                        </h2>
 
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-1">
+                        {/* Rating */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-0.5">
                                 {[...Array(5)].map((_, i) => (
                                     <svg
                                         key={i}
                                         className={cn(
-                                            'w-5 h-5',
-                                            i < Math.floor(product.averageRating)
-                                                ? 'text-yellow-400 fill-current'
-                                                : 'text-text-muted'
+                                            'w-4 h-4',
+                                            i < Math.floor(averageRating)
+                                                ? 'text-amber-400 fill-current'
+                                                : 'text-white/15'
                                         )}
                                         fill="none"
                                         stroke="currentColor"
@@ -193,106 +203,122 @@ export const ProductDetailPage: React.FC = () => {
                                     </svg>
                                 ))}
                             </div>
-                            <span className="text-text-primary font-medium">
-                                {(product.averageRating || 0).toFixed(1)}
+                            <span className="text-sm font-medium text-white/70">
+                                {averageRating.toFixed(1)}
                             </span>
-                            <span className="text-text-muted">
-                                ({product.reviewCount} reviews)
+                            <span className="text-xs text-white/30">
+                                ({reviewCount} نظر)
                             </span>
                         </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center space-x-4 space-x-reverse">
-                                <span className="text-3xl font-bold text-text-primary">
-                                    {(product.effectivePrice || product.discountPrice || product.price).toLocaleString('fa-IR')} ریال
+                        {/* Price */}
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                            <div className="flex items-baseline gap-3 flex-wrap">
+                                <span className="text-2xl sm:text-3xl font-bold text-white">
+                                    {(product.effectivePrice || product.discountPrice || product.price).toLocaleString('fa-IR')}
                                 </span>
+                                <span className="text-sm text-white/30">ریال</span>
                                 {hasDiscount && (
-                                    <>
-                                        <span className="text-xl text-text-muted line-through">
-                                            {product.price.toLocaleString('fa-IR')} ریال
-                                        </span>
-                                        <span className="glass-card bg-accent-error/20 border-accent-error/30 px-3 py-1 rounded-lg text-accent-error font-semibold">
-                                            {discountPercentage}% تخفیف
-                                        </span>
-                                    </>
+                                    <span className="text-sm text-white/20 line-through">
+                                        {product.price.toLocaleString('fa-IR')} ریال
+                                    </span>
                                 )}
                             </div>
                             {hasDiscount && (
-                                <p className="text-sm text-accent-success">
+                                <p className="text-xs text-emerald-400 mt-2">
                                     شما {((product.price - (product.effectivePrice || product.discountPrice || product.price))).toLocaleString('fa-IR')} ریال صرفه‌جویی می‌کنید
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-semibold text-text-primary">Description</h3>
-                            <p className="text-text-secondary leading-relaxed">
-                                {product.description}
-                            </p>
-                        </div>
+                        {/* Description */}
+                        {product.description && (
+                            <div>
+                                <h3 className="text-xs sm:text-sm font-semibold text-white/60 mb-2">توضیحات</h3>
+                                <p className="text-xs sm:text-sm text-white/40 leading-relaxed">
+                                    {product.description}
+                                </p>
+                            </div>
+                        )}
 
-                        <div className="flex items-center space-x-2">
+                        {/* Stock Status */}
+                        <div className="flex items-center gap-2">
                             <div className={cn(
-                                'w-3 h-3 rounded-full',
-                                product.stock > 0 ? 'bg-accent-success' : 'bg-accent-error'
-                            )}></div>
+                                'w-2 h-2 rounded-full',
+                                product.stock > 0 ? 'bg-emerald-400' : 'bg-red-400'
+                            )} />
                             <span className={cn(
-                                'font-medium',
-                                product.stock > 0 ? 'text-accent-success' : 'text-accent-error'
+                                'text-xs sm:text-sm font-medium',
+                                product.stock > 0 ? 'text-emerald-400' : 'text-red-400'
                             )}>
                                 {product.stock > 0
-                                    ? `In Stock (${product.stock} available)`
-                                    : 'Out of Stock'
+                                    ? `موجود (${product.stock} عدد)`
+                                    : 'ناموجود'
                                 }
                             </span>
                         </div>
 
-                        {/* Quantity Selector */}
+                        {/* Quantity + Add to Cart */}
                         {product.stock > 0 && (
-                            <div className="flex items-center space-x-4">
-                                <span className="text-text-primary font-medium">تعداد:</span>
-                                <div className="flex items-center border border-border-glass-light rounded-lg overflow-hidden">
-                                    <button
-                                        onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                                        className="px-3 py-2 hover:bg-glass-medium transition"
-                                    >
-                                        -
-                                    </button>
-                                    <span className="px-4 py-2">{quantity}</span>
-                                    <button
-                                        onClick={() =>
-                                            setQuantity(prev =>
-                                                prev < product.stock ? prev + 1 : prev
-                                            )
-                                        }
-                                        className="px-3 py-2 hover:bg-glass-medium transition"
-                                    >
-                                        +
-                                    </button>
+                            <div className="space-y-4 pt-2">
+                                {/* Quantity */}
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs sm:text-sm text-white/50">تعداد:</span>
+                                    <div className="flex items-center rounded-xl border border-white/[0.08] bg-white/[0.03] overflow-hidden">
+                                        <button
+                                            onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.05] transition-all"
+                                        >
+                                            <Minus className="w-3.5 h-3.5" />
+                                        </button>
+                                        <span className="w-10 sm:w-12 text-center text-sm font-semibold text-white">
+                                            {quantity}
+                                        </span>
+                                        <button
+                                            onClick={() => setQuantity(prev => prev < product.stock ? prev + 1 : prev)}
+                                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.05] transition-all"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {/* Add to Cart Button */}
+                                <button
+                                    onClick={handleAddToCart}
+                                    className="w-full flex items-center justify-center gap-2.5 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-accent-primary to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-accent-primary/20"
+                                >
+                                    <ShoppingCart className="w-4 h-4" />
+                                    افزودن به سبد خرید
+                                </button>
                             </div>
                         )}
 
-                        {/* Add To Cart Button */}
-                        {product.stock > 0 && (
-                            <GlassButton
-                                className="w-full mt-4"
-                                onClick={handleAddToCart}
-                            >
-                                افزودن به سبد خرید
-                            </GlassButton>
-                        )}
-                    </GlassCard>
+                        {/* Features */}
+                        <div className="grid grid-cols-3 gap-3 pt-2">
+                            <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <Truck className="w-4 h-4 text-white/30" />
+                                <span className="text-[9px] sm:text-[10px] text-white/30 text-center">ارسال سریع</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <Shield className="w-4 h-4 text-white/30" />
+                                <span className="text-[9px] sm:text-[10px] text-white/30 text-center">ضمانت اصالت</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <Package className="w-4 h-4 text-white/30" />
+                                <span className="text-[9px] sm:text-[10px] text-white/30 text-center">بسته‌بندی ایمن</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="mb-12">
-                    <ReviewsSection
-                        productId={product.id}
-                        averageRating={product.averageRating}
-                        reviewCount={product.reviewCount}
-                        reviewsObj={product.reviews ?? []}
-                    />
-                </div>
+                {/* Reviews Section */}
+                <ReviewsSection
+                    productId={product.id}
+                    averageRating={product.averageRating}
+                    reviewCount={product.reviewCount}
+                    reviewsObj={product.reviews ?? []}
+                />
             </div>
         </div>
     );

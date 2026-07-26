@@ -85,3 +85,6 @@ export type { ConditionalTooltipProps } from './ConditionalTooltip';
 
 export { TruncatedText } from './TruncatedText';
 export type { TruncatedTextProps } from './TruncatedText';
+
+export { DropdownSelect } from './DropdownSelect';
+export type { DropdownSelectProps, DropdownOption } from './DropdownSelect';

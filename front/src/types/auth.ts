@@ -54,6 +54,7 @@ export interface RegisterRequest {
     name: string;
     phone?: string;
     birthDate?: string;
+    ref?: string;
 }
 
 export interface UpdateProfileRequest {

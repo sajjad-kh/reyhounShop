@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../components/ui/GlassCard';
+import { DropdownSelect } from '../components/ui/DropdownSelect';
 import { GlassButton } from '../components/ui/GlassButton';
 import { ProductCard } from '../components/ui/ProductCard';
 import { FilterSidebar } from '../components/ui/FilterSidebar';
@@ -285,17 +286,12 @@ export const SearchResultsPage: React.FC = () => {
                             {/* Sort */}
                             <div className="flex items-center space-x-2">
                                 <span className="text-sm text-text-secondary">Sort by:</span>
-                                <select
+                                <DropdownSelect
                                     value={`${sort.field}-${sort.order}`}
-                                    onChange={(e) => handleSortChange(e.target.value)}
-                                    className="glass-input px-3 py-2 rounded-lg bg-glass-light border-border-glass-light text-text-primary focus:ring-accent-primary text-sm"
-                                >
-                                    {SORT_OPTIONS.map(option => (
-                                        <option key={option.value} value={option.value} className="bg-gray-800 text-white">
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(v) => handleSortChange(v)}
+                                    options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                                    placeholder="مرتب‌سازی"
+                                />
                             </div>
 
                             {/* Filter Toggle (Mobile) */}

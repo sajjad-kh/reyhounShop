@@ -53,6 +53,7 @@ enum NotificationStatus {
 enum NotificationChannel {
   EMAIL
   SMS
+  IN_APP
 }
 
 enum NotificationType {
@@ -63,6 +64,15 @@ enum NotificationType {
   PROMOTION
   WELCOME
   PASSWORD_RESET
+  LOYALTY_EARNED
+  LOYALTY_REDEEMED
+  LOYALTY_EXPIRING
+  LOYALTY_REWARD
+  LOYALTY_BIRTHDAY
+  LOYALTY_REFERRAL
+  DESIGN_UPLOADED
+  DESIGN_APPROVED
+  DISCOUNT
 }
 
 enum DeliveryType {
@@ -114,93 +124,104 @@ enum ReviewCommentStatus {
  * ================= USER =================
  */
 
-  enum AuthSessionStatus {
-    PENDING
-    APPROVED
-    EXPIRED
-  }
+enum AuthSessionStatus {
+  PENDING
+  APPROVED
+  EXPIRED
+}
 
-  model AuthSession {
-    id String @id
+model AuthSession {
+  id String @id
 
-    userId Int?
-    user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
 
-    status AuthSessionStatus @default(PENDING)
+  status AuthSessionStatus @default(PENDING)
 
-    telegramChatId String? @unique
+  telegramChatId String? @unique
 
-    expiresAt DateTime
-    createdAt DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-    @@index([userId])
-    @@index([telegramChatId])
-  }
+  @@index([userId])
+  @@index([telegramChatId])
+}
 
-  model User {
-    id Int @id @default(autoincrement())
+model User {
+  id Int @id @default(autoincrement())
 
-    email String? @unique
-    password String?
+  email    String? @unique
+  password String?
 
-    phone String? @unique
-    name String
+  phone String? @unique
+  name  String
 
-    authProvider String @default("EMAIL") // 👈 مهم
+  authProvider String @default("EMAIL") // 👈 مهم
 
-    role     Role    @default(USER)
-    isActive Boolean @default(true)
+  role     Role    @default(USER)
+  isActive Boolean @default(true)
 
-    is2FAEnabled Boolean @default(false)
-    twoFASecret  String?
+  is2FAEnabled Boolean @default(false)
+  twoFASecret  String?
 
-    loyaltyPoints Int @default(0)
+  loyaltyPoints Int @default(0)
 
-    // relations
-    addresses Address[]
-    orders    Order[]
-    cart      Cart?
+  // relations
+  addresses Address[]
+  orders    Order[]
+  cart      Cart?
 
-    reviews  Review[]
-    wishlist Wishlist[]
+  reviews  Review[]
+  wishlist Wishlist[]
 
-    logs ActivityLog[]
+  logs ActivityLog[]
 
-    notificationPreference NotificationPreference?
-    notifications          Notification[]
+  notificationPreference NotificationPreference?
+  notifications          Notification[]
 
-    designVersions OrderDesignVersion[] @relation("DesignerVersions")
-    designComments DesignComment[]
+  designVersions OrderDesignVersion[] @relation("DesignerVersions")
+  designComments DesignComment[]
 
-    messages        OrderMessage[]
-    attachments     OrderAttachment[]
-    statusHistories OrderStatusHistory[]
-    designRevisions DesignRevision[] @relation("DesignerRevisions")
+  messages        OrderMessage[]
+  attachments     OrderAttachment[]
+  statusHistories OrderStatusHistory[]
+  designRevisions DesignRevision[]     @relation("DesignerRevisions")
 
-    // Bale login
-    baleChatId String? @unique
-    baleUsername String?
-    baleFirstName String?
-    baleConnectedAt DateTime?
+  // Loyalty
+  birthDate    DateTime?
+  referralCode String?   @unique
+  referredById Int?
+  referredBy   User?     @relation("ReferredBy", fields: [referredById], references: [id])
 
+  // Bale login
+  baleChatId      String?   @unique
+  baleUsername    String?
+  baleFirstName   String?
+  baleConnectedAt DateTime?
 
-    telegramId          BigInt?   @unique
-    telegramUsername    String?
-    telegramFirstName   String?
-    telegramLastName    String?
-    telegramConnectedAt DateTime?
+  telegramId          BigInt?   @unique
+  telegramUsername    String?
+  telegramFirstName   String?
+  telegramLastName    String?
+  telegramConnectedAt DateTime?
 
+  reviewsApproved Review[] @relation("ReviewApprover")
 
-    reviewsApproved Review[] @relation("ReviewApprover")
+  authSessions AuthSession[]
 
-    authSessions AuthSession[]
+  // Loyalty relations
+  loyaltyWallet         LoyaltyWallet?
+  loyaltyTransactions   LoyaltyTransaction[]
+  loyaltyRedemptions    LoyaltyRedemption[]
+  loyaltyDailyLogins    LoyaltyDailyLogin[]
+  loyaltyBirthdayGrants LoyaltyBirthdayGrant[]
+  referralsMade         LoyaltyReferral[]      @relation("ReferralReferrer")
+  referralsReceived     LoyaltyReferral[]      @relation("ReferralReferred")
+  referredUsers         User[]                 @relation("ReferredBy")
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-  }
-
-
-
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 /**
  * ================= ADDRESS =================
@@ -364,6 +385,7 @@ model Order {
   status        OrderStatus   @default(PENDING_PAYMENT)
   paymentStatus PaymentStatus @default(PENDING)
 
+  orderCode    String?
   trackingCode String?
 
   paymentRef String?
@@ -371,6 +393,9 @@ model Order {
   totalPrice     Int
   shippingCost   Int
   discountAmount Int @default(0)
+
+  loyaltyPointsUsed Int @default(0)
+  loyaltyDiscount   Int @default(0)
 
   addressId Int
   address   Address @relation(fields: [addressId], references: [id])
@@ -653,6 +678,7 @@ model Notification {
   status NotificationStatus @default(PENDING)
 
   scheduledAt DateTime?
+  readAt      DateTime?
 
   metadata Json?
 
@@ -683,7 +709,7 @@ enum EntityType {
   ACTIVITY_LOG
   API_LOG
   ERROR_LOG
-  PERFORMANCE    
+  PERFORMANCE
 }
 
 enum LogSeverity {
@@ -694,7 +720,6 @@ enum LogSeverity {
 }
 
 enum ActivityAction {
-
   AUTH_LOGIN
   AUTH_LOGOUT
   AUTH_LOGIN_FAILED
@@ -747,18 +772,18 @@ model ActivityLog {
   id Int @id @default(autoincrement())
 
   userId Int?
-  user User? @relation(fields: [userId], references: [id])
+  user   User? @relation(fields: [userId], references: [id])
 
   targetUserId Int?
 
   orderId Int?
-  order Order? @relation(fields: [orderId], references: [id])
+  order   Order? @relation(fields: [orderId], references: [id])
 
   actorType ActorType
 
   action ActivityAction
 
-  entity EntityType
+  entity   EntityType
   entityId String?
 
   severity LogSeverity @default(INFO)
@@ -766,11 +791,11 @@ model ActivityLog {
   success Boolean @default(true)
 
   correlationId String?
-  sessionId String?
+  sessionId     String?
 
   metadata Json?
 
-  ip String?
+  ip        String?
   userAgent String?
 
   createdAt DateTime @default(now())
@@ -778,37 +803,49 @@ model ActivityLog {
   @@index([userId])
   @@index([targetUserId])
   @@index([orderId])
-
   @@index([action])
   @@index([entity])
-
   @@index([severity])
   @@index([createdAt])
-
   @@index([correlationId])
 }
 
 model ErrorLog {
-  id          Int      @id @default(autoincrement())
-  message     String
-  stack       String?
-  endpoint    String?
-  method      String?
-  ip          String?
-  userId      Int?
-  statusCode  Int?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  message    String
+  stack      String?
+  endpoint   String?
+  method     String?
+  ip         String?
+  userId     Int?
+  statusCode Int?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Discount {
+  id           Int       @id @default(autoincrement())
+  code         String    @unique
+  type         String // PERCENT | FIXED
+  value        Int
+  minPurchase  Int?
+  maxUses      Int?
+  usedCount    Int       @default(0)
+  applicableTo String    @default("all")
+  expiresAt    DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model BankAccount {
-  id          Int     @id @default(autoincrement())
-  bankName    String
-  holderName  String
-  cardNumber  String
-  sheba       String
-  isActive    Boolean @default(true)
-  priority    Int     @default(1)
+  id         Int     @id @default(autoincrement())
+  bankName   String
+  holderName String
+  cardNumber String
+  sheba      String
+  isActive   Boolean @default(true)
+  priority   Int     @default(1)
 }
 
 model TourStep {
@@ -820,4 +857,295 @@ model TourStep {
   order       Int     @default(1)
   placement   String  @default("bottom")
   isActive    Boolean @default(true)
+}
+
+/**
+ * ================= LOYALTY SYSTEM =================
+ */
+
+enum LoyaltyTransactionType {
+  EARN
+  SPEND
+  BONUS
+  REFUND
+  EXPIRE
+  ADJUSTMENT
+  CAMPAIGN
+  REFERRAL
+  REVIEW
+  BIRTHDAY
+  LOGIN
+  FIRST_ORDER
+  PROFILE_COMPLETED
+}
+
+enum LoyaltyTransactionSource {
+  ORDER
+  ADMIN
+  CAMPAIGN
+  REVIEW
+  COUPON
+  REFERRAL
+  BIRTHDAY
+  LOGIN
+  API
+  PROFILE
+}
+
+enum LoyaltyRuleEvent {
+  ORDER_COMPLETED
+  REVIEW
+  DAILY_LOGIN
+  BIRTHDAY
+  REFERRAL_SIGNUP
+  REFERRAL_FIRST_ORDER
+  FIRST_ORDER
+  PROFILE_COMPLETED
+  REFUND
+}
+
+enum LoyaltyRewardType {
+  DISCOUNT
+  FREE_SHIPPING
+  CREDIT
+  COUPON
+}
+
+enum LoyaltyRedemptionStatus {
+  PENDING
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+enum LoyaltyReferralStatus {
+  PENDING
+  REGISTERED
+  FIRST_ORDER_COMPLETED
+}
+
+/**
+ * 1) Loyalty Wallet — وضعیت فعلی امتیاز کاربر
+ */
+model LoyaltyWallet {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  availablePoints Int @default(0)
+  pendingPoints   Int @default(0)
+  lifetimeEarned  Int @default(0)
+  lifetimeSpent   Int @default(0)
+  lifetimeExpired Int @default(0)
+
+  tierId Int?
+  tier   LoyaltyTier? @relation(fields: [tierId], references: [id])
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@index([tierId])
+}
+
+/**
+ * 2) Loyalty Ledger (Transaction) — هیچ‌وقت بدون ثبت تراکنش موجودی تغییر نمی‌کند
+ */
+model LoyaltyTransaction {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  walletId Int?
+  wallet   LoyaltyWallet? @relation(fields: [walletId], references: [id])
+
+  points       Int // مثبت = دریافت، منفی = خرج/انقضا/برگشت
+  balanceAfter Int // موجودی قابل استفاده بعد از این تراکنش
+
+  type   LoyaltyTransactionType
+  source LoyaltyTransactionSource
+
+  description String?
+  reference   String? // مثال: ORDER:123
+  referenceId String?
+  orderId     Int?
+
+  ruleId     Int?
+  rule       LoyaltyRule?     @relation(fields: [ruleId], references: [id])
+  campaignId Int?
+  campaign   LoyaltyCampaign? @relation(fields: [campaignId], references: [id])
+
+  expireDate DateTime?
+
+  createdAt  DateTime  @default(now())
+  redeemedAt DateTime?
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expireDate])
+}
+
+/**
+ * 3) Loyalty Tier — سطح کاربران
+ */
+model LoyaltyTier {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique // BRONZE, SILVER, ...
+  label     String // نمایش فارسی
+  minPoints Int
+  maxPoints Int? // null = بی‌نهایت
+  color     String?
+  benefits  Json?
+  isActive  Boolean @default(true)
+
+  wallets LoyaltyWallet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * 4) Rule Engine — قوانین داخل دیتابیس (بدون تغییر کد)
+ */
+model LoyaltyRule {
+  id                Int                  @id @default(autoincrement())
+  name              String
+  event             LoyaltyRuleEvent
+  points            Int
+  multiplierApplies Boolean        @default(true)
+  isActive        Boolean          @default(true)
+  priority        Int              @default(0)
+  conditions      Json? // { minAmount, categoryIds, ... }
+  transactions    LoyaltyTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([event])
+}
+
+/**
+ * 5) Campaign System — کمپین‌های امتیازی
+ */
+model LoyaltyCampaign {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  multiplier  Float    @default(1) // ضریب امتیاز
+  bonus       Int      @default(0) // امتیاز جایزه ثابت
+  priority    Int      @default(0)
+  conditions  Json? // { categoryIds, productIds, minAmount, ... }
+  isActive    Boolean  @default(true)
+
+  transactions LoyaltyTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startDate])
+  @@index([endDate])
+}
+
+/**
+ * 6) Reward Catalog — کاتالوگ جوایز قابل تبادل
+ */
+model LoyaltyReward {
+  id                 Int                 @id @default(autoincrement())
+  title              String
+  description        String?
+  requiredPoints     Int
+  rewardType         LoyaltyRewardType
+  rewardValue        Int? // درصد یا مبلغ (ریال/تومان)
+  rewardValueType    String? // PERCENT | FIXED
+  active             Boolean             @default(true)
+  limit              Int? // حداکثر دفعات تبادل کل
+  redeemedCount      Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  loyaltyRedemptions LoyaltyRedemption[]
+}
+
+/**
+ * 7) Coupon Exchange / Redemption — ثبت تبادل امتیاز با جایزه
+ */
+model LoyaltyRedemption {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rewardId Int?
+  reward   LoyaltyReward? @relation(fields: [rewardId], references: [id])
+
+  points      Int
+  rewardType  LoyaltyRewardType
+  rewardValue Int?
+  couponCode  String?                 @unique
+  status      LoyaltyRedemptionStatus @default(PENDING)
+  expiresAt   DateTime?
+  usedAt      DateTime?
+  orderId     Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([couponCode])
+  @@index([status])
+}
+
+/**
+ * 8) Referral — سیستم دعوت
+ */
+model LoyaltyReferral {
+  id   Int    @id @default(autoincrement())
+  code String @unique
+
+  referrerId Int
+  referrer   User @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+
+  referredId Int?
+  referred   User? @relation("ReferralReferred", fields: [referredId], references: [id])
+
+  status       LoyaltyReferralStatus @default(PENDING)
+  registeredAt DateTime?
+  firstOrderAt DateTime?
+
+  referrerPoints Int @default(0)
+  referredPoints Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([referrerId])
+  @@index([referredId])
+}
+
+/**
+ * 10) Daily Login — ورود روزانه
+ */
+model LoyaltyDailyLogin {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   String // YYYY-MM-DD
+  points Int
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+/**
+ * 9) Birthday Reward log — ثبت سالانه تولد
+ */
+model LoyaltyBirthdayGrant {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year   Int
+  points Int
+
+  @@unique([userId, year])
+  @@index([userId])
 }

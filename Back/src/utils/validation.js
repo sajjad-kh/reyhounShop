@@ -23,7 +23,8 @@ const userRegistrationSchema = Joi.object({
   }),
   birthDate: Joi.date().max('now').optional().messages({
     'date.max': 'Birth date cannot be in the future'
-  })
+  }),
+  ref: Joi.string().optional()
 });
 
 /**

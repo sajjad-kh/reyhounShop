@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { GlassCard } from './GlassCard';
-import { GlassButton } from './GlassButton';
-import { Pagination } from './Pagination';
 import { ProductReview } from '../../types/product';
 import { productService } from '../../services/productService';
 import { cn } from '../../utils';
+import { MessageCircle, ThumbsUp, Flag, Star } from 'lucide-react';
 
 export interface ReviewsSectionProps {
     productId: number;
@@ -25,8 +23,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [activeTab, setActiveTab] = useState<'all' | 'reviews' | 'questions'>('all');
+    const [activeTab, setActiveTab] = useState<'reviews' | 'questions'>('reviews');
 
     const ratingDistribution = useMemo(() => {
         const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -46,14 +43,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         try {
             setLoading(true);
             setError(null);
-            console.log("reviewsObj",reviewsObj)
             setReviews(reviewsObj);
-            // const response = await productService.getProductReviews(productId, page, 5);
-            // setReviews(response.reviews);
-            // console.log("responseeee",response)
-
-            // setCurrentPage(response.pagination.page);
-            // setTotalPages(response.pagination.totalPages);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load reviews');
             setReviews([]);
@@ -66,32 +56,19 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         fetchReviews(1);
     }, [productId, reviewsObj]);
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-        fetchReviews(page);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
     const renderStars = (rating: number, size: 'sm' | 'md' = 'sm') => {
-        const sizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
+        const sizeClass = size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5';
 
         return (
-            <div className="flex items-center">
+            <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
                     <svg
                         key={i}
                         className={cn(
                             sizeClass,
                             i < Math.floor(rating)
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-text-muted'
+                                ? 'text-amber-400 fill-current'
+                                : 'text-white/15'
                         )}
                         fill="none"
                         stroke="currentColor"
@@ -109,186 +86,162 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         );
     };
 
-    const tabs = [
-        { id: 'all', label: 'Overview', count: null },
-        { id: 'reviews', label: 'Reviews', count: reviewCount },
-        { id: 'questions', label: 'Questions', count: 0 },
-    ];
-
     return (
-        <GlassCard className={cn('', className)}>
+        <div className={cn('rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden', className)}>
             {/* Tab Navigation */}
-            <div className="border-b border-border-glass-light mb-6">
-                <nav className="flex space-x-8">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={cn(
-                                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-                                activeTab === tab.id
-                                    ? 'border-accent-primary text-accent-primary'
-                                    : 'border-transparent text-text-muted hover:text-text-secondary hover:border-border-glass-medium'
-                            )}
-                        >
-                            {tab.label}
-                            {tab.count !== null && (
-                                <span className="ml-2 rounded-full p-2 text-xs">
-                                    {tab.count}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
+            <div className="border-b border-white/[0.06] px-4 sm:px-6">
+                <div className="flex gap-6">
+                    <button
+                        onClick={() => setActiveTab('reviews')}
+                        className={cn(
+                            'py-3.5 text-xs sm:text-sm font-semibold transition-colors border-b-2 -mb-px',
+                            activeTab === 'reviews'
+                                ? 'border-accent-primary text-accent-primary'
+                                : 'border-transparent text-white/40 hover:text-white/60'
+                        )}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Star className="w-4 h-4" />
+                            نظرات
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5">{reviewCount}</span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('questions')}
+                        className={cn(
+                            'py-3.5 text-xs sm:text-sm font-semibold transition-colors border-b-2 -mb-px',
+                            activeTab === 'questions'
+                                ? 'border-accent-primary text-accent-primary'
+                                : 'border-transparent text-white/40 hover:text-white/60'
+                        )}
+                    >
+                        <div className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4" />
+                            سوالات
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5">0</span>
+                        </div>
+                    </button>
+                </div>
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'all' && (
-                <div className="space-y-6">
-                    {/* Rating Summary */}
-                    <div className="flex items-start space-x-8">
-                        <div className="text-center">
-                            <div className="text-4xl font-bold text-text-primary mb-2">
-                                {averageRating.toFixed(1)}
-                            </div>
-                            {renderStars(averageRating, 'md')}
-                            <div className="text-sm text-text-muted mt-1">
-                                Based on {reviewCount} reviews
-                            </div>
-                        </div>
-
-                        {/* Rating Distribution */}
-                        <div className="flex-1 space-y-2">
-                            {[5, 4, 3, 2, 1].map(rating => {
-                                const count = ratingDistribution[rating];
-                                const percentage = reviewCount > 0 ? (count / reviewCount) * 100 : 0;
-
-                                return (
-                                    <div key={rating} className="flex items-center space-x-3">
-                                        <span className="text-sm text-text-secondary w-8">
-                                            {rating}★
-                                        </span>
-                                        <div className="flex-1 h-2 bg-glass-light rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-yellow-400 transition-all duration-300"
-                                                style={{ width: `${percentage}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm text-text-muted w-12">
-                                            {count}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'reviews' && (
-                <div className="space-y-6">
-                    {loading ? (
-                        <div className="space-y-4">
-                            {[...Array(3)].map((_, i) => (
-                                <div key={i} className="glass-card bg-glass-light p-4 animate-pulse">
-                                    <div className="flex items-start space-x-4">
-                                        <div className="w-10 h-10 bg-glass-medium rounded-full"></div>
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-4 bg-glass-medium rounded w-1/4"></div>
-                                            <div className="h-4 bg-glass-medium rounded w-1/2"></div>
-                                            <div className="h-16 bg-glass-medium rounded"></div>
-                                        </div>
-                                    </div>
+            <div className="p-4 sm:p-6">
+                {activeTab === 'reviews' && (
+                    <div className="space-y-6">
+                        {/* Rating Summary */}
+                        <div className="flex flex-col sm:flex-row items-start gap-6">
+                            {/* Big Rating */}
+                            <div className="text-center sm:text-left flex-shrink-0">
+                                <div className="text-4xl sm:text-5xl font-bold text-white mb-2">
+                                    {averageRating.toFixed(1)}
                                 </div>
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <div className="text-center py-8">
-                            <div className="text-accent-error mb-4">
-                                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                {renderStars(averageRating, 'md')}
+                                <p className="text-xs text-white/30 mt-2">
+                                    بر اساس {reviewCount} نظر
+                                </p>
                             </div>
-                            <p className="text-text-secondary">{error}</p>
-                            <GlassButton
-                                variant="secondary"
-                                className="mt-4"
-                                onClick={() => fetchReviews(currentPage)}
-                            >
-                                Try Again
-                            </GlassButton>
-                        </div>
-                    ) : reviews.length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="text-text-muted mb-4">
-                                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
+
+                            {/* Rating Distribution */}
+                            <div className="flex-1 w-full space-y-2">
+                                {[5, 4, 3, 2, 1].map(rating => {
+                                    const count = ratingDistribution[rating];
+                                    const percentage = reviewCount > 0 ? (count / reviewCount) * 100 : 0;
+
+                                    return (
+                                        <div key={rating} className="flex items-center gap-3">
+                                            <span className="text-[11px] text-white/40 w-6 text-center">
+                                                {rating}
+                                            </span>
+                                            <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                                                    style={{ width: `${percentage}%` }}
+                                                />
+                                            </div>
+                                            <span className="text-[10px] text-white/25 w-8 text-left">
+                                                {count}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <h3 className="text-lg font-semibold text-text-primary mb-2">No Reviews Yet</h3>
-                            <p className="text-text-secondary mb-4">Be the first to review this product!</p>
-                            <GlassButton variant="primary">
-                                Write a Review
-                            </GlassButton>
                         </div>
-                    ) : (
-                        <>
-                            {/* Reviews List */}
-                            <div className="space-y-4">
+
+                        {/* Reviews List */}
+                        {loading ? (
+                            <div className="space-y-3">
+                                {[...Array(3)].map((_, i) => (
+                                    <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 animate-pulse">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-white/[0.05]" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-3 bg-white/[0.05] rounded w-1/4" />
+                                                <div className="h-3 bg-white/[0.05] rounded w-1/2" />
+                                                <div className="h-12 bg-white/[0.05] rounded" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : reviews.length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
+                                    <MessageCircle className="w-6 h-6 text-white/15" />
+                                </div>
+                                <h3 className="text-sm font-semibold text-white/60 mb-1">نظری ثبت نشده</h3>
+                                <p className="text-xs text-white/30">اولین نفری باشید که نظر می‌دهد</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
                                 {reviews.map(review => (
-                                    <div key={review.id} className="glass-card bg-glass-light p-6">
-                                        <div className="flex items-start space-x-4">
+                                    <div key={review.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                                        <div className="flex items-start gap-3">
                                             {/* Avatar */}
-                                            <div className="w-10 h-10 bg-gradient-accent rounded-full flex items-center justify-center text-white font-semibold">
-                                                {/* {review.user.name.toUpperCase()} */}
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-primary/30 to-purple-500/30 border border-white/10 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-xs font-bold text-white/70">
+                                                    {review.user.name?.charAt(0) || '?'}
+                                                </span>
                                             </div>
 
-                                            {/* Review Content */}
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div>
-                                                        <h4 className="font-semibold text-text-primary">
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <h4 className="text-xs sm:text-sm font-semibold text-white/80 truncate">
                                                             {review.user.name}
-                                                            {review.verified && (
-                                                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                                                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                                    </svg>
-                                                                    Verified Purchase
-                                                                </span>
-                                                            )}
                                                         </h4>
-                                                        <div className="flex items-center space-x-2">
-                                                            {renderStars(review.rating)}
-                                                            <span className="text-sm text-text-muted">
-                                                                {new Date(review.createdAt).toLocaleDateString('fa-IR')}
+                                                        {review.verified && (
+                                                            <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                                                خریدار
                                                             </span>
-                                                        </div>
+                                                        )}
                                                     </div>
+                                                    <span className="text-[10px] text-white/25 flex-shrink-0">
+                                                        {new Date(review.createdAt).toLocaleDateString('fa-IR')}
+                                                    </span>
                                                 </div>
 
-                                                {/* Review Title */}
+                                                {renderStars(review.rating)}
+
                                                 {review.title && (
-                                                    <h5 className="font-medium text-text-primary mb-2">
+                                                    <h5 className="text-xs sm:text-sm font-medium text-white/70 mt-2">
                                                         {review.title}
                                                     </h5>
                                                 )}
 
-                                                {/* Review Comment */}
-                                                <p className="text-text-secondary mb-4 leading-relaxed">
+                                                <p className="text-xs sm:text-sm text-white/45 leading-relaxed mt-2">
                                                     {review.comment}
                                                 </p>
 
-                                                {/* Review Actions */}
-                                                <div className="flex items-center space-x-4">
-                                                    <button className="flex items-center space-x-1 text-sm text-text-muted hover:text-text-secondary transition-colors">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                                                        </svg>
-                                                        <span>Helpful ({review.helpful})</span>
+                                                {/* Actions */}
+                                                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.04]">
+                                                    <button className="flex items-center gap-1.5 text-[10px] text-white/25 hover:text-white/50 transition-colors">
+                                                        <ThumbsUp className="w-3 h-3" />
+                                                        مفید ({review.helpful})
                                                     </button>
-                                                    <button className="text-sm text-text-muted hover:text-text-secondary transition-colors">
-                                                        Report
+                                                    <button className="flex items-center gap-1.5 text-[10px] text-white/25 hover:text-white/50 transition-colors">
+                                                        <Flag className="w-3 h-3" />
+                                                        گزارش
                                                     </button>
                                                 </div>
                                             </div>
@@ -296,34 +249,20 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                                     </div>
                                 ))}
                             </div>
-
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={handlePageChange}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
-            )}
-
-            {activeTab === 'questions' && (
-                <div className="text-center py-8">
-                    <div className="text-text-muted mb-4">
-                        <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        )}
                     </div>
-                    <h3 className="text-lg font-semibold text-text-primary mb-2">No Questions Yet</h3>
-                    <p className="text-text-secondary mb-4">Be the first to ask a question about this product!</p>
-                    <GlassButton variant="primary">
-                        Ask a Question
-                    </GlassButton>
-                </div>
-            )}
-        </GlassCard>
+                )}
+
+                {activeTab === 'questions' && (
+                    <div className="text-center py-8">
+                        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
+                            <MessageCircle className="w-6 h-6 text-white/15" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-white/60 mb-1">سوالی ثبت نشده</h3>
+                        <p className="text-xs text-white/30">اولین نفری باشید که سوال می‌پرسد</p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };

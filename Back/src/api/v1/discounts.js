@@ -1,7 +1,10 @@
 const express = require('express');
 const discountService = require('../../services/discountService');
 const { authenticateToken, requireRole } = require('../../middleware/auth');
-const { activityLogger } = require('../../middleware/logging');
+const { PrismaClient, ActivityAction, EntityType, ActorType } = require('@prisma/client');
+const loggingService = require('../../services/loggingService');
+
+const prisma = new PrismaClient();
 
 const router = express.Router();
 
@@ -115,13 +118,18 @@ router.post('/', authenticateToken, requireRole(['ADMIN']), async (req, res) => 
     });
 
     // Log activity
-    await activityLogger(
-      'discount.created',
-      'Discount',
-      discount.id,
-      { code: discount.code, type: discount.type, value: discount.value },
-      req
-    );
+    try {
+      await loggingService.logActivity({
+        action: ActivityAction.SYSTEM_EVENT,
+        entity: EntityType.SYSTEM,
+        entityId: String(discount.id),
+        metadata: { code: discount.code, type: discount.type, value: discount.value },
+        userId: req.user ? req.user.userId : null,
+        actorType: ActorType.ADMIN,
+      });
+    } catch (logErr) {
+      console.error('Failed to log discount activity:', logErr.message);
+    }
 
     res.status(201).json(discount);
   } catch (error) {
@@ -310,13 +318,14 @@ router.put('/:id', authenticateToken, requireRole(['ADMIN']), async (req, res) =
     const discount = await discountService.updateDiscount(id, updateData);
 
     // Log activity
-    await activityLogger(
-      'discount.updated',
-      'Discount',
-      discount.id,
-      { code: discount.code, changes: updateData },
-      req
-    );
+    await loggingService.logActivity({
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: EntityType.SYSTEM,
+      entityId: String(discount.id),
+      metadata: { code: discount.code, changes: updateData },
+      userId: req.user ? req.user.userId : null,
+      actorType: ActorType.ADMIN,
+    });
 
     res.json(discount);
   } catch (error) {
@@ -354,13 +363,14 @@ router.delete('/:id', authenticateToken, requireRole(['ADMIN']), async (req, res
     const discount = await discountService.deleteDiscount(id);
 
     // Log activity
-    await activityLogger(
-      'discount.deleted',
-      'Discount',
-      discount.id,
-      { code: discount.code },
-      req
-    );
+    await loggingService.logActivity({
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: EntityType.SYSTEM,
+      entityId: String(discount.id),
+      metadata: { code: discount.code },
+      userId: req.user ? req.user.userId : null,
+      actorType: ActorType.ADMIN,
+    });
 
     res.json({
       message: 'Discount deleted successfully',
@@ -373,6 +383,54 @@ router.delete('/:id', authenticateToken, requireRole(['ADMIN']), async (req, res
     }
     res.status(500).json({
       error: 'Failed to delete discount'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/discounts/{id}/reactivate:
+ *   post:
+ *     summary: Reactivate a deactivated discount
+ *     tags: [Discounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Discount reactivated successfully
+ */
+router.post('/:id/reactivate', authenticateToken, requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const discount = await discountService.reactivateDiscount(id);
+
+    // Log activity
+    await loggingService.logActivity({
+      action: ActivityAction.SYSTEM_EVENT,
+      entity: EntityType.SYSTEM,
+      entityId: String(discount.id),
+      metadata: { code: discount.code },
+      userId: req.user ? req.user.userId : null,
+      actorType: ActorType.ADMIN,
+    });
+
+    res.json({
+      message: 'Discount reactivated successfully',
+      discount
+    });
+  } catch (error) {
+    console.error('Error reactivating discount:', error);
+    if (error.message === 'Discount not found') {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({
+      error: 'Failed to reactivate discount'
     });
   }
 });

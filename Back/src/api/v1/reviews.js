@@ -124,39 +124,86 @@ router.post('/:productId', authenticateToken, async (req, res) => {
       }
     });
 
+    const hasComment = !!comment?.trim();
+
+    let review;
     if (existingReview) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'DUPLICATE_REVIEW',
-          message: 'You have already reviewed this product for this order'
+      const hadComment = Boolean(existingReview.comment && existingReview.comment.trim());
+
+      // Approved WITH a comment (admin-approved) becomes permanently locked.
+      // Auto-approved no-comment reviews stay editable so a comment can be
+      // added later, which resets it back to pending for admin re-approval.
+      if (existingReview.isApproved && hadComment) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'REVIEW_LOCKED',
+            message: 'This review has been approved and can no longer be edited'
+          }
+        });
+      }
+      // Allow re-submitting / editing an existing review.
+      // Adding a comment resets approval to pending (hasComment === true).
+      review = await prisma.review.update({
+        where: { id: existingReview.id },
+        data: {
+          rating,
+          comment: hasComment ? comment.trim() : '',
+          isApproved: !hasComment
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      });
+    } else {
+      review = await prisma.review.create({
+        data: {
+          productId,
+          userId,
+          orderId: Number(orderId),
+          rating,
+          comment: hasComment ? comment.trim() : '',
+
+          // بدون کامنت => تایید خودکار
+          // با کامنت => نیاز به تایید ادمین
+          isApproved: !hasComment
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
         }
       });
     }
 
-    const hasComment = !!comment?.trim();
-
-    const review = await prisma.review.create({
-      data: {
-        productId,
-        userId,
-        orderId: Number(orderId),
-        rating,
-        comment: hasComment ? comment.trim() : '',
-
-        // بدون کامنت => تایید خودکار
-        // با کامنت => نیاز به تایید ادمین
-        isApproved: !hasComment
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+    // Award the buyer's order points + first-order bonus as available
+    // once they leave a review for the delivered order.
+    try {
+      const loyaltyService = require('../../services/loyaltyService');
+      const order = await prisma.order.findUnique({ where: { id: Number(orderId) } });
+      if (order && order.status === 'DELIVERED') {
+        const items = await prisma.orderItem.findMany({
+          where: { orderId: Number(orderId) },
+          include: { product: { select: { id: true, categoryId: true } } }
+        });
+        const ctx = {
+          productIds: items.map((i) => i.productId),
+          categoryIds: items.map((i) => i.product.categoryId).filter(Boolean)
+        };
+        await loyaltyService.awardOrderPoints(Number(orderId), userId, order.totalPrice, ctx, false);
+        await loyaltyService.awardFirstOrder(userId, Number(orderId), false);
       }
-    });
+    } catch (e) {
+      console.error('Loyalty review award failed:', e.message);
+    }
 
     return res.status(201).json({
       success: true,

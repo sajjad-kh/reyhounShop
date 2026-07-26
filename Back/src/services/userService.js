@@ -1,6 +1,7 @@
 const { getPrismaClient } = require('../utils/database');
 const { hashPassword, comparePassword } = require('../utils/auth');
 const { ActivityAction } = require('@prisma/client');
+const loyaltyService = require('./loyaltyService');
 
 class UserService {
   /**
@@ -127,13 +128,23 @@ class UserService {
     await this.logActivity({
       userId,
       action: ActivityAction.USER_UPDATED,
-      entity: 'User',
+      entity: 'USER',
       entityId: userId,
       metadata: {
         updatedFields: Object.keys(updateFields).filter(field => field !== 'password'),
         hasPasswordChange: !!newPassword
       }
     });
+
+    // Award PROFILE_COMPLETED if name + phone are now both present
+    if (updatedUser.name && updatedUser.phone) {
+      try {
+        await loyaltyService.awardProfileCompleted(userId);
+      } catch (e) {
+        // امتیازدهی نباید باعث شکست آپدیت پروفایل شود
+        console.error('AWARD PROFILE_COMPLETED ERROR:', e.message);
+      }
+    }
 
     return updatedUser;
   }
@@ -439,7 +450,7 @@ class UserService {
         try {
             await getPrismaClient().activityLog.create({
                 data: {
-                    userId,
+                    user: { connect: { id: userId } },
                     action,
                     entity,
                     entityId: entityId ? String(entityId) : null,

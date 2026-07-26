@@ -7,6 +7,8 @@ interface OrderSummaryProps {
     selectedShippingMethodId?: number | null;
     shippingCost?: number;
     paymentMethod: string;
+    loyaltyDiscount?: number;
+    promoDiscount?: number;
 }
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -15,12 +17,16 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     selectedShippingMethodId,
     shippingCost = 0,
     paymentMethod,
+    loyaltyDiscount = 0,
+    promoDiscount = 0,
 }) => {
 
     const finalAmount =
         (cart.totalAmount || 0) -
         (cart.discountAmount || 0) +
-        (shippingCost || 0);
+        (shippingCost || 0) -
+        (loyaltyDiscount || 0) -
+        (promoDiscount || 0);
 
     return (
         <div className="space-y-6">
@@ -36,6 +42,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                     <div className="flex justify-between text-green-400">
                         <span>تخفیف</span>
                         <span>-{(cart.discountAmount || 0).toLocaleString('fa-IR')} ریال</span>
+                    </div>
+                )}
+
+                {loyaltyDiscount > 0 && (
+                    <div className="flex justify-between text-green-400">
+                        <span>تخفیف امتیاز وفاداری</span>
+                        <span>-{loyaltyDiscount.toLocaleString('fa-IR')} ریال</span>
+                    </div>
+                )}
+
+                {promoDiscount > 0 && (
+                    <div className="flex justify-between text-green-400">
+                        <span>تخفیف کد تخفیف</span>
+                        <span>-{promoDiscount.toLocaleString('fa-IR')} ریال</span>
                     </div>
                 )}
 

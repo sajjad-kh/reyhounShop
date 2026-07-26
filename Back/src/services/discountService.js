@@ -16,9 +16,10 @@ class DiscountService {
       expiresAt
     } = discountData;
 
-    // Validate discount code uniqueness
+    // Validate discount code uniqueness (normalize like create does)
+    const normalizedCode = code.toUpperCase();
     const existingDiscount = await prisma.discount.findUnique({
-      where: { code }
+      where: { code: normalizedCode }
     });
 
     if (existingDiscount) {
@@ -201,6 +202,20 @@ class DiscountService {
   }
 
   /**
+   * Reactivate discount (set isActive back to true)
+   */
+  async reactivateDiscount(id) {
+    const discount = await this.getDiscountById(id);
+
+    const reactivatedDiscount = await prisma.discount.update({
+      where: { id: parseInt(id) },
+      data: { isActive: true }
+    });
+
+    return reactivatedDiscount;
+  }
+
+  /**
    * Validate discount code for use
    */
   async validateDiscount(code, orderTotal = 0, userId = null) {
@@ -250,8 +265,9 @@ class DiscountService {
   /**
    * Apply discount to order (increment usage count)
    */
-  async applyDiscount(discountId) {
-    const discount = await prisma.discount.update({
+  async applyDiscount(discountId, tx) {
+    const client = tx || prisma;
+    const discount = await client.discount.update({
       where: { id: discountId },
       data: {
         usedCount: {

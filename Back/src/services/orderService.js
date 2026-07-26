@@ -13,6 +13,8 @@ const cartService = require('./cartService');
 const shippingMethodService = require('./shippingMethodService');
 const OrderFormatter = require('../formatters/orderFormatter');
 const adminService = require('./adminService');
+const loyaltyService = require('./loyaltyService');
+const discountService = require('./discountService');
 
 const {
   OrderStatus,
@@ -69,6 +71,83 @@ class OrderService {
   }
 
   // =========================================================
+  // UPDATE ORDER STATUS (ADMIN)
+  // =========================================================
+  async updateOrderStatus(orderId, status, adminId) {
+    const prisma = getPrismaClient();
+
+    const id = Number(orderId);
+    if (!id || isNaN(id)) throw new Error('INVALID_ORDER_ID');
+
+    const validStatuses = [
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_REVIEW,
+      OrderStatus.INFO,
+      OrderStatus.DESIGNING,
+      OrderStatus.DESIGN_REVIEW,
+      OrderStatus.DESIGN_APPROVED,
+      OrderStatus.PRINTING,
+      OrderStatus.PACKAGING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.CANCELLED
+    ];
+
+    if (!validStatuses.includes(status)) throw new Error('INVALID_ORDER_STATUS');
+
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) throw new Error('ORDER_NOT_FOUND');
+
+    const fromStatus = order.status;
+
+    let activityAction = ActivityAction.ORDER_STATUS_CHANGED;
+    if (status === OrderStatus.DELIVERED) activityAction = ActivityAction.ORDER_DELIVERED;
+    else if (status === OrderStatus.SHIPPED) activityAction = ActivityAction.ORDER_SHIPPED;
+    else if (status === OrderStatus.CANCELLED) activityAction = ActivityAction.ORDER_CANCELLED;
+
+    let result;
+    await prisma.$transaction(async (tx) => {
+      result = await tx.order.update({
+        where: { id },
+        data: { status }
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: id,
+          changedById: Number(adminId),
+          fromStatus,
+          toStatus: status,
+          note: `تغییر وضعیت از ${fromStatus} به ${status}`
+        }
+      });
+
+      await tx.activityLog.create({
+        data: {
+          user: { connect: { id: Number(adminId) } },
+          actorType: 'ADMIN',
+          action: activityAction,
+          entity: EntityType.ORDER,
+          entityId: String(id),
+          severity: LogSeverity.INFO,
+          metadata: {
+            orderStatus: status,
+            fromStatus,
+            toStatus: status
+          }
+        }
+      });
+    });
+
+    return {
+      success: true,
+      id,
+      status,
+      fromStatus
+    };
+  }
+
+  // =========================================================
   // GET ORDERS BY USER
   // =========================================================
   async getOrdersByUser(userId) {
@@ -109,6 +188,7 @@ class OrderService {
 
     return {
       id: order.id,
+      orderCode: order.orderCode,
       trackingCode: order.trackingCode,
       status: order.status,
       paymentStatus: order.paymentStatus,
@@ -116,6 +196,8 @@ class OrderService {
       totalPrice: order.totalPrice || 0,
       shippingCost: order.shippingCost || 0,
       discountAmount: order.discountAmount || 0,
+      loyaltyPointsUsed: order.loyaltyPointsUsed || 0,
+      loyaltyDiscount: order.loyaltyDiscount || 0,
 
       paymentProofUrl: paymentReceipt ? normalize(paymentReceipt.url) : null,
 
@@ -184,7 +266,7 @@ class OrderService {
 
     const order = await prisma.order.findFirst({
       where: { id: Number(orderId), userId: Number(userId) },
-      include: { designVersions: true }
+      include: { designVersions: true, user: { select: { name: true } } }
     });
 
     if (!order) throw new Error('ORDER_NOT_FOUND');
@@ -221,7 +303,7 @@ class OrderService {
 
       await tx.activityLog.create({
         data: {
-          userId: Number(userId),
+          user: { connect: { id: Number(userId) } },
           actorType: 'USER',
           action: ActivityAction.DESIGN_APPROVED,
           entity: EntityType.ORDER,
@@ -242,19 +324,38 @@ class OrderService {
           changedById: Number(userId),
           fromStatus: OrderStatus.DESIGN_REVIEW,
           toStatus: OrderStatus.DESIGN_APPROVED,
-          note: 'Approved by user'
+          note: 'تأیید شده توسط کاربر'
         }
       });
 
-      await tx.orderMessage.create({
+      await tx.notification.create({
         data: {
-          orderId: Number(orderId),
           userId: Number(userId),
-          isAdmin: false,
-          type: MessageType.DESIGN_APPROVED,
-          message: 'Design approved'
+          type: 'ORDER_STATUS_UPDATE',
+          channel: 'IN_APP',
+          title: 'تأیید طرح',
+          message: `طرح سفارش #${orderId} با موفقیت تأیید شد`,
+          status: 'SENT',
+          metadata: { orderId: Number(orderId), orderCode: order.orderCode }
         }
       });
+
+      // Notify admin
+      const admin = await tx.user.findFirst({ where: { role: 'ADMIN' } });
+      if (admin) {
+        await tx.notification.create({
+          data: {
+            userId: admin.id,
+            type: 'ORDER_STATUS_UPDATE',
+            channel: 'IN_APP',
+            title: 'تأیید طرح توسط مشتری',
+            message: `طرح سفارش #${orderId} توسط ${order.user?.name || 'مشتری'} تأیید شد`,
+            status: 'SENT',
+            metadata: { orderId: Number(orderId), orderCode: order.orderCode }
+          }
+        });
+      }
+
     });
 
     return {
@@ -299,7 +400,7 @@ class OrderService {
 
       await prisma.activityLog.create({
         data: {
-          userId: adminId, // اگر داری
+          user: { connect: { id: adminId } },
           targetUserId: order.userId,
           actorType: 'ADMIN',
           action: ActivityAction.PAYMENT_SUCCESS,
@@ -324,7 +425,7 @@ class OrderService {
 
       await prisma.activityLog.create({
         data: {
-          userId: order.userId,
+          user: { connect: { id: order.userId } },
           actorType: 'ADMIN',
           action: ActivityAction.PAYMENT_FAILED,
           entity: EntityType.ORDER,
@@ -348,7 +449,8 @@ class OrderService {
     paymentProof,
     designComment,
     userFiles,
-    discountCode
+    discountCode,
+    loyaltyPointsToUse
   }) {
 
     const prisma = getPrismaClient();
@@ -478,6 +580,62 @@ class OrderService {
 
       const shippingCost = shipping.baseCost || 0;
 
+      // =============================
+      // Tier benefits (discountPercent, freeShipping, freeShippingMinOrder)
+      // =============================
+      let tierDiscountAmount = 0;
+      let tierShippingCost = shippingCost;
+      let tierBenefits = null;
+      const wallet = await tx.loyaltyWallet.findUnique({ where: { userId: Number(userId) }, include: { tier: true } });
+      if (wallet?.tier?.benefits) {
+        tierBenefits = wallet.tier.benefits;
+        if (tierBenefits.discountPercent > 0) {
+          tierDiscountAmount = Math.floor(totalPrice * tierBenefits.discountPercent / 100);
+        }
+        if (tierBenefits.freeShipping) {
+          if (!tierBenefits.freeShippingMinOrder || totalPrice >= tierBenefits.freeShippingMinOrder) {
+            tierShippingCost = 0;
+          }
+        }
+      }
+
+      // =============================
+      // Promo / discount code
+      // =============================
+      let discountAmount = 0;
+      if (discountCode) {
+        const validation = await discountService.validateDiscount(
+          discountCode,
+          totalPrice + tierShippingCost - tierDiscountAmount,
+          Number(userId)
+        );
+        if (!validation.valid) {
+          throw new Error(validation.error || 'کد تخفیف نامعتبر است');
+        }
+        discountAmount = discountService.calculateDiscountAmount(
+          validation.discount,
+          totalPrice + tierShippingCost - tierDiscountAmount
+        );
+        await discountService.applyDiscount(validation.discount.id, tx);
+      }
+
+      // =============================
+      // Loyalty points redemption at checkout (applied after discount code)
+      // =============================
+      let loyaltyPointsUsed = 0;
+      let loyaltyDiscount = 0;
+      const orderPayable = Math.max(0, totalPrice + tierShippingCost - tierDiscountAmount - discountAmount);
+      if (loyaltyPointsToUse && loyaltyPointsToUse > 0) {
+        const spend = await loyaltyService.spendPointsOnOrder(
+          tx,
+          Number(userId),
+          Number(loyaltyPointsToUse),
+          orderPayable
+        );
+        loyaltyPointsUsed = spend.pointsUsed;
+        loyaltyDiscount = spend.discount;
+      }
+
       // reserve stock
       for (const item of mergedItems) {
 
@@ -497,15 +655,18 @@ class OrderService {
       // create order
       const order = await tx.order.create({
         data: {
-          trackingCode:
+          orderCode:
             'EC' + Date.now(),
 
           userId: Number(userId),
           addressId: Number(addressId),
           shippingMethodId: Number(shippingMethodId),
 
-          totalPrice: totalPrice + shippingCost,
-          shippingCost,
+          totalPrice: totalPrice + tierShippingCost - tierDiscountAmount - discountAmount - loyaltyDiscount,
+          shippingCost: tierShippingCost,
+          discountAmount: discountAmount + tierDiscountAmount,
+          loyaltyPointsUsed,
+          loyaltyDiscount,
 
           status: OrderStatus.PENDING_PAYMENT,
           paymentStatus: PaymentStatus.PENDING,
@@ -555,7 +716,7 @@ class OrderService {
             create: {
               toStatus: OrderStatus.PENDING_PAYMENT,
               changedById: Number(userId),
-              note: 'Order created'
+              note: 'سفارش ایجاد شد'
             }
           }
         },
@@ -579,15 +740,20 @@ class OrderService {
 
       await tx.activityLog.create({
         data: {
-          userId: Number(userId),
+          user: { connect: { id: Number(userId) } },
           actorType: 'USER',
           action: ActivityAction.ORDER_CREATED,
           entity: EntityType.ORDER,
           entityId: String(order.id),
           severity: LogSeverity.INFO,
           metadata: {
-            totalPrice: totalPrice + shippingCost,
-            shippingCost,
+            totalPrice: order.totalPrice,
+            shippingCost: tierShippingCost,
+            discountAmount: discountAmount + tierDiscountAmount,
+            tierDiscountAmount,
+            discountCode: discountCode || null,
+            loyaltyPointsUsed,
+            loyaltyDiscount,
             itemCount: mergedItems.length
           }
         }
@@ -608,9 +774,41 @@ class OrderService {
         }
       });
 
+      // IN_APP notification for new order
+      await tx.notification.create({
+        data: {
+          userId: Number(userId),
+          type: 'ORDER_CONFIRMATION',
+          channel: 'IN_APP',
+          title: 'سفارش ثبت شد',
+          message: `سفارش ${order.orderCode} با موفقیت ثبت شد`,
+          status: 'SENT',
+          metadata: { orderId: order.id, orderCode: order.orderCode }
+        }
+      });
+
+      // Notify admin about new order
+      const customer = await tx.user.findUnique({
+        where: { id: Number(userId) },
+        select: { name: true }
+      });
+      const admin = await tx.user.findFirst({ where: { role: 'ADMIN' } });
+      if (admin) {
+        await tx.notification.create({
+          data: {
+            userId: admin.id,
+            type: 'ORDER_STATUS_UPDATE',
+            channel: 'IN_APP',
+            title: 'سفارش جدید',
+            message: `سفارش جدید #${order.id} از ${customer?.name || 'مشتری'}`,
+            status: 'SENT',
+            metadata: { orderId: order.id, orderCode: order.orderCode }
+          }
+        });
+      }
 
       return this.formatOrder(order);
-    });
+    }, { timeout: 30000 });
   }
 
   // =========================================================
@@ -628,6 +826,9 @@ class OrderService {
       where: {
         id: Number(orderId),
         userId: Number(userId)
+      },
+      include: {
+        user: { select: { name: true } }
       }
     });
 
@@ -670,7 +871,7 @@ class OrderService {
 
       await tx.activityLog.create({
         data: {
-          userId: Number(userId),
+          user: { connect: { id: Number(userId) } },
           actorType: 'USER',
           action: ActivityAction.DESIGN_REVISION,
           entity: EntityType.ORDER,
@@ -682,6 +883,22 @@ class OrderService {
           }
         }
       });
+
+      // Notify admin
+      const admin = await tx.user.findFirst({ where: { role: 'ADMIN' } });
+      if (admin) {
+        await tx.notification.create({
+          data: {
+            userId: admin.id,
+            type: 'ORDER_STATUS_UPDATE',
+            channel: 'IN_APP',
+            title: 'پیام جدید از مشتری',
+            message: `پیام جدید از ${order.user?.name || 'مشتری'} — سفارش #${order.id}`,
+            status: 'SENT',
+            metadata: { orderId: order.id, orderCode: order.orderCode }
+          }
+        });
+      }
 
       return {
         success: true,
@@ -723,7 +940,7 @@ class OrderService {
 
         await tx.activityLog.create({
           data: {
-            userId: adminId,
+            user: { connect: { id: adminId } },
             targetUserId: order.userId,
             actorType: 'ADMIN',
             action: ActivityAction.ORDER_STATUS_CHANGED,
@@ -754,7 +971,20 @@ class OrderService {
           type: 'ORDER_STATUS_UPDATE',
           channel: 'EMAIL',
           title: 'سفارش ارسال شد',
-          message: `سفارش شما ارسال شد. کد رهگیری: ${trackingCode}`
+          message: `سفارش #${order.id} شما با کد رهگیری ${trackingCode} ارسال شد`,
+          status: 'SENT'
+        }
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: order.userId,
+          type: 'ORDER_STATUS_UPDATE',
+          channel: 'IN_APP',
+          title: 'سفارش ارسال شد',
+          message: `سفارش #${order.id} شما با کد رهگیری ${trackingCode} ارسال شد`,
+          status: 'SENT',
+          metadata: { orderId: order.id, trackingCode, orderCode: order.orderCode }
         }
       });
 
@@ -769,9 +999,10 @@ class OrderService {
 
     const prisma = getPrismaClient();
 
-    return prisma.$transaction(async tx => {
+    let order;
+    const updated = await prisma.$transaction(async tx => {
 
-      const order =
+      order =
         await tx.order.findFirst({
           where: {
             id: Number(orderId),
@@ -794,7 +1025,7 @@ class OrderService {
         );
       }
 
-      const updated =
+      const updatedOrder =
         await tx.order.update({
           where: {
             id: Number(orderId)
@@ -807,7 +1038,7 @@ class OrderService {
 
         await tx.activityLog.create({
           data: {
-            userId: Number(userId),
+            user: { connect: { id: Number(userId) } },
             actorType: 'USER',
             action: ActivityAction.ORDER_STATUS_CHANGED,
             entity: EntityType.ORDER,
@@ -830,13 +1061,26 @@ class OrderService {
           toStatus:
             OrderStatus.DELIVERED,
           note:
-            'Confirmed by customer'
+            'تحویل توسط مشتری تأیید شد'
         }
       });
 
-      return updated;
+      return updatedOrder;
 
     });
+
+    try {
+      const loyaltyService = require('./loyaltyService');
+      // Referrer gets their 500 points immediately at delivery.
+      await loyaltyService.processReferralFirstOrder(Number(userId), Number(orderId));
+      // Buyer's order points + first-order bonus are awarded later,
+      // when the buyer submits a product review (see reviewService).
+    } catch (e) {
+      console.error('Loyalty award on delivery failed:', e.message);
+    }
+
+    return updated;
+
   }
 
 }

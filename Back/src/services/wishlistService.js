@@ -68,11 +68,12 @@ class WishlistService {
     // Log the activity
     await prisma.activityLog.create({
       data: {
-        userId,
+        user: { connect: { id: userId } },
         action: 'wishlist.added',
-        entity: 'Wishlist',
+        entity: 'SYSTEM',
         entityId: wishlistItem.id,
-        details: {
+        actorType: 'USER',
+        metadata: {
           productId,
           productName: product.name
         }
@@ -211,11 +212,12 @@ class WishlistService {
     // Log the activity
     await prisma.activityLog.create({
       data: {
-        userId,
+        user: { connect: { id: userId } },
         action: 'wishlist.removed',
-        entity: 'Wishlist',
+        entity: 'SYSTEM',
         entityId: wishlistItemId,
-        details: {
+        actorType: 'USER',
+        metadata: {
           productId: wishlistItem.productId,
           productName: wishlistItem.product.name
         }
@@ -326,11 +328,12 @@ class WishlistService {
     // Log the activity
     await prisma.activityLog.create({
       data: {
-        userId,
+        user: { connect: { id: userId } },
         action: 'wishlist.moved_to_cart',
-        entity: 'Wishlist',
+        entity: 'SYSTEM',
         entityId: wishlistItemId,
-        details: {
+        actorType: 'USER',
+        metadata: {
           productId: product.id,
           productName: product.name,
           quantity,
@@ -362,10 +365,11 @@ class WishlistService {
     // Log the activity
     await prisma.activityLog.create({
       data: {
-        userId,
+        user: { connect: { id: userId } },
         action: 'wishlist.cleared',
-        entity: 'Wishlist',
-        details: {
+        entity: 'SYSTEM',
+        actorType: 'USER',
+        metadata: {
           removedCount: count
         }
       }

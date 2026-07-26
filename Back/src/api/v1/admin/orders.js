@@ -2,6 +2,8 @@ const express = require('express');
 const adminService = require('../../../services/adminService');
 const orderService = require('../../../services/orderService');
 const uploadDesign = require('../../../middleware/uploadDesign');
+const path = require('path');
+const fs = require('fs');
 
 const {
   OrderStatus,
@@ -253,7 +255,7 @@ router.post(
       const order = await orderService.adminReviewPaymentProof(orderId, {
         approve: decision === 'approve',
         rejectionReason: decision === 'reject' ? rejectionReason : undefined
-      });
+      }, adminId);
 
       await adminService.logAdminActivity(adminId, 'order.payment_review', 'Order', orderId, {
         decision,
@@ -346,6 +348,50 @@ router.post(
  *       500:
  *         description: Internal server error
  */
+router.get('/download', async (req, res) => {
+  try {
+    const filePath = req.query.file;
+    if (!filePath) {
+      return res.status(400).json({ success: false, error: { code: 'FILE_PATH_REQUIRED' } });
+    }
+
+    const decoded = decodeURIComponent(filePath);
+    const normalized = path.normalize(decoded).replace(/^(\.\.[\/\\])+/, '');
+
+    if (normalized.includes('..')) {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_PATH' } });
+    }
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const fullPath = path.join(uploadsDir, normalized);
+
+    if (!fullPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, error: { code: 'ACCESS_DENIED' } });
+    }
+
+    if (!fs.existsSync(fullPath)) {
+      return res.status(404).json({ success: false, error: { code: 'FILE_NOT_FOUND' } });
+    }
+
+    const ext = path.extname(fullPath).toLowerCase();
+    const mimeTypes = {
+      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+      '.webp': 'image/webp', '.pdf': 'application/pdf', '.gif': 'image/gif'
+    };
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const filename = path.basename(fullPath);
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', fs.statSync(fullPath).size);
+
+    fs.createReadStream(fullPath).pipe(res);
+  } catch (err) {
+    console.error('Download error:', err);
+    res.status(500).json({ success: false, error: { code: 'DOWNLOAD_FAILED' } });
+  }
+});
+
 router.get('/:orderId',
   authenticateToken,
   requireRole(['ADMIN']),
@@ -369,16 +415,13 @@ router.get('/:orderId',
       const orderId = parseInt(req.params.orderId);
       
       // Get order details (admin can see any order)
-      const [order, timeline] = await Promise.all([
-        orderService.getOrderById(orderId),
-        orderService.getOrderTimeline(orderId)
-      ]);
+      const order = await orderService.getOrderById(orderId);
 
       res.json({
         success: true,
         data: {
           order,
-          timeline
+          timeline: order.timeline
         }
       });
     } catch (error) {
@@ -1066,15 +1109,15 @@ router.post(
 
         await tx.activityLog.create({
           data: {
-            userId: adminId,
-            orderId,
+            user: { connect: { id: adminId } },
+            order: { connect: { id: orderId } },
             actorType: 'ADMIN',
             action: file
               ? 'DESIGN_UPLOADED'
-              : 'SEND_ADMIN_MESSAGE',
-            entity: 'ORDER_DESIGN',
-            entityId: version?.id,
-            details: {
+              : 'ORDER_UPDATED',
+            entity: 'DESIGN',
+              entityId: version?.id ? String(version.id) : null,
+            metadata: {
               attachmentId: attachment?.id,
               version: version?.version,
               fileName: file?.originalname || null
@@ -1091,11 +1134,23 @@ router.post(
           await tx.notification.create({
             data: {
               userId: order.userId,
-              type: 'ORDER_STATUS_UPDATE',
+              type: 'DESIGN_UPLOADED',
               channel: 'EMAIL',
               title: 'طرح جدید آماده بررسی است',
               message: `طرح جدید سفارش #${orderId} برای شما ارسال شد`,
               status: 'PENDING'
+            }
+          });
+
+          await tx.notification.create({
+            data: {
+              userId: order.userId,
+              type: 'DESIGN_UPLOADED',
+              channel: 'IN_APP',
+              title: 'طرح جدید آماده بررسی',
+              message: `طرح جدید سفارش #${orderId} برای شما ارسال شد`,
+              status: 'SENT',
+              metadata: { orderId: Number(orderId), orderCode: order.orderCode }
             }
           });
 

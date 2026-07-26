@@ -193,6 +193,35 @@ router.get('/',
 
 /**
  * @swagger
+ * /api/v1/admin/users/stats:
+ *   get:
+ *     summary: Get aggregate user statistics for admin dashboard
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully
+ */
+router.get('/stats',
+  authenticateToken,
+  requireRole(['ADMIN']),
+  async (req, res) => {
+    try {
+      const stats = await adminService.getUserStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('Admin user stats error:', error);
+      res.status(500).json({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve user stats' }
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
  * /api/v1/admin/users/{userId}:
  *   get:
  *     summary: Get detailed user information for admin

@@ -1,7 +1,7 @@
 // components/OrderTable.tsx
 import React from 'react';
 import { GlassCard } from '../../../components/ui/GlassCard';
-import { ThumbStack } from './ThumbStack';
+import { Package } from 'lucide-react';
 import type { UnifiedAdminOrderRow } from '../types';
 
 type Props = {
@@ -35,7 +35,34 @@ export default function OrderTable({ rows, onReceiptClick, onManagementClick }: 
                             >
                                 {/* عکس محصول */}
                                 <td className="py-3 px-4">
-                                    <ThumbStack thumbs={row.productThumbs} overflow={row.overflowCount} />
+                                    <div className="flex flex-col items-center -space-y-1.5">
+                                        {row.productThumbs.length === 0 ? (
+                                            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                                                <Package className="w-4 h-4 text-white/30" />
+                                            </div>
+                                        ) : (
+                                            row.productThumbs.slice(0, 3).map((item, idx) => (
+                                                <div key={idx} className="relative group flex-shrink-0" style={{ zIndex: row.productThumbs.length - idx }}>
+                                                    <img
+                                                        src={item.src || '/placeholder.png'}
+                                                        alt={item.alt}
+                                                        className="w-9 h-9 object-cover rounded-lg border-2 border-white/20 group-hover:border-accent-primary/50 group-hover:scale-[1.8] group-hover:relative group-hover:z-50 transition-all"
+                                                        title={item.alt}
+                                                    />
+                                                    {item.quantity > 1 && (
+                                                        <span className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-accent-primary text-white text-[8px] font-bold flex items-center justify-center">
+                                                            {item.quantity}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                        {row.overflowCount > 0 && (
+                                            <span className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-[10px] font-bold text-white/60">
+                                                +{row.overflowCount}
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
 
                                 {/* رسید پرداخت */}
@@ -63,9 +90,11 @@ export default function OrderTable({ rows, onReceiptClick, onManagementClick }: 
                                 {/* کد سفارش */}
                                 <td className="py-3 px-4 text-center">
                                     <div className="font-mono text-sm">{row.displayId}</div>
-                                    <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] bg-white/10 text-text-secondary">
-                                        {row.sourceBadge}
-                                    </span>
+                                    {(row.trackingCode || row.phone) && (
+                                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] bg-white/10 text-text-secondary font-mono">
+                                            {row.trackingCode || row.phone}
+                                        </span>
+                                    )}
                                 </td>
 
                                 {/* مشتری */}
@@ -99,7 +128,7 @@ export default function OrderTable({ rows, onReceiptClick, onManagementClick }: 
                                 <td className="py-3 px-4 text-center">
                                     <button
                                         onClick={() => onManagementClick(row)}
-                                        className="w-full px-5 py-2.5 bg-gradient-to-r from-accent-primary to-purple-600 text-white text-sm font-medium rounded-2xl hover:shadow-lg hover:scale-105 transition-all active:scale-95"
+                                        className="w-full px-2 py-2.5 bg-gradient-to-r from-accent-primary to-purple-600 text-white text-sm font-medium rounded-2xl hover:shadow-lg hover:scale-105 transition-all active:scale-95"
                                     >
                                         مدیریت سفارش
                                     </button>

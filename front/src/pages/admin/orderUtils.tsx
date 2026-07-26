@@ -57,10 +57,11 @@ export function mapBasalamToUnified(order: BasalamOrder): UnifiedAdminOrderRow |
     return {
         key: `basalam-${order.id}`,
         source: 'basalam',
-        sourceBadge: 'باسلام',
+        sourceBadge: '',
         productThumbs,
         overflowCount: items.length > 3 ? items.length - 3 : 0,
         displayId: String(order.id),
+        phone: order.order?.customer?.recipient?.mobile || null,
         customerName:
             order.order?.customer?.user?.name ||
             order.order?.customer?.recipient?.name ||
@@ -129,7 +130,7 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
     return {
         key: `internal-${order.id}`,
         source: 'internal',
-        sourceBadge: 'اپ',
+        sourceBadge: '',
         internalOrderId: order.id,
         receiptHref,
         receiptIsPdf,
@@ -137,7 +138,7 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
         paymentRejectionReason: order.paymentRejectionReason,
         productThumbs,
         overflowCount: items.length > 3 ? items.length - 3 : 0,
-        displayId: order.trackingCode || `#${order.id}`,
+        displayId: order.orderCode || `#${order.id}`,
         customerName: customer,
         detailLine: addressLine,
         statusLabel: meta.title,
@@ -176,6 +177,7 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
                     case 'MESSAGE':
                         return {
                             type: t.type,
+                            createdAt: t.createdAt || t.data?.createdAt,
                             data: {
                                 id: t.data?.id,
                                 message: t.data?.message,
@@ -187,13 +189,13 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
                                         email: t.data.user.email,
                                     }
                                     : undefined,
-                                createdAt: t.data?.createdAt,
                             },
                         };
 
                     case 'DESIGN':
                         return {
                             type: t.type,
+                            createdAt: t.createdAt || t.data?.createdAt,
                             data: {
                                 id: t.data?.id,
                                 version: t.data?.version,
@@ -213,6 +215,7 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
                     case 'STATUS':
                         return {
                             type: t.type,
+                            createdAt: t.createdAt || t.data?.createdAt,
                             data: {
                                 id: t.data?.id,
                                 toStatus: t.data?.toStatus,
@@ -234,6 +237,8 @@ export function mapInternalToUnified(order: InternalAdminOrder): UnifiedAdminOrd
 
         status:order.status,
 
+        phone: order.address?.phone || null,
+        orderCode:order.orderCode,
         trackingCode:order.trackingCode,
 
     };
@@ -243,6 +248,7 @@ export function rowMatchesSearch(row: UnifiedAdminOrderRow, q: string): boolean 
     const s = q.trim().toLowerCase();
     if (!s) return true;
     if (row.displayId.toLowerCase().includes(s)) return true;
+    if ((row.phone || '').toLowerCase().includes(s)) return true;
     if (row.customerName.toLowerCase().includes(s)) return true;
     if (row.detailLine.toLowerCase().includes(s)) return true;
     if (row.shippingTitle.toLowerCase().includes(s)) return true;

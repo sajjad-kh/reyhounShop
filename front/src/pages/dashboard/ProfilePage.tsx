@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { PasswordStrengthIndicator } from '../../components/ui/PasswordStrengthIndicator';
@@ -244,11 +245,7 @@ export const ProfilePage: React.FC = () => {
     };
 
     if (!state.user) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <div className="glass-spinner w-8 h-8" />
-            </div>
-        );
+        return <LoadingSpinner className="py-12" />;
     }
 
     return (

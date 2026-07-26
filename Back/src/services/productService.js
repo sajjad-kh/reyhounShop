@@ -1,4 +1,5 @@
 const { getPrismaClient } = require('../utils/database');
+const { ActivityAction } = require('@prisma/client');
 const ShippingMethodRepository = require('../repositories/ShippingMethodRepository');
 
 class ProductService {
@@ -81,14 +82,16 @@ class ProductService {
       inStock,
       hasDiscount,
       minRating,
-      page = 1,
-      limit = 20,
+      page: rawPage = 1,
+      limit: rawLimit = 20,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = options;
 
+    const page = Math.max(1, parseInt(rawPage, 10) || 1);
+    const limit = Math.min(parseInt(rawLimit, 10) || 20, 100);
     const skip = (page - 1) * limit;
-    const take = Math.min(limit, 100); // Max 100 items per page
+    const take = limit;
 
     // Build where clause
     const where = {
@@ -512,7 +515,11 @@ class ProductService {
         productId,
         order: {
           status: {
-            in: ['PENDING', 'PROCESSING', 'SHIPPED']
+            in: [
+              'PENDING_PAYMENT', 'PAYMENT_REVIEW', 'INFO',
+              'DESIGNING', 'DESIGN_REVIEW', 'DESIGN_APPROVED',
+              'PRINTING', 'PACKAGING', 'SHIPPED'
+            ]
           }
         }
       }
@@ -648,15 +655,21 @@ class ProductService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
+  async logActivity({ userId, action, entity, entityId, metadata, details, actorType } = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM', 'Security': 'SYSTEM'
+    };
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           action,
-          entity,
+          entity: entityMap[entity] || entity,
           entityId,
-          details
+          metadata: details ?? metadata ?? {},
+          actorType: actorType ?? 'SYSTEM'
         }
       });
     } catch (error) {

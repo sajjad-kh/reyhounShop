@@ -9,9 +9,11 @@ import {
     ProductDetailPage,
     SearchResultsPage,
     ForgetPasswordPage,
+    NotificationsPage,
 } from '../pages';
 import { ProfilePage, AddressesPage, WishlistPage, LoyaltyPage,PaymentAccountsPage} from '../pages/dashboard';
 import { CheckoutPage } from '../pages/CheckoutPage';
+import { CheckoutSuccessPage } from '../pages/CheckoutSuccessPage';
 import { CartPage } from '../pages/CartPage';
 import { PaymentVerifyPage } from '../pages/PaymentVerifyPage';
 import { OrderConfirmationPage } from '../pages/OrderConfirmationPage';
@@ -24,7 +26,9 @@ import {
     OrderManagement,
     UserManagement,
     Logs,
-    TourManagement
+    TourManagement,
+    LoyaltyAdminPage,
+    DiscountsAdminPage
 } from '../pages/admin';
 import BasalamPage from '../pages/admin/BasalamPage';
 import { BasalamCheckoutPage } from '../pages/basalam/BasalamCheckoutPage';
@@ -164,12 +168,24 @@ export const protectedRoutes: RouteObject[] = [
                 ],
             },
             {
+                path: 'loyalty',
+                element: <LoyaltyPage />,
+            },
+            {
+                path: 'notifications',
+                element: <NotificationsPage />,
+            },
+            {
                 path: 'cart',
                 element: <CartPage />,
             },
             {
                 path: 'checkout',
                 element: <CheckoutPage />,
+            },
+            {
+                path: 'checkout/success',
+                element: <CheckoutSuccessPage />,
             },
             {
                 path: 'payment/verify',
@@ -252,6 +268,14 @@ export const adminRoutes: RouteObject[] = [
             {
                 path: 'tours',
                 element: <TourManagement />,
+            },
+            {
+                path: 'loyalty',
+                element: <LoyaltyAdminPage />,
+            },
+            {
+                path: 'discounts',
+                element: <DiscountsAdminPage />,
             },
         ],
     },

@@ -50,25 +50,102 @@ class ReviewService {
       where: { productId, userId, orderId: Number(orderId) }
     });
 
+    const isNew = !existingReview;
+
+    let review;
     if (existingReview) {
-      throw new Error('You have already reviewed this product for this order');
+      const hadComment = Boolean(existingReview.comment && existingReview.comment.trim());
+
+      // Once approved WITH a comment (admin-approved), it becomes locked.
+      // Auto-approved no-comment reviews stay editable so the user can add a
+      // comment later; doing so resets it back to pending for admin approval.
+      if (existingReview.isApproved && hadComment) {
+        throw new Error('REVIEW_LOCKED');
+      }
+
+      // Allow re-submitting / editing an existing review.
+      // Adding a comment resets approval to pending (isCommentEmpty === false).
+      review = await prisma.review.update({
+        where: { id: existingReview.id },
+        data: {
+          rating,
+          comment,
+          isApproved: isCommentEmpty
+        },
+        include: {
+          user: {
+            select: { id: true, name: true }
+          }
+        }
+      });
+    } else {
+      review = await prisma.review.create({
+        data: {
+          product: { connect: { id: productId } },
+          user: { connect: { id: userId } },
+          order: { connect: { id: Number(orderId) } },
+          rating,
+          comment,
+          isApproved: isCommentEmpty
+        },
+        include: {
+          user: {
+            select: { id: true, name: true }
+          }
+        }
+      });
     }
 
-    return prisma.review.create({
-      data: {
-        product: { connect: { id: productId } },
-        user: { connect: { id: userId } },
-        order: { connect: { id: Number(orderId) } },
-        rating,
-        comment,
-        isApproved: isCommentEmpty
-      },
-      include: {
-        user: {
-          select: { id: true, name: true }
+    // Notify admin when a review with comment needs approval
+    if (!isCommentEmpty) {
+      try {
+        const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+        if (admin) {
+          const reviewerName = review.user?.name || 'مشتری';
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'ORDER_STATUS_UPDATE',
+              channel: 'IN_APP',
+              title: 'نظر جدید در انتظار تأیید',
+              message: `${reviewerName} نظری برای محصول «${product.name}» ثبت کرده — سفارش #${orderId}`,
+              status: 'SENT',
+              metadata: { orderId: Number(orderId), productId }
+            }
+          });
         }
+      } catch (e) {
+        console.error('Admin review notification failed:', e.message);
       }
-    });
+    }
+
+    // Loyalty is only awarded the first time a review is submitted.
+    if (isNew) {
+      try {
+        const loyaltyService = require('./loyaltyService');
+        await loyaltyService.awardReview(userId, Number(orderId), productId);
+
+        // Award the buyer's order points + first-order bonus as available
+        // once they leave a review for the delivered order.
+        const order = await prisma.order.findUnique({ where: { id: Number(orderId) } });
+        if (order && order.status === 'DELIVERED') {
+          const items = await prisma.orderItem.findMany({
+            where: { orderId: Number(orderId) },
+            include: { product: { select: { id: true, categoryId: true } } }
+          });
+          const ctx = {
+            productIds: items.map((i) => i.productId),
+            categoryIds: items.map((i) => i.product.categoryId).filter(Boolean)
+          };
+          await loyaltyService.awardOrderPoints(Number(orderId), userId, order.totalPrice, ctx, false);
+          await loyaltyService.awardFirstOrder(userId, Number(orderId), false);
+        }
+      } catch (e) {
+        console.error('Loyalty review award failed:', e.message);
+      }
+    }
+
+    return review;
   }
 
 
@@ -286,21 +363,26 @@ class ReviewService {
       }
     });
 
-    // Log the moderation activity
-    await prisma.activityLog.create({
-      data: {
-        userId: adminUserId,
-        action: isApproved ? 'review.approved' : 'review.rejected',
-        entity: 'Review',
-        entityId: reviewId,
-        details: {
-          reviewId,
-          productId: review.productId,
-          reviewUserId: review.userId,
-          isApproved
+    // Log the moderation activity (non-critical)
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: adminUserId,
+          action: 'REVIEW_APPROVED',
+          entity: 'REVIEW',
+          entityId: String(reviewId),
+          actorType: 'ADMIN',
+          metadata: {
+            reviewId,
+            productId: review.productId,
+            reviewUserId: review.userId,
+            isApproved
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      console.error('Activity log for review moderation failed:', e.message);
+    }
 
     return updatedReview;
   }
@@ -619,20 +701,25 @@ class ReviewService {
       where: { id: reviewId }
     });
 
-    // Log the deletion
-    await prisma.activityLog.create({
-      data: {
-        userId,
-        action: 'review.deleted',
-        entity: 'Review',
-        entityId: reviewId,
-        details: {
-          reviewId,
-          productId: review.productId,
-          deletedBy: isAdmin ? 'admin' : 'user'
+    // Log the deletion (non-critical)
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: userId,
+          action: 'PRODUCT_DELETED',
+          entity: 'REVIEW',
+          entityId: String(reviewId),
+          actorType: 'ADMIN',
+          metadata: {
+            reviewId,
+            productId: review.productId,
+            deletedBy: isAdmin ? 'admin' : 'user'
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      console.error('Activity log for review deletion failed:', e.message);
+    }
   }
 
   async getReviewStatistics() {
@@ -718,10 +805,11 @@ class ReviewService {
   ) {
     await prisma.activityLog.create({
       data: {
-        userId: adminUserId,
+        user: { connect: { id: adminUserId } },
         action: 'review.bulkDeleted',
-        entity: 'Review',
-        details: {
+        entity: 'REVIEW',
+        actorType: 'ADMIN',
+        metadata: {
           reviewIds
         }
       }

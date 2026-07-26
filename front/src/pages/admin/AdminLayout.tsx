@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from '../../components/notification/NotificationBell';
 import {
     LayoutDashboard,
     Package,
@@ -11,7 +12,7 @@ import {
     X,
     LogOut,
     Store,
-    Truck ,Star,CreditCard, MousePointerClick
+    Truck ,Star,CreditCard, MousePointerClick, Tag
 } from 'lucide-react';
 
 
@@ -85,6 +86,16 @@ const AdminLayout: React.FC = () => {
             label: 'Tour Guide',
             icon: MousePointerClick,
         },
+        {
+            path: '/admin/loyalty',
+            label: 'Loyalty',
+            icon: Star,
+        },
+        {
+            path: '/admin/discounts',
+            label: 'تخفیف‌ها',
+            icon: Tag,
+        },
     ];
 
     const isActive = (path: string) => {
@@ -97,7 +108,7 @@ const AdminLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-primary">
             {/* Top Navigation Bar */}
-            <nav className="glass-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
+            <nav dir="ltr" className="glass-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <button
@@ -114,6 +125,7 @@ const AdminLayout: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
+                        <NotificationBell isAdmin />
                         <div className="hidden md:flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-accent flex items-center justify-center text-white font-semibold">
                                 {user.name.charAt(0).toUpperCase()}

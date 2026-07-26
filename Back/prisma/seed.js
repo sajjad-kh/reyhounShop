@@ -28,6 +28,11 @@ async function main() {
     }
   });
 
+  const loyaltyService = require("../src/services/loyaltyService");
+  const seeded = await loyaltyService.seedDefaults();
+  await loyaltyService.ensureAllWallets();
+  console.log("loyalty seeded:", seeded);
+
   console.log("seed done");
 }
 

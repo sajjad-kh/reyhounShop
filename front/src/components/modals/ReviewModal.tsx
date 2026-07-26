@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ReviewModalProps {
     isOpen: boolean;
     loading?: boolean;
     onClose: () => void;
     error?: string | null;
+    initialRating?: number;
+    initialComment?: string;
+    readOnly?: boolean;
+    reapprovalHint?: boolean;
     onSubmit: (data: {
         rating: number;
         comment: string;
@@ -15,6 +19,10 @@ export default function ReviewModal({
     isOpen,
     loading = false,
     error,
+    initialRating = 0,
+    initialComment = '',
+    readOnly = false,
+    reapprovalHint = false,
     onClose,
     onSubmit,
 }: ReviewModalProps) {
@@ -23,9 +31,20 @@ export default function ReviewModal({
     const [comment, setComment] = useState('');
     const [localError, setLocalError] = useState<string | null>(null);
 
+    // Pre-fill with the existing review's values each time the modal opens.
+    useEffect(() => {
+        if (isOpen) {
+            setRating(initialRating || 0);
+            setComment(initialComment || '');
+            setLocalError(null);
+        }
+    }, [isOpen, initialRating, initialComment]);
+
     if (!isOpen) return null;
 
     const handleSubmit = async () => {
+        if (readOnly) return;
+
         if (rating <= 3 && !comment.trim()) {
             setLocalError('برای امتیاز ۱ تا ۳ ستاره وارد کردن نظر الزامی است');
             return;
@@ -112,6 +131,7 @@ export default function ReviewModal({
                         <button
                             key={star}
                             type="button"
+                            disabled={readOnly}
                             onClick={() => setRating(star)}
                             onMouseEnter={() => setHoveredStar(star)}
                             onMouseLeave={() => setHoveredStar(0)}
@@ -119,6 +139,7 @@ export default function ReviewModal({
                                 text-4xl
                                 transition-all
                                 hover:scale-125
+                                disabled:cursor-not-allowed disabled:hover:scale-100
                             "
                         >
                             <span
@@ -148,6 +169,7 @@ export default function ReviewModal({
                     <textarea
                         rows={4}
                         value={comment}
+                        disabled={readOnly}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="نظر خود را بنویسید..."
                         className="
@@ -163,9 +185,22 @@ export default function ReviewModal({
                             outline-none
                             focus:border-yellow-400/40
                             focus:bg-white/[0.07]
+                            disabled:opacity-70 disabled:cursor-not-allowed
                         "
                     />
                 </div>
+
+                {readOnly && (
+                    <div className="mt-3 text-center text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl py-2 px-3">
+                        این نظر تأیید شده و دیگر قابل ویرایش نیست
+                    </div>
+                )}
+
+                {reapprovalHint && (
+                    <div className="mt-3 text-center text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl py-2 px-3">
+                        با افزودن متن، نظر دوباره برای تأیید ادمین ارسال می‌شود
+                    </div>
+                )}
 
 
                 {/* Footer */}
@@ -184,27 +219,29 @@ export default function ReviewModal({
                             transition
                         "
                     >
-                        انصراف
+                        {readOnly ? 'بستن' : 'انصراف'}
                     </button>
 
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!rating || loading}
-                        className="
-                            flex-1
-                            rounded-xl
-                            bg-yellow-500
-                            hover:bg-yellow-400
-                            py-3
-                            font-medium
-                            text-black
-                            transition
-                            disabled:opacity-50
-                            disabled:cursor-not-allowed
-                        "
-                    >
-                        {loading ? 'در حال ثبت...' : 'ثبت نظر'}
-                    </button>
+                    {!readOnly && (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!rating || loading}
+                            className="
+                                flex-1
+                                rounded-xl
+                                bg-yellow-500
+                                hover:bg-yellow-400
+                                py-3
+                                font-medium
+                                text-black
+                                transition
+                                disabled:opacity-50
+                                disabled:cursor-not-allowed
+                            "
+                        >
+                            {loading ? 'در حال ثبت...' : 'ثبت نظر'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

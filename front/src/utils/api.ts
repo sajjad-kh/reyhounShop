@@ -38,37 +38,27 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
     retryableStatuses: [408, 429, 500, 502, 503, 504],
 };
 
-// Simple in-memory cache
+// Simple in-memory cache — DISABLED for authenticated endpoints.
+// React Query already handles per-user caching via query keys.
+// This cache was causing cross-user data leaks because the cache key
+// (url + params) did not include the auth token.
 class ApiCache {
     private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
 
-    set(key: string, data: any, ttl: number = 300000): void {
-        this.cache.set(key, {
-            data,
-            timestamp: Date.now(),
-            ttl,
-        });
+    set(_key: string, _data: any, _ttl: number = 300000): void {
+        // no-op: React Query handles caching
     }
 
-    get(key: string): any | null {
-        const cached = this.cache.get(key);
-        if (!cached) return null;
-
-        const isExpired = Date.now() - cached.timestamp > cached.ttl;
-        if (isExpired) {
-            this.cache.delete(key);
-            return null;
-        }
-
-        return cached.data;
+    get(_key: string): any | null {
+        return null;
     }
 
     clear(): void {
         this.cache.clear();
     }
 
-    delete(key: string): void {
-        this.cache.delete(key);
+    delete(_key: string): void {
+        this.cache.delete(_key);
     }
 }
 
@@ -127,20 +117,6 @@ const createApiClient = (): AxiosInstance => {
                 }
             }
 
-            // Check cache for GET requests
-            if (config.method === 'get' && config.url) {
-                const cacheKey = `${config.url}${JSON.stringify(config.params || {})}`;
-                const cached = apiCache.get(cacheKey);
-                if (cached) {
-                    // Return cached response
-                    return Promise.reject({
-                        config,
-                        response: { data: cached },
-                        cached: true,
-                    } as any);
-                }
-            }
-
             return config;
         },
         (error) => {
@@ -151,20 +127,9 @@ const createApiClient = (): AxiosInstance => {
     // Response interceptor for handling errors, token refresh, and retry logic
     client.interceptors.response.use(
         (response: AxiosResponse) => {
-            // Cache successful GET responses
-            if (response.config.method === 'get' && response.config.url) {
-                const cacheKey = `${response.config.url}${JSON.stringify(response.config.params || {})}`;
-                // Cache for 5 minutes by default
-                apiCache.set(cacheKey, response.data, 300000);
-            }
-
             return response;
         },
         async (error: AxiosError | any) => {
-            // Handle cached responses
-            if (error.cached) {
-                return Promise.resolve(error.response);
-            }
 
             const originalRequest: any = error.config;
 

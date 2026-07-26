@@ -1,4 +1,5 @@
 const { getPrismaClient } = require('../utils/database');
+const { ActivityAction } = require('@prisma/client');
 
 class InventoryService {
   /**
@@ -249,9 +250,15 @@ class InventoryService {
     });
 
     // Log reservation activity
-    await this.logActivity(null, 'inventory.stock_reserved', 'Order', orderId, {
-      reservations,
-      totalItems: items.length
+    await this.logActivity({
+      userId: null,
+      action: 'inventory.stock_reserved',
+      entity: 'Order',
+      entityId: orderId,
+      details: {
+        reservations,
+        totalItems: items.length
+      }
     });
 
     return { reservations, failures };
@@ -473,18 +480,21 @@ class InventoryService {
    * @param {number|string} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
+  async logActivity({ userId, action, entity, entityId, metadata, details, actorType } = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM', 'Security': 'SYSTEM'
+    };
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           action,
-          entity,
-          entityId: typeof entityId === 'string' ? null : entityId,
-          details: {
-            ...details,
-            ...(typeof entityId === 'string' && { orderId: entityId })
-          }
+          entity: entityMap[entity] || entity,
+          entityId,
+          metadata: details ?? metadata ?? {},
+          actorType: actorType ?? 'SYSTEM'
         }
       });
     } catch (error) {

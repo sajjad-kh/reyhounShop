@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
+import { DropdownSelect } from '../../components/ui/DropdownSelect';
 import {
     RefreshCw,
     Search,
@@ -396,33 +397,53 @@ const LogsMethodsManagement: React.FC = () => {
                         />
                     </div>
 
-                    <select value={actorType} onChange={(e) => { setActorType(e.target.value); setPage(1); }}
-                        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
-                        <option value="all">همه نقش‌ها</option>
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                        <option value="SYSTEM">SYSTEM</option>
-                    </select>
+                    <DropdownSelect
+                        value={actorType}
+                        onChange={(v) => { setActorType(v); setPage(1); }}
+                        placeholder="همه نقش‌ها"
+                        className="min-w-[140px]"
+                        options={[
+                            { value: 'all', label: 'همه نقش‌ها' },
+                            { value: 'USER', label: 'USER' },
+                            { value: 'ADMIN', label: 'ADMIN' },
+                            { value: 'SYSTEM', label: 'SYSTEM' },
+                        ]}
+                    />
 
-                    <select value={severity} onChange={(e) => { setSeverity(e.target.value as any); setPage(1); }}
-                        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
-                        <option value="all">همه سطوح</option>
-                        <option value="INFO">INFO</option>
-                        <option value="WARNING">WARNING</option>
-                        <option value="ERROR">ERROR</option>
-                    </select>
+                    <DropdownSelect
+                        value={severity}
+                        onChange={(v) => { setSeverity(v as any); setPage(1); }}
+                        placeholder="همه سطوح"
+                        className="min-w-[140px]"
+                        options={[
+                            { value: 'all', label: 'همه سطوح' },
+                            { value: 'INFO', label: 'INFO' },
+                            { value: 'WARNING', label: 'WARNING' },
+                            { value: 'ERROR', label: 'ERROR' },
+                        ]}
+                    />
 
-                    <select value={entity} onChange={(e) => { setEntity(e.target.value); setPage(1); }}
-                        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
-                        <option value="all">همه Entity‌ها</option>
-                        {uniqueEntities.map(e => <option key={e} value={e}>{e}</option>)}
-                    </select>
+                    <DropdownSelect
+                        value={entity}
+                        onChange={(v) => { setEntity(v); setPage(1); }}
+                        placeholder="همه Entity‌ها"
+                        className="min-w-[160px]"
+                        options={[
+                            { value: 'all', label: 'همه Entity‌ها' },
+                            ...uniqueEntities.map((e) => ({ value: e, label: e })),
+                        ]}
+                    />
 
-                    <select value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }}
-                        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none min-w-[160px]">
-                        <option value="all">همه اکشن‌ها</option>
-                        {uniqueActions.map(a => <option key={a} value={a}>{actionLabel[a] || a}</option>)}
-                    </select>
+                    <DropdownSelect
+                        value={action}
+                        onChange={(v) => { setAction(v); setPage(1); }}
+                        placeholder="همه اکشن‌ها"
+                        className="min-w-[180px]"
+                        options={[
+                            { value: 'all', label: 'همه اکشن‌ها' },
+                            ...uniqueActions.map((a) => ({ value: a, label: actionLabel[a] || a })),
+                        ]}
+                    />
                 </div>
 
                 <div className="flex gap-3 flex-wrap items-center">

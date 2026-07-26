@@ -1,4 +1,5 @@
 const { getPrismaClient } = require('../utils/database');
+const { ActivityAction } = require('@prisma/client');
 
 class CartService {
   /**
@@ -406,7 +407,7 @@ class CartService {
     let itemCount = 0;
 
     cart.items.forEach(item => {
-      const itemPrice = item.product.effectivePrice;
+      const itemPrice = item.product.discountPrice || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
       
@@ -475,15 +476,21 @@ class CartService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
+  async logActivity({ userId, action, entity, entityId, metadata, details, actorType } = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM', 'Security': 'SYSTEM'
+    };
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           action,
-          entity,
+          entity: entityMap[entity] || entity,
           entityId,
-          details
+          metadata: details ?? metadata ?? {},
+          actorType: actorType ?? 'SYSTEM'
         }
       });
     } catch (error) {

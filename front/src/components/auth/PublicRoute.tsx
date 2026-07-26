@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { GlassCard } from '../ui/GlassCard';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface PublicRouteProps {
     children: React.ReactNode;
@@ -19,14 +19,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
 
     // Show loading state while checking authentication
     if (state.isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-primary">
-                <GlassCard className="p-8 text-center">
-                    <div className="glass-spinner w-8 h-8 mx-auto mb-4" />
-                    <p className="text-text-secondary">Loading...</p>
-                </GlassCard>
-            </div>
-        );
+        return <LoadingSpinner fullScreen size="md" label="در حال بارگذاری..." />;
     }
 
     // If route is restricted and user is authenticated, redirect

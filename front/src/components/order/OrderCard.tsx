@@ -3,7 +3,7 @@ import { Order } from '../../types/order';
 import { getImageUrl } from '../../utils/constants';
 import { orderService } from '../../services/orderService';
 import Swal from 'sweetalert2';
-import { toast } from 'react-hot-toast';
+import { toast } from '../../utils/toast';
 
 import yekanNormal from '../../../public/fonts/yekan/Yekan.woff?url';
 

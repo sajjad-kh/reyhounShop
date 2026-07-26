@@ -569,7 +569,7 @@ router.post('/validate-discount', authenticateToken, async (req, res) => {
 
     // Get current cart total
     const cart = await cartService.getCartSummary(req.user.id);
-    const cartTotal = cart.summary.subtotal;
+    const cartTotal = cart.totalAmount;
 
     if (cartTotal === 0) {
       return res.status(400).json({

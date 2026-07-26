@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
+import { DropdownSelect } from '../../components/ui/DropdownSelect';
 import {
     CheckCircle,
     XCircle,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getImageUrl } from '../../utils/constants';
 import { tokenHandler } from '../../utils/tokenHandler';
+import { showToast } from '../../components/ui/Toast';
 
 interface Review {
     id: number;
@@ -80,44 +82,48 @@ const ReviewMethodsManagement: React.FC = () => {
     // ================= ACTIONS (UNCHANGED) =================
     const approveReview = async (reviewId: number) => {
         try {
-            await fetch(`/api/v1/admin/reviews/${reviewId}/moderate`, {
+            const res = await fetch(`/api/v1/admin/reviews/${reviewId}/moderate`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify({ isApproved: true })
             });
 
+            if (!res.ok) throw new Error();
+            showToast.success('نظر تایید شد');
             loadReviews();
         } catch (err) {
-            console.error(err);
+            showToast.error('خطا در تایید نظر');
         }
     };
 
     const rejectReview = async (reviewId: number) => {
         try {
-            await fetch(`/api/v1/admin/reviews/${reviewId}/moderate`, {
+            const res = await fetch(`/api/v1/admin/reviews/${reviewId}/moderate`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify({ isApproved: false })
             });
 
+            if (!res.ok) throw new Error();
+            showToast.success('نظر رد شد');
             loadReviews();
         } catch (err) {
-            console.error(err);
+            showToast.error('خطا در رد نظر');
         }
     };
 
     const deleteReview = async (reviewId: number) => {
-        if (!confirm('حذف شود؟')) return;
-
         try {
-            await fetch(`/api/v1/admin/reviews/${reviewId}`, {
+            const res = await fetch(`/api/v1/admin/reviews/${reviewId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
             });
 
+            if (!res.ok) throw new Error();
+            showToast.success('نظر حذف شد');
             loadReviews();
         } catch (err) {
-            console.error(err);
+            showToast.error('خطا در حذف نظر');
         }
     };
 
@@ -170,15 +176,15 @@ const ReviewMethodsManagement: React.FC = () => {
                     />
                 </div>
 
-                <select
+                <DropdownSelect
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
-                    className="px-4 py-2 border rounded-xl bg-transparent"
-                >
-                    <option value="all">همه</option>
-                    <option value="approved">تایید شده</option>
-                    <option value="pending">در انتظار</option>
-                </select>
+                    onChange={(v) => setStatus(v as 'all' | 'approved' | 'pending')}
+                    options={[
+                        { value: 'all', label: 'همه' },
+                        { value: 'approved', label: 'تایید شده' },
+                        { value: 'pending', label: 'در انتظار' },
+                    ]}
+                />
             </GlassCard>
 
             {/* TABLE (DESKTOP) + CARDS (MOBILE) */}

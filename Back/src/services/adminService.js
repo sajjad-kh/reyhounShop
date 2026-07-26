@@ -8,7 +8,7 @@ class AdminService {
   // 🔥 SHARED TIMELINE BUILDER
   // =========================
   buildOrderTimeline(order) {
-    return [
+    const items = [
       ...(order.messages || []).map(m => ({
         type: 'MESSAGE',
         createdAt: m.createdAt,
@@ -32,18 +32,7 @@ class AdminService {
         }
       })),
 
-      ...(order.activityLogs || []).map(a => ({
-        type: 'ACTIVITY',
-        createdAt: a.createdAt,
-        data: {
-          id: a.id,
-          action: a.action,
-          entity: a.entity,
-          entityId: a.entityId,
-          details: a.details,
-          user: a.user
-        }
-      })),
+      // activityLogs حذف شد — لاگ‌های داخلی ادمین نیازی به نمایش در تایم‌لاین ندارند
 
       ...(order.designVersions || []).map(v => ({
         type: 'DESIGN',
@@ -58,6 +47,27 @@ class AdminService {
         }
       }))
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    // حذف آیتم‌های تکراری STATUS با بازه زمانی کمتر از ۵ ثانیه
+    const deduped = [];
+    for (const item of items) {
+      if (item.type === 'STATUS') {
+        const lastStatus = [...deduped].reverse().find(i => i.type === 'STATUS');
+        if (lastStatus) {
+          const diff = Math.abs(new Date(item.createdAt) - new Date(lastStatus.createdAt));
+          if (diff < 5000 && item.data?.toStatus === lastStatus.data?.toStatus) {
+            // اگر note جزئیات بیشتری دارد، جایگزین کن
+            if ((item.data?.note || '').length > (lastStatus.data?.note || '').length) {
+              deduped[deduped.indexOf(lastStatus)] = item;
+            }
+            continue;
+          }
+        }
+      }
+      deduped.push(item);
+    }
+
+    return deduped;
   }
 
 
@@ -478,9 +488,11 @@ class AdminService {
 
     if (search) {
       where.OR = [
+        { orderCode: { contains: search } },
         { trackingCode: { contains: search } },
         { user: { name: { contains: search } } },
-        { user: { email: { contains: search } } }
+        { user: { email: { contains: search } } },
+        { address: { phone: { contains: search } } }
       ];
     }
 
@@ -609,18 +621,7 @@ class AdminService {
           }
         })),
 
-        ...(order.activityLogs || []).map(a => ({
-          type: 'ACTIVITY',
-          createdAt: a.createdAt,
-          data: {
-            id: a.id,
-            action: a.action,
-            entity: a.entity,
-            entityId: a.entityId,
-            details: a.details,
-            user: a.user
-          }
-        })),
+        // activityLogs حذف شد — لاگ‌های داخلی ادمین نیازی به نمایش در تایم‌لاین ندارند
 
         ...(order.designVersions || []).map(v => ({
           type: 'DESIGN',
@@ -634,12 +635,31 @@ class AdminService {
             designer: v.designer
           }
         }))
-      ].sort((a, b) =>
-        new Date(a.createdAt) - new Date(b.createdAt)
-      );
+      ];
+
+      timeline.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      // حذف آیتم‌های تکراری STATUS با بازه زمانی کمتر از ۵ ثانیه
+      const deduped = [];
+      for (const item of timeline) {
+        if (item.type === 'STATUS') {
+          const lastStatus = [...deduped].reverse().find(i => i.type === 'STATUS');
+          if (lastStatus) {
+            const diff = Math.abs(new Date(item.createdAt) - new Date(lastStatus.createdAt));
+            if (diff < 5000 && item.data?.toStatus === lastStatus.data?.toStatus) {
+              if ((item.data?.note || '').length > (lastStatus.data?.note || '').length) {
+                deduped[deduped.indexOf(lastStatus)] = item;
+              }
+              continue;
+            }
+          }
+        }
+        deduped.push(item);
+      }
 
       return {
         id: order.id,
+        orderCode: order.orderCode,
         trackingCode: order.trackingCode,
         status: order.status,
         paymentStatus: order.paymentStatus,
@@ -681,6 +701,22 @@ class AdminService {
           url: file.url,
           originalName: file.originalName,
           mimeType: file.mimeType
+        })),
+
+        items: (order.items || []).map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          product: item.product
+            ? {
+                id: item.product.id,
+                name: item.product.name,
+                price: item.product.price,
+                images: (item.product.images || []).map(img => ({
+                  url: img.url,
+                  isMain: img.isMain
+                }))
+              }
+            : null
         })),
 
         timeline
@@ -789,9 +825,20 @@ class AdminService {
       };
     });
 
+    // Fetch real loyalty points from LoyaltyWallet (user.loyaltyPoints is deprecated/unused)
+    const wallets = await getPrismaClient().loyaltyWallet.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true, availablePoints: true }
+    });
+    const walletMap = {};
+    wallets.forEach(w => {
+      walletMap[w.userId] = w.availablePoints || 0;
+    });
+
     return {
       users: users.map(user => ({
         ...user,
+        loyaltyPoints: walletMap[user.id] ?? 0,
         statistics: {
           totalOrders: user._count.orders,
           completedOrders: userStatsMap[user.id]?.completedOrders || 0,
@@ -803,10 +850,35 @@ class AdminService {
         page,
         limit: take,
         total,
+        totalPages: Math.ceil(total / take),
         pages: Math.ceil(total / take),
         hasNext: skip + take < total,
         hasPrev: page > 1
       }
+    };
+  }
+
+  /**
+   * Get aggregate user statistics for admin dashboard
+   * @returns {Promise<Object>} Stats: totalUsers, totalAdmins, totalCustomers, totalLoyaltyPoints, activeUsers
+   */
+  async getUserStats() {
+    const [totalUsers, roleCounts, walletAgg, activeCount] = await Promise.all([
+      getPrismaClient().user.count(),
+      getPrismaClient().user.groupBy({ by: ['role'], _count: { role: true } }),
+      getPrismaClient().loyaltyWallet.aggregate({ _sum: { availablePoints: true } }),
+      getPrismaClient().user.count({ where: { isActive: true } })
+    ]);
+
+    const roleMap = {};
+    roleCounts.forEach((r) => { roleMap[r.role] = r._count.role; });
+
+    return {
+      totalUsers,
+      totalAdmins: roleMap.ADMIN || 0,
+      totalCustomers: roleMap.USER || 0,
+      activeUsers: activeCount,
+      totalLoyaltyPoints: walletAgg._sum.availablePoints || 0
     };
   }
 
@@ -885,14 +957,29 @@ class AdminService {
    * @param {Object} details - Additional details
    */
   async logAdminActivity(adminId, action, entity, entityId, details = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM'
+    };
+    const actionMap = {
+      'user.status_updated': 'USER_UPDATED',
+      'user.status_change_reason': 'USER_UPDATED',
+      'user.role_updated': 'USER_ROLE_CHANGED',
+      'user.role_change_reason': 'USER_ROLE_CHANGED',
+      'order.payment_review': 'ORDER_STATUS_CHANGED',
+      'order.status_updated': 'ORDER_STATUS_CHANGED',
+      'order.admin_notes': 'ORDER_UPDATED'
+    };
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId: adminId,
-          action,
-          entity,
-          entityId,
-          details: {
+          user: { connect: { id: adminId } },
+          action: actionMap[action] || 'ORDER_UPDATED',
+          entity: entityMap[entity] || entity,
+          entityId: entityId != null ? String(entityId) : null,
+          actorType: 'ADMIN',
+          metadata: {
             ...details,
             adminAction: true
           }

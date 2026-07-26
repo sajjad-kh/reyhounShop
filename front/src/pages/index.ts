@@ -13,3 +13,4 @@ export * from './OrderHistoryPage';
 export * from './ReviewPage';
 export * from './UserDashboard';
 export * from './ForgetPasswordPage';
+export * from './NotificationsPage';

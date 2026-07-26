@@ -73,6 +73,7 @@ const validateCreateOrder = [
   body('addressId').isInt({ min: 1 }),
   body('shippingMethodId').isInt({ min: 1 }),
   body('discountCode').optional().isString().isLength({ max: 50 }),
+  body('loyaltyPoints').optional().isInt({ min: 0 }),
   body('designComment').optional().isString().isLength({ max: 5000 })
 ];
 
@@ -139,6 +140,7 @@ router.post(
         addressId: req.body.addressId,
         shippingMethodId: req.body.shippingMethodId,
         discountCode: req.body.discountCode,
+        loyaltyPointsToUse: req.body.loyaltyPoints ? Number(req.body.loyaltyPoints) : 0,
         items: req.body.items,
         paymentProof: { ...paymentProof, url: paymentProofUrl },
         designComment: req.body.notes,
@@ -355,6 +357,26 @@ router.post(
         'CONFIRM_DELIVERY_ERROR:',
         err
       );
+
+      if (err.message === 'ORDER_NOT_FOUND') {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'ORDER_NOT_FOUND',
+            message: 'Order not found'
+          }
+        });
+      }
+
+      if (err.message === 'INVALID_ORDER_STATUS') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_ORDER_STATUS',
+            message: 'Order must be in SHIPPED status to confirm delivery'
+          }
+        });
+      }
 
       return res.status(500).json({
         success: false,

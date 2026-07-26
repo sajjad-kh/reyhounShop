@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { DashboardSidebar } from '../components/layout/DashboardSidebar';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 
 // Icons
@@ -23,14 +24,7 @@ export const UserDashboard: React.FC = () => {
     };
 
     if (!state.user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-primary">
-                <div className="glass-card p-8 text-center">
-                    <div className="glass-spinner w-8 h-8 mx-auto mb-4" />
-                    <p className="text-text-secondary">Loading dashboard...</p>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner fullScreen label="در حال بارگذاری..." />;
     }
 
     return (

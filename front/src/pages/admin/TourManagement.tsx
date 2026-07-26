@@ -7,7 +7,7 @@ import { api } from '../../utils/api';
 import { cn } from '../../utils';
 import { TourStep, TourStepInput, TourPlacement } from '../../types/tour';
 import { Plus, Pencil, Trash2, MousePointerClick, Crosshair, X, Search, ChevronUp, ChevronDown } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from '../../utils/toast';
 
 const PLACEMENTS: { value: TourPlacement; label: string }[] = [
     { value: 'auto', label: 'خودکار' },

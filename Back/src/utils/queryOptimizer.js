@@ -107,6 +107,7 @@ class QueryOptimizer {
           status: true,
           totalPrice: true,
           paymentStatus: true,
+          orderCode: true,
           trackingCode: true,
           createdAt: true,
           items: {

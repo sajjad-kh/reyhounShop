@@ -33,7 +33,7 @@ const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
         };
 
         const sizeClasses = {
-            sm: 'px-3 py-2 text-sm rounded-lg',
+            sm: 'px-1.5 py-1 text-xs rounded-lg',
             md: 'px-4 py-2.5 text-base rounded-xl',
             lg: 'px-6 py-3 text-lg rounded-2xl'
         };

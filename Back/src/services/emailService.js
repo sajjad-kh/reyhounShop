@@ -224,6 +224,18 @@ class EmailService {
         }
       });
 
+      await prisma.notification.create({
+        data: {
+          userId,
+          type: 'PAYMENT_SUCCESS',
+          channel: 'IN_APP',
+          title: 'پرداخت موفق',
+          message: `پرداخت سفارش #${orderData.id} با موفقیت انجام شد`,
+          status: 'SENT',
+          metadata: { orderId: orderData.id, paymentId: paymentData.id }
+        }
+      });
+
       const result = await this.sendEmail(user.email, subject, htmlContent);
 
       // Update notification status

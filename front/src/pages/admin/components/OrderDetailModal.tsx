@@ -32,6 +32,11 @@ export default function OrderDetailModal({ row, onClose }: Props) {
 
                 <h2 className="text-2xl font-bold mb-1">مدیریت سفارش</h2>
                 <p className="text-text-secondary mb-6">شماره سفارش: <span className="font-mono">{row.displayId}</span></p>
+                {(row.trackingCode || row.phone) && (
+                    <span className="inline-block mb-6 px-2 py-0.5 rounded-md text-[10px] bg-white/10 text-text-secondary font-mono">
+                        {row.trackingCode || row.phone}
+                    </span>
+                )}
 
 
 

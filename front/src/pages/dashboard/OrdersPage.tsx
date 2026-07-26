@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { OrderTracker } from '../../components/order/OrderTracker';
 import { orderService } from '../../services/orderService';
 import { Order } from '../../types/order';
@@ -49,6 +51,11 @@ export const OrdersPage: React.FC = () => {
     const [isResubmitting, setIsResubmitting] = useState(false);
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
+    const navigate = useNavigate();
+
+    const isDelivered = (order: Order | null): boolean =>
+        Boolean(order && String(order.status).toUpperCase() === 'DELIVERED');
+
     useEffect(() => {
         (async () => {
             try {
@@ -61,11 +68,7 @@ export const OrdersPage: React.FC = () => {
     }, []);
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-10">
-                <div className="glass-spinner w-8 h-8" />
-            </div>
-        );
+        return <LoadingSpinner className="py-10" />;
     }
 
     const canResubmit = (order: Order | null): boolean => {
@@ -322,6 +325,16 @@ export const OrdersPage: React.FC = () => {
                                 >
                                     {isDownloadingPdf ? 'در حال دانلود...' : 'دانلود PDF رسید'}
                                 </button>
+
+                                {isDelivered(selected) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(`/dashboard/orders/${selected.id}`)}
+                                        className="px-3 py-2 rounded-lg border border-amber-400/40 bg-amber-500/15 text-amber-200 text-sm hover:bg-amber-500/25"
+                                    >
+                                        ⭐ ثبت نظر محصول
+                                    </button>
+                                )}
 
                                 {canResubmit(selected) && (
                                     <label className="px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm hover:bg-amber-500/20 cursor-pointer">

@@ -89,7 +89,7 @@ export const adminService = {
             return {
                 ...response,
                 data: products,
-                pagination: response.data?.pagination
+                pagination: response.pagination
             };
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -295,6 +295,22 @@ export const adminService = {
             };
         } catch (error) {
             console.error('Error fetching users:', error);
+            throw new Error(handleApiError(error));
+        }
+    },
+
+    getUserStats: async (): Promise<ApiResponse<{
+        totalUsers: number;
+        totalAdmins: number;
+        totalCustomers: number;
+        activeUsers: number;
+        totalLoyaltyPoints: number;
+    }>> => {
+        try {
+            const response = await api.get(API_ENDPOINTS.ADMIN.USERS + '/stats');
+            return response;
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
             throw new Error(handleApiError(error));
         }
     },

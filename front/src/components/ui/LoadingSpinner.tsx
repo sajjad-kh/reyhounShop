@@ -1,50 +1,47 @@
 import React from 'react';
+import { GlassCard } from './GlassCard';
 
 export interface LoadingSpinnerProps {
     size?: 'sm' | 'md' | 'lg' | 'xl';
     variant?: 'primary' | 'secondary' | 'accent';
     className?: string;
     label?: string;
+    fullScreen?: boolean;
 }
 
 const sizeClasses = {
-    sm: 'w-4 h-4 border-2',
+    sm: 'w-5 h-5 border-2',
     md: 'w-8 h-8 border-2',
-    lg: 'w-12 h-12 border-3',
-    xl: 'w-16 h-16 border-4',
-};
-
-const variantClasses = {
-    primary: 'border-white/20 border-t-blue-500',
-    secondary: 'border-white/20 border-t-purple-500',
-    accent: 'border-white/20 border-t-pink-500',
+    lg: 'w-10 h-10 border-[3px]',
+    xl: 'w-14 h-14 border-4',
 };
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     size = 'md',
-    variant = 'primary',
     className = '',
     label,
+    fullScreen = false,
 }) => {
-    return (
-        <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
+    const card = (
+        <GlassCard className="p-8 text-center">
             <div
-                className={`
-                    ${sizeClasses[size]}
-                    ${variantClasses[variant]}
-                    rounded-full
-                    animate-spin
-                `}
+                className={`${sizeClasses[size]} border-[var(--glass-bg-light)] border-t-[var(--accent-primary)] rounded-full animate-spin mx-auto ${label ? 'mb-4' : ''}`}
                 role="status"
                 aria-label={label || 'Loading'}
             />
-            {label && (
-                <span className="text-sm text-white/70 font-medium">
-                    {label}
-                </span>
-            )}
-        </div>
+            {label && <p className="text-text-secondary">{label}</p>}
+        </GlassCard>
     );
+
+    if (fullScreen) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-primary">
+                {card}
+            </div>
+        );
+    }
+
+    return <div className={`flex items-center justify-center ${className}`}>{card}</div>;
 };
 
 export default LoadingSpinner;

@@ -57,8 +57,8 @@ export const ToastNotification = ({ toast }: ToastNotificationProps) => {
                 'transition-all duration-300 ease-out',
                 typeStyles[toast.type],
                 isExiting
-                    ? 'opacity-0 translate-x-full scale-95'
-                    : 'opacity-100 translate-x-0 scale-100 slide-in-right'
+                    ? 'opacity-0 -translate-y-full scale-95'
+                    : 'opacity-100 translate-y-0 scale-100 toast-slide-down'
             )}
             role="alert"
             aria-live="assertive"

@@ -47,7 +47,7 @@ class PaymentService {
 
       await prisma.activityLog.create({
         data: {
-          userId: order.userId,
+          user: { connect: { id: order.userId } },
           actorType: 'USER',
           action: ActivityAction.PAYMENT_INITIATED,
           entity: EntityType.ORDER,
@@ -92,7 +92,7 @@ class PaymentService {
 
       await prisma.activityLog.create({
         data: {
-          userId: order.userId,
+          user: { connect: { id: order.userId } },
           actorType: 'SYSTEM',
           action:
             status === 'SUCCESS'
@@ -137,7 +137,7 @@ class PaymentService {
 
       await prisma.activityLog.create({
         data: {
-          userId: order.userId,
+          user: { connect: { id: order.userId } },
           actorType: 'SYSTEM',
           action: ActivityAction.PAYMENT_FAILED,
           entity: EntityType.ORDER,

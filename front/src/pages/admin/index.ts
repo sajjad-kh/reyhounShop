@@ -6,3 +6,5 @@ export { default as ShippingMethodStats } from './ShippingMethodStats';
 export { default as Review } from './AdminReview';
 export { default as Logs } from './AdminLogs';
 export { default as TourManagement } from './TourManagement';
+export { default as LoyaltyAdminPage } from './LoyaltyAdminPage';
+export { default as DiscountsAdminPage } from './DiscountsAdminPage';

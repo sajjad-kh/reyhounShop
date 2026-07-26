@@ -1,8 +1,11 @@
 // OrderManagement.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { Search, Package, RefreshCw, AlertCircle, Store } from 'lucide-react';
 import { adminService } from '../../services/adminService';
+import toast from 'react-hot-toast';
 
 import type { OrderSourceFilter, UnifiedAdminOrderRow } from './types';
 import { fetchBasalamVendorParcels } from './basalamApi';
@@ -18,6 +21,7 @@ import OrderMobileList from './components/OrderMobileList';
 import OrderActivityModal from './components/OrderActivityModal';  
 
 const OrderManagement: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     // Order Receipt Modal States
     const [proofModalRow, setProofModalRow] = useState<UnifiedAdminOrderRow | null>(null);
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -116,6 +120,20 @@ const OrderManagement: React.FC = () => {
         return mapped.filter((r) => rowMatchesSearch(r, searchQuery));
     }, [internalRaw, basalamOrders, sourceFilter, searchQuery]);
 
+    // Auto-open order from notification click
+    useEffect(() => {
+        const orderIdParam = searchParams.get('orderId');
+        if (orderIdParam && unifiedRows.length > 0) {
+            const targetId = Number(orderIdParam);
+            const match = unifiedRows.find((r) => r.internalOrderId === targetId || String(r.internalOrderId) === orderIdParam);
+            if (match) {
+                setSelectedOrderForManagement(match);
+                setIsManagementModalOpen(true);
+                setSearchParams({});
+            }
+        }
+    }, [searchParams, unifiedRows]);
+
     const loading = loadingInternal || (needsBasalam && loadingBasalam);
 
     // ================== Handlers ==================
@@ -171,6 +189,7 @@ const OrderManagement: React.FC = () => {
         setReviewFormError(null);
         try {
             await adminService.reviewOrderPayment(id, { decision: 'approve' });
+            toast.success('پرداخت تأیید شد');
             await loadInternalOrders();
             setProofModalRow(null);
         } catch (err: any) {
@@ -197,6 +216,7 @@ const OrderManagement: React.FC = () => {
                 decision: 'reject',
                 rejectionReason: trimmed,
             });
+            toast.success('رسید رد شد');
             await loadInternalOrders();
             setProofModalRow(null);
         } catch (err: any) {
@@ -295,10 +315,7 @@ const OrderManagement: React.FC = () => {
 
                 {/* Orders Display */}
                 {loading && unifiedRows.length === 0 ? (
-                    <GlassCard className="p-8 text-center">
-                        <div className="glass-spinner w-12 h-12 mx-auto mb-4" />
-                        <p className="text-text-secondary">در حال بارگذاری سفارشات...</p>
-                    </GlassCard>
+                    <LoadingSpinner label="در حال بارگذاری سفارشات..." />
                 ) : unifiedRows.length === 0 ? (
                     <GlassCard className="p-8 text-center">
                         <Package className="w-16 h-16 text-text-muted mx-auto mb-4" />
@@ -311,7 +328,7 @@ const OrderManagement: React.FC = () => {
                             onReceiptClick={openPaymentProofModal}
                             onManagementClick={handleManagementClick}     // ← اتصال مدال جدید
                         />
-                        <OrderMobileList rows={unifiedRows} onReceiptClick={openPaymentProofModal} />
+                        <OrderMobileList rows={unifiedRows} onReceiptClick={openPaymentProofModal} onOrderClick={handleManagementClick} />
                     </>
                 )}
             </div>

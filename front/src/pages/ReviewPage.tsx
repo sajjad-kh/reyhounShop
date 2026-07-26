@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { reviewService } from '../services/reviewService';
 import { getImageUrl } from '../utils/constants';
 import { formatDate } from '../utils/format';
@@ -45,11 +46,7 @@ export const ReviewsPage: React.FC = () => {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-10">
-                <div className="glass-spinner w-8 h-8" />
-            </div>
-        );
+        return <LoadingSpinner className="py-10" />;
     }
 
     return (

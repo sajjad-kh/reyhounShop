@@ -4,6 +4,7 @@
  */
 
 const { getPrismaClient } = require('../utils/database');
+const { ActivityAction } = require('@prisma/client');
 const { downloadImage, generateFilename } = require('../utils/imageDownloader');
 const productService = require('./productService');
 const ShippingMethodRepository = require('../repositories/ShippingMethodRepository');
@@ -385,15 +386,21 @@ class BasalamService {
    * @param {number} entityId - Entity ID
    * @param {Object} details - Additional details
    */
-  async logActivity(userId, action, entity, entityId, details = {}) {
+  async logActivity({ userId, action, entity, entityId, metadata, details, actorType } = {}) {
+    const entityMap = {
+      'Product': 'PRODUCT', 'Order': 'ORDER', 'User': 'USER', 'Review': 'REVIEW',
+      'Category': 'CATEGORY', 'Notification': 'NOTIFICATION', 'Cart': 'SYSTEM',
+      'CartItem': 'SYSTEM', 'Wishlist': 'SYSTEM', 'Address': 'SYSTEM', 'Security': 'SYSTEM'
+    };
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           action,
-          entity,
+          entity: entityMap[entity] || entity,
           entityId,
-          details
+          metadata: details ?? metadata ?? {},
+          actorType: actorType ?? 'SYSTEM'
         }
       });
     } catch (error) {

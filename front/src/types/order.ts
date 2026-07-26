@@ -5,6 +5,7 @@ import { OrderStatus, PaymentStatus } from '../utils/constants';
 
 export interface Order {
     id: number;
+    orderCode?: string | null;
     trackingCode: string;
     status: OrderStatus;
     paymentStatus: PaymentStatus;
@@ -12,6 +13,8 @@ export interface Order {
     totalPrice: number;
     shippingCost: number;
     discountAmount: number;
+    loyaltyPointsUsed?: number;
+    loyaltyDiscount?: number;
 
     finalAmount?: number; // frontend computed
 

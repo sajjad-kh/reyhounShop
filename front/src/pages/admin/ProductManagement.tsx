@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
@@ -89,7 +90,7 @@ const ProductManagement: React.FC = () => {
             console.log('First product images:', response.data[0]?.images);
             setProducts(response.data);
             if (response.pagination) {
-                setTotalPages((response.pagination.total/response.pagination.limit)+1);
+                setTotalPages(response.pagination.totalPages || Math.ceil(response.pagination.total / response.pagination.limit));
             }
         } catch (err: any) {
             setError(err.message || 'Failed to load products');
@@ -185,16 +186,7 @@ const ProductManagement: React.FC = () => {
 
 
     if (loading && products.length === 0) {
-        return (
-            <div className="min-h-screen bg-gradient-primary p-6" dir="rtl">
-                <div className="max-w-7xl mx-auto">
-                    <GlassCard className="p-8 text-center">
-                        <div className="glass-spinner w-12 h-12 mx-auto mb-4" />
-                        <p className="text-text-secondary">در حال بارگذاری محصولات...</p>
-                    </GlassCard>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner fullScreen label="در حال بارگذاری محصولات..." />;
     }
 
     return (

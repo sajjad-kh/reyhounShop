@@ -13,6 +13,12 @@ import { Address } from '../types/auth';
 import { ShippingMethod } from '../types/shipping';
 import { PaymentUpload } from '../components/checkout/PaymentUpload';
 import { ReviewStep } from '../components/checkout/ReviewStep';
+import { PointForecast } from '../components/loyalty/PointForecast';
+import { LoyaltyRedeemBox } from '../components/loyalty/LoyaltyRedeemBox';
+import { useLoyaltyPoints } from '../hooks/useLoyalty';
+import { pointsToRial } from '../services/loyaltyService';
+import { discountService } from '../services/discountService';
+import { toast } from '../utils/toast';
 
 import { STORAGE_KEYS } from '../utils/constants';
 import { secureStorage } from '../utils/security';
@@ -40,7 +46,38 @@ export const CheckoutPage: React.FC = () => {
     const [reviewNotes, setReviewNotes] = useState<string>('');
 
     const [userAddresses, setUserAddresses] = useState<Address[]>([]);
-    const [addressesLoading, setAddressesLoading] = useState(false);
+    const [, setAddressesLoading] = useState(false);
+
+    // Loyalty points redemption at checkout
+    const pointsQ = useLoyaltyPoints(user?.id);
+    const [loyaltyPointsToUse, setLoyaltyPointsToUse] = useState(0);
+    const [discountCode, setDiscountCode] = useState('');
+    const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+    const [validatingCode, setValidatingCode] = useState(false);
+    const orderPayable =
+        (cart.totalAmount || 0) - (cart.discountAmount || 0) - (appliedDiscount?.amount || 0) + (shippingCost || 0);
+    const loyaltyDiscountRial = pointsToRial(loyaltyPointsToUse);
+
+    const handleApplyDiscount = async () => {
+        const code = discountCode.trim();
+        if (!code) return;
+        setValidatingCode(true);
+        try {
+            const res = await discountService.validateDiscount(code);
+            if (res.valid) {
+                setAppliedDiscount({ code, amount: res.discountAmount || 0 });
+                toast.success(`کد تخفیف اعمال شد: ${(res.discountAmount || 0).toLocaleString('fa-IR')} ریال`);
+            } else {
+                setAppliedDiscount(null);
+                toast.error(res.error || 'کد تخفیف نامعتبر است');
+            }
+        } catch (e) {
+            setAppliedDiscount(null);
+            toast.error(e instanceof Error ? e.message : 'خطا در بررسی کد تخفیف');
+        } finally {
+            setValidatingCode(false);
+        }
+    };
 
     const [shippingMethodsCache, setShippingMethodsCache] = useState<ShippingMethod[]>([]);
 
@@ -160,6 +197,10 @@ export const CheckoutPage: React.FC = () => {
             if (!shippingMethodId || shippingMethodId <= 0) throw new Error("Invalid shippingMethodId");
 
             formData.append("addressId", String(addressId));
+            formData.append("loyaltyPoints", String(loyaltyPointsToUse || 0));
+            if (appliedDiscount) {
+                formData.append("discountCode", appliedDiscount.code);
+            }
             formData.append("shippingMethodId", String(shippingMethodId));
             formData.append("shippingCost", String(cost));
             formData.append("items", JSON.stringify(cart.items));
@@ -207,7 +248,7 @@ export const CheckoutPage: React.FC = () => {
             ? data.data[0]
             : data.data;
 
-            navigate(`/checkout/success?orderId=${order.id}`);
+            navigate(`/checkout/success?orderId=${order.id}&orderCode=${order.orderCode || ''}`);
 
         } catch (err) {
             console.error("Order submit failed:", err);
@@ -314,7 +355,48 @@ export const CheckoutPage: React.FC = () => {
                                 selectedShippingMethodId={selectedShippingMethodId}
                                 shippingCost={shippingCost}
                                 paymentMethod="manual"
+                                loyaltyDiscount={loyaltyDiscountRial}
+                                promoDiscount={appliedDiscount?.amount || 0}
                             />
+                            <div className="mt-4">
+                                <div className="glass-card p-4">
+                                    <label className="block text-sm text-text-primary mb-2">کد تخفیف</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={discountCode}
+                                            onChange={(e) => setDiscountCode(e.target.value)}
+                                            disabled={!!appliedDiscount}
+                                            placeholder="مثلاً EID1405"
+                                            className="flex-1 glass-input bg-glass-light rounded-xl px-3 py-2 text-text-primary text-sm"
+                                        />
+                                        {appliedDiscount ? (
+                                            <GlassButton variant="secondary" onClick={() => { setAppliedDiscount(null); setDiscountCode(''); }}>
+                                                حذف
+                                            </GlassButton>
+                                        ) : (
+                                            <GlassButton variant="accent" loading={validatingCode} onClick={handleApplyDiscount}>
+                                                اعمال
+                                            </GlassButton>
+                                        )}
+                                    </div>
+                                    {appliedDiscount && (
+                                        <p className="mt-2 text-xs text-green-400">
+                                            کد «{appliedDiscount.code}» اعمال شد (−{appliedDiscount.amount.toLocaleString('fa-IR')} ریال)
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="mt-4">
+                                <LoyaltyRedeemBox
+                                    availablePoints={pointsQ.data?.availablePoints ?? 0}
+                                    maxDiscountRial={orderPayable}
+                                    pointsToUse={loyaltyPointsToUse}
+                                    onChange={setLoyaltyPointsToUse}
+                                />
+                            </div>
+                            <div className="mt-4">
+                                <PointForecast amount={cart.totalAmount || 0} />
+                            </div>
                         </div>
                     </div>
 

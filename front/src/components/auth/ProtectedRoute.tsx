@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../utils/constants';
 import { GlassCard } from '../ui/GlassCard';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -20,14 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // Show loading state while checking authentication
     if (state.isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-primary">
-                <GlassCard className="p-8 text-center">
-                    <div className="glass-spinner w-8 h-8 mx-auto mb-4" />
-                    <p className="text-text-secondary">Checking authentication...</p>
-                </GlassCard>
-            </div>
-        );
+        return <LoadingSpinner fullScreen size="md" label="در حال بارگذاری..." />;
     }
 
     // Redirect to login if not authenticated

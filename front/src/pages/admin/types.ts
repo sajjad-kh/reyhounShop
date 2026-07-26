@@ -34,6 +34,7 @@ export interface BasalamOrder {
 
 export interface InternalAdminOrder {
     id: number;
+    orderCode?: string | null;
     trackingCode?: string | null;
     status?: string | null;
     paymentStatus?: string | null;
@@ -43,6 +44,7 @@ export interface InternalAdminOrder {
     user?: { name?: string | null; email?: string | null };
     address?: {
         fullName?: string | null;
+        phone?: string | null;
         line?: string;
         city?: string;
         province?: string;
@@ -78,8 +80,10 @@ export interface UnifiedAdminOrderRow {
     productThumbs: Array<{ src: string; alt: string; quantity: number }>;
     overflowCount: number;
     displayId: string;
+    phone?: string | null;
+    trackingCode?: string | null;
     customerName: string;
-    trackingCode: string | null;
+    orderCode: string | null;
     detailLine: string;
 
     status: string;
@@ -115,12 +119,12 @@ export interface UnifiedAdminOrderRow {
     // ✅ ADD THIS (IMPORTANT)
     timeline?: Array<{
         type: "MESSAGE" | "DESIGN" | "STATUS" | string;
+        createdAt?: string | Date;
         data?: {
             id?: number;
             message?: string;
             note?: string;
             isAdmin?: boolean;
-            createdAt?: string | Date;
             user?: {
                 id: number;
                 name?: string;

@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { orderService } from '../services/orderService';
 import { Order } from '../types/order';
 import { GlassButton } from '../components/ui/GlassButton';
 import { OrderTracker } from '../components/order/OrderTracker';
 import { getImageUrl } from '../utils/constants';
 import { getTimelineMeta } from "../utils/getTimelineMeta";
-import { Upload, CheckCircle, X } from "lucide-react";
+import { Upload, CheckCircle, X, Calendar, Clock } from "lucide-react";
 
 import { reviewService } from '../services/reviewService';
-
+import { showToast } from '../components/ui/Toast';
 import ReviewModal from '../components/modals/ReviewModal';
-import Swal from 'sweetalert2';
 
 
 export const OrderConfirmationPage: React.FC = () => {
@@ -30,6 +29,10 @@ export const OrderConfirmationPage: React.FC = () => {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     const [reviewError, setReviewError] = useState<string | null>(null);
+    const [initialReviewRating, setInitialReviewRating] = useState(0);
+    const [initialReviewComment, setInitialReviewComment] = useState('');
+    const [reviewLocked, setReviewLocked] = useState(false);
+    const [reviewNeedsReapproval, setReviewNeedsReapproval] = useState(false);
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -45,6 +48,17 @@ export const OrderConfirmationPage: React.FC = () => {
         };
         fetchOrder();
     }, [orderId, navigate]);
+
+    const location = useLocation();
+    const designSectionRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (location.hash === '#design' && designSectionRef.current) {
+            setTimeout(() => {
+                designSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
+    }, [location.hash, order]);
 
     useEffect(() => {
         return () => {
@@ -79,11 +93,11 @@ export const OrderConfirmationPage: React.FC = () => {
 
             setOrder(freshOrder);
 
-            alert('طرح با موفقیت تأیید شد ✅');
+            showToast.success('طرح با موفقیت تأیید شد');
 
         } catch (err) {
             console.error(err);
-            alert('خطا در تأیید طرح');
+            showToast.error('خطا در تأیید طرح');
         } finally {
             setSending(false);
         }
@@ -177,9 +191,20 @@ export const OrderConfirmationPage: React.FC = () => {
                 {/* HEADER */}
                 <div className="text-center p-5 md:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur">
                     <h1 className="text-xl md:text-2xl font-bold">بررسی و تأیید سفارش</h1>
-                    <p className="text-white/60 mt-1 text-sm md:text-base">
-                        کد پیگیری: <span className="font-mono">{order.trackingCode}</span>
-                    </p>
+                    <div className="flex items-center justify-center gap-3 mt-2 text-sm md:text-base text-white/60">
+                        {order.orderCode && (
+                            <span className="font-mono">{order.orderCode}</span>
+                        )}
+                        {order.orderCode && order.trackingCode && (
+                            <span className="w-px h-4 bg-white/20" />
+                        )}
+                        {order.trackingCode && (
+                            <>
+                                <span>کد پیگیری:</span>
+                                <span className="font-mono">{order.trackingCode}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* TRACKER */}
@@ -194,6 +219,12 @@ export const OrderConfirmationPage: React.FC = () => {
                     <h2 className="font-bold mb-3 text-lg">خلاصه پرداخت</h2>
                     <Row label="جمع محصولات" value={productTotal} />
                     <Row label="هزینه ارسال" value={order.shippingCost} />
+                    {Number(order.discountAmount) > 0 && (
+                        <Row label="تخفیف" value={-order.discountAmount} />
+                    )}
+                    {Number(order.loyaltyDiscount) > 0 && (
+                        <Row label="تخفیف امتیاز وفاداری" value={-order.loyaltyDiscount} />
+                    )}
                     <Row label="مبلغ نهایی" value={order.totalPrice} bold />
                 </div>
 
@@ -224,16 +255,40 @@ export const OrderConfirmationPage: React.FC = () => {
                                             تعداد: {item.quantity.toLocaleString('fa-IR')} عدد
 
                                             {order.status?.toUpperCase() === 'DELIVERED' && (
-                                                order.reviewedProductIds?.includes(item.product.id) ? (
-                                                    <span className="mx-1 px-2 py-2 text-xs text-emerald-400">
-                                                        ✓ نظر ثبت شد
-                                                    </span>
-                                                ) : (
+                                                <span className="inline-flex items-center gap-2">
+                                                    {order.reviewedProductIds?.includes(item.product.id) && (
+                                                        <span className="mx-1 px-1.5 py-0.5 text-xs text-emerald-400">
+                                                            ✓ نظر ثبت شده
+                                                        </span>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         onClick={() => {
                                                             setSelectedProductId(item.product.id);
                                                             setReviewError(null);
+                                                            setInitialReviewRating(0);
+                                                            setInitialReviewComment('');
+                                                            setReviewLocked(false);
+                                                            setReviewNeedsReapproval(false);
+                                                            (async () => {
+                                                                try {
+                                                                    const myReviews = await reviewService.getMyReviews();
+                                                                    const existing = (myReviews ?? []).find(
+                                                                        (r: any) => r.product?.id === item.product.id && r.orderId === order.id
+                                                                    );
+                                                                    if (existing) {
+                                                                        setInitialReviewRating(existing.rating || 0);
+                                                                        setInitialReviewComment(existing.comment || '');
+                                                                        const hadComment = Boolean(existing.comment && existing.comment.trim());
+                                                                        setReviewLocked(Boolean(existing.isApproved) && hadComment);
+                                                                        // Auto-approved (no comment) review being edited with a
+                                                                        // comment will be sent back to pending for admin approval.
+                                                                        setReviewNeedsReapproval(Boolean(existing.isApproved) && !hadComment);
+                                                                    }
+                                                                } catch {
+                                                                    /* ignore, modal opens empty */
+                                                                }
+                                                            })();
                                                             setReviewModalOpen(true);
                                                         }}
                                                         className="
@@ -249,9 +304,9 @@ export const OrderConfirmationPage: React.FC = () => {
                                                             hover:scale-[1.02]
                                                         "
                                                     >
-                                                        ⭐ شرکت در نظرسنجی
+                                                        ⭐ {order.reviewedProductIds?.includes(item.product.id) ? 'ویرایش نظر' : 'شرکت در نظرسنجی'}
                                                     </button>
-                                                )
+                                                </span>
                                             )}
 
                                         
@@ -280,189 +335,160 @@ export const OrderConfirmationPage: React.FC = () => {
                 <div className="relative mt-8">
                     <div className="absolute left-1/2 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-purple-500 to-transparent z-0 hidden md:block" />
                     <div className="space-y-8 md:space-y-10 relative z-10">
-                        {order.timeline?.length ? (
-                            order.timeline
-                                .filter(item => {
-                                    // ❌ STATUS های DESIGN_REVIEW رو کلاً حذف کن
-                                    if (item.type === "STATUS" && item.data?.toStatus === "DESIGN_REVIEW") {
-                                        return false;
-                                    }
-                                    return true;
-                                })
-                                .map((item: any, index: number) => {
-                                    const meta = getTimelineMeta(item);
-                                    const Icon = meta.icon;
+                        {order.timeline?.length ? (() => {
+                            const filtered = (order.timeline || []).filter((item: any) => {
+                                if (item.type === "STATUS" && item.data?.toStatus === "DESIGN_REVIEW") return false;
+                                return true;
+                            });
 
-                                    const isAdmin =
-                                        item.type === "DESIGN" ||
-                                        item.data?.isAdmin === true;
+                            const formatDateParts = (dateStr: string | Date | undefined) => {
+                                if (!dateStr) return null;
+                                const d = new Date(String(dateStr));
+                                if (isNaN(d.getTime())) return null;
+                                return {
+                                    date: d.toLocaleDateString("fa-IR", { year: "numeric", month: "long", day: "numeric" }),
+                                    time: d.toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+                                    weekday: d.toLocaleDateString("fa-IR", { weekday: "long" }),
+                                    dateKey: d.toLocaleDateString("fa-IR"),
+                                };
+                            };
 
-                                    const isLeft = isAdmin;
-                                    const isRight = !isAdmin;
+                            const groups: { dateKey: string; dateLabel: string; weekday: string; items: any[] }[] = [];
+                            let currentGroup: { dateKey: string; dateLabel: string; weekday: string; items: any[] } | null = null;
+                            for (const item of filtered) {
+                                const info = formatDateParts(item.createdAt || item.data?.createdAt);
+                                const dk = info ? info.dateKey : "unknown";
+                                if (!currentGroup || currentGroup.dateKey !== dk) {
+                                    currentGroup = { dateKey: dk, dateLabel: info?.date || "نامشخص", weekday: info?.weekday || "", items: [] };
+                                    groups.push(currentGroup);
+                                }
+                                currentGroup.items.push(item);
+                            }
 
-                                    const date = item.data?.createdAt
-                                        ? new Date(item.data.createdAt)
-                                        : null;
+                            let globalIndex = 0;
 
-                                    const formattedDate = date && !isNaN(date.getTime())
-                                        ? date.toLocaleString("fa-IR", {
-                                            year: "2-digit",
-                                            month: "2-digit",
-                                            day: "2-digit",
-                                            hour: "2-digit",
-                                            minute: "2-digit"
-                                        })
-                                        : "—";
-
-                                    return (
-                                        <div key={index} className="relative flex flex-col md:flex-row md:items-center group">
-
-                                            {/* MOBILE NODE */}
-                                            <div className="md:hidden flex justify-center mb-3">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-violet-600 flex items-center justify-center ring-4 ring-zinc-900">
-                                                    <span className="text-white font-bold text-lg">{index + 1}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* LEFT */}
-                                            <div className="w-full md:w-1/2 md:pr-8 lg:pr-16 flex justify-center md:justify-end">
-                                                {isLeft && (
-                                                    <div className="w-full max-w-md rounded-2xl p-5 border bg-white/5 backdrop-blur-xl shadow-xl">
-
-                                                        <div className="flex justify-between items-center mb-3">
-                                                            <span className={`flex items-center gap-2 text-sm ${meta.color}`}>
-                                                                <Icon className="w-4 h-4" />
-                                                                {meta.label}
-                                                            </span>
-
-                                                            <span className="text-xs text-white/40">
-                                                                {formattedDate}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* 🎨 DESIGN ENHANCED */}
-                                                        {item.type === "DESIGN" && item.data?.fileUrl && (
-                                                            <>
-                                                                <img
-                                                                    src={item.data.fileUrl}
-                                                                    className="w-full rounded-xl border border-purple-400/30"
-                                                                    alt="design"
-                                                                />
-
-                                                                <div className="mt-3 text-xs text-white/60 space-y-1">
-                                                                    <p>Version: {item.data?.version}</p>
-                                                                    <p>Status: {item.data?.status}</p>
-                                                                    {item.data?.isFinal && (
-                                                                        <p className="text-green-400">Final Design</p>
-                                                                    )}
-                                                                    {item.data?.designer?.email && (
-                                                                        <p>Designer: {item.data.designer.email}</p>
-                                                                    )}
-                                                                </div>
-                                                            </>
-                                                        )}
-
-                                                        {/* MESSAGE */}
-                                                        {item.type !== "DESIGN" && (
-                                                            <div className="space-y-3">
-                                                                <p className="text-sm text-white/80 leading-6">
-                                                                    {item.data?.message || item.data?.note || "—"}
-                                                                </p>
-
-                                                                {item.data?.attachments?.length > 0 && (
-                                                                    <div className="grid grid-cols-2 gap-2">
-                                                                        {item.data.attachments.map((file: any) => (
-                                                                            <img
-                                                                                key={file.id}
-                                                                                src={getImageUrl(file.url)}
-                                                                                alt="attachment"
-                                                                                className="rounded-xl border border-white/10 object-cover"
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* CENTER NODE */}
-                                            <div className="hidden md:flex w-14 flex-col items-center z-20">
-                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-violet-600 flex items-center justify-center shadow-[0_0_25px_-3px] shadow-purple-500 ring-4 ring-zinc-950 group-hover:scale-110 transition-all">
-                                                    <span className="text-white font-bold text-xl drop-shadow-md">
-                                                        {index + 1}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* RIGHT */}
-                                            <div className="w-full md:w-1/2 md:pl-8 lg:pl-16 flex justify-center md:justify-start">
-                                                {isRight && (
-                                                    <div className="w-full max-w-md rounded-2xl p-5 border bg-white/5 backdrop-blur-xl shadow-xl">
-
-                                                        <div className="flex justify-between items-center mb-3">
-                                                            <span className={`flex items-center gap-2 text-sm ${meta.color}`}>
-                                                                <Icon className="w-4 h-4" />
-                                                                {meta.label}
-                                                            </span>
-
-                                                            <span className="text-xs text-white/40">
-                                                                {formattedDate}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* 🎨 DESIGN ENHANCED */}
-                                                        {item.type === "DESIGN" && item.data?.fileUrl && (
-                                                            <>
-                                                                <img
-                                                                    src={item.data.fileUrl}
-                                                                    className="w-full rounded-xl border border-purple-400/30"
-                                                                    alt="design"
-                                                                />
-
-                                                                <div className="mt-3 text-xs text-white/60 space-y-1">
-                                                                    <p>Version: {item.data?.version}</p>
-                                                                    <p>Status: {item.data?.status}</p>
-                                                                    {item.data?.isFinal && (
-                                                                        <p className="text-green-400">Final Design</p>
-                                                                    )}
-                                                                    {item.data?.designer?.email && (
-                                                                        <p>Designer: {item.data.designer.email}</p>
-                                                                    )}
-                                                                </div>
-                                                            </>
-                                                        )}
-
-                                                        {/* MESSAGE */}
-                                                        {item.type !== "DESIGN" && (
-                                                            <div className="space-y-3">
-                                                                <p className="text-sm text-white/80 leading-6">
-                                                                    {item.data?.message || item.data?.note || "—"}
-                                                                </p>
-
-                                                                {item.data?.attachments?.length > 0 && (
-                                                                    <div className="grid grid-cols-2 gap-2">
-                                                                        {item.data.attachments.map((file: any) => (
-                                                                            <img
-                                                                                key={file.id}
-                                                                                src={getImageUrl(file.url)}
-                                                                                alt="attachment"
-                                                                                className="rounded-xl border border-white/10 object-cover"
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
+                            return groups.map((group) => (
+                                <div key={group.dateKey}>
+                                    {/* DATE SEPARATOR */}
+                                    <div className="relative flex items-center justify-center mb-6">
+                                        <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
+                                        <div className="relative z-10 flex items-center gap-2.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#0A0F1C] border border-white/10 shadow-lg shadow-black/30">
+                                            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent-primary/60" />
+                                            <span className="text-[11px] sm:text-[12px] font-bold text-white/70">{group.dateLabel}</span>
+                                            <span className="text-[11px] sm:text-[12px] text-white/30">{group.weekday}</span>
                                         </div>
-                                    );
-                                })
-                        ) : (
+                                    </div>
+
+                                    {group.items.map((item: any) => {
+                                        const idx = globalIndex++;
+                                        const meta = getTimelineMeta(item);
+                                        const Icon = meta.icon;
+
+                                        const note = (item.data?.note || '').toLowerCase();
+                                        const isAdmin =
+                                            item.type === "DESIGN" ||
+                                            item.data?.isAdmin === true ||
+                                            (item.type === "STATUS" && !(note.includes('مشتری') || note.includes('تحویل') || note.includes('کاربر')));
+
+                                        const isLeft = isAdmin;
+                                        const isRight = !isAdmin;
+
+                                        const info = formatDateParts(item.createdAt || item.data?.createdAt);
+                                        const timeLabel = info?.time || "";
+
+                                        return (
+                                            <div key={idx} className="relative flex flex-col md:flex-row md:items-center group mb-6 last:mb-0">
+
+                                                {/* MOBILE NODE */}
+                                                <div className="md:hidden flex justify-center mb-3">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-violet-600 flex items-center justify-center ring-4 ring-zinc-900">
+                                                        <span className="text-white font-bold text-lg">{idx + 1}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* LEFT */}
+                                                <div className="w-full md:w-1/2 md:pr-8 lg:pr-16 flex justify-center md:justify-end">
+                                                    {isLeft && (
+                                                        <div className="w-full max-w-md rounded-2xl p-5 border bg-white/5 backdrop-blur-xl shadow-xl">
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <span className={`flex items-center gap-2 text-sm ${meta.color}`}>
+                                                                    <Icon className="w-4 h-4" />
+                                                                    {meta.label}
+                                                                </span>
+                                                                {timeLabel && (
+                                                                    <span className="text-xs text-white/40 flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {timeLabel}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {item.type === "DESIGN" && item.data?.fileUrl && (
+                                                                <>
+                                                                    <img src={item.data.fileUrl} className="w-full rounded-xl border border-purple-400/30" alt="design" />
+                                                                    <div className="mt-3 text-xs text-white/60 space-y-1">
+                                                                        <p>Version: {item.data?.version}</p>
+                                                                        <p>Status: {item.data?.status}</p>
+                                                                        {item.data?.isFinal && <p className="text-green-400">Final Design</p>}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                            {item.type !== "DESIGN" && (
+                                                                <p className="text-sm text-white/80 leading-6">
+                                                                    {item.data?.message || item.data?.note || "—"}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* CENTER NODE */}
+                                                <div className="hidden md:flex w-14 flex-col items-center z-20">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-violet-600 flex items-center justify-center shadow-[0_0_25px_-3px] shadow-purple-500 ring-4 ring-zinc-950 group-hover:scale-110 transition-all">
+                                                        <span className="text-white font-bold text-xl drop-shadow-md">{idx + 1}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* RIGHT */}
+                                                <div className="w-full md:w-1/2 md:pl-8 lg:pl-16 flex justify-center md:justify-start">
+                                                    {isRight && (
+                                                        <div className="w-full max-w-md rounded-2xl p-5 border bg-white/5 backdrop-blur-xl shadow-xl">
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <span className={`flex items-center gap-2 text-sm ${meta.color}`}>
+                                                                    <Icon className="w-4 h-4" />
+                                                                    {meta.label}
+                                                                </span>
+                                                                {timeLabel && (
+                                                                    <span className="text-xs text-white/40 flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {timeLabel}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {item.type === "DESIGN" && item.data?.fileUrl && (
+                                                                <>
+                                                                    <img src={item.data.fileUrl} className="w-full rounded-xl border border-purple-400/30" alt="design" />
+                                                                    <div className="mt-3 text-xs text-white/60 space-y-1">
+                                                                        <p>Version: {item.data?.version}</p>
+                                                                        <p>Status: {item.data?.status}</p>
+                                                                        {item.data?.isFinal && <p className="text-green-400">Final Design</p>}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                            {item.type !== "DESIGN" && (
+                                                                <p className="text-sm text-white/80 leading-6">
+                                                                    {item.data?.message || item.data?.note || "—"}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ));
+                        })() : (
                             <p className="text-center text-white/40 py-12 text-sm">
                                 هیچ فعالیتی ثبت نشده است
                             </p>
@@ -472,7 +498,7 @@ export const OrderConfirmationPage: React.FC = () => {
 
                 {/* DESIGN REVIEW SECTION */}
                 {canReview && (
-                    <div className="rounded-2xl p-5 md:p-6 bg-white/5 border border-white/10 backdrop-blur-xl">
+                    <div ref={designSectionRef} id="design-section" className="rounded-2xl p-5 md:p-6 bg-white/5 border border-white/10 backdrop-blur-xl">
                         <h3 className="font-bold text-lg mb-2">نظر شما درباره طرح چیست؟</h3>
                         <p className="text-white/60 text-sm mb-5">در صورت رضایت تأیید کنید، در غیر این صورت درخواست تغییر بدهید</p>
 
@@ -573,6 +599,10 @@ export const OrderConfirmationPage: React.FC = () => {
                     onClose={() => setReviewModalOpen(false)}
                     loading={reviewLoading}
                     error={reviewError}
+                    readOnly={reviewLocked}
+                    reapprovalHint={reviewNeedsReapproval}
+                    initialRating={initialReviewRating}
+                    initialComment={initialReviewComment}
                     onSubmit={async (data) => {
                         try {
                             setReviewLoading(true);
@@ -600,14 +630,11 @@ export const OrderConfirmationPage: React.FC = () => {
 
                             setReviewModalOpen(false);
 
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'ثبت شد',
-                                text: data.comment?.trim()
+                            showToast.success(
+                                data.comment?.trim()
                                     ? 'نظر شما ثبت شد و پس از تایید نمایش داده می‌شود'
-                                    : 'امتیاز شما ثبت شد',
-                                confirmButtonText: 'باشه'
-                            });
+                                    : 'امتیاز شما ثبت شد'
+                            );
 
                         } catch (err: any) {
                             const apiError = err?.response?.data?.error;
@@ -658,6 +685,8 @@ export const OrderConfirmationPage: React.FC = () => {
 const Row = ({ label, value, bold }: any) => (
     <div className={`flex justify-between text-sm ${bold ? 'font-bold border-t border-white/10 pt-2' : 'text-white/70'}`}>
         <span>{label}</span>
-        <span>{value.toLocaleString('fa-IR')} ریال</span>
+        <span className={value < 0 ? 'text-emerald-400' : ''}>
+            {Math.abs(value).toLocaleString('fa-IR')} ریال{value < 0 ? ' -' : ''}
+        </span>
     </div>
 );

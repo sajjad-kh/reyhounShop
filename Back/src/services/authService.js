@@ -12,7 +12,7 @@ class AuthService {
    * @returns {Promise<Object>} Created user and token
    */
   async register(userData) {
-    const { email, password, name, phone } = userData;
+    const { email, password, name, phone, ref, birthDate } = userData;
 
     // Check if user already exists
     const existingUser = await getPrismaClient().user.findFirst({
@@ -43,7 +43,7 @@ class AuthService {
         password: hashedPassword,
         name,
         phone: phone || null,
-        // birthDate: birthDate ? new Date(birthDate) : null
+        birthDate: birthDate ? new Date(birthDate) : null
       },
       select: {
         id: true,
@@ -54,7 +54,7 @@ class AuthService {
         isActive: true,
         is2FAEnabled: true,
         loyaltyPoints: true,
-        // birthDate: true,
+        birthDate: true,
         createdAt: true
       }
     });
@@ -66,11 +66,37 @@ class AuthService {
       }
     });
 
+    // Ensure loyalty wallet exists BEFORE any point awards (referral needs it)
+    try {
+      const loyaltyService = require('./loyaltyService');
+      await loyaltyService.ensureWallet(user.id);
+    } catch (e) {
+      console.error('Ensure loyalty wallet failed:', e.message);
+    }
+
+    // Process referral signup reward
+    if (ref) {
+      try {
+        const loyaltyService = require('./loyaltyService');
+        await loyaltyService.processReferralSignup(user.id, String(ref).toUpperCase());
+      } catch (e) {
+        console.error('Referral signup failed:', e.message);
+      }
+    }
+
     // Generate JWT token
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role
+    });
+
+    // Generate refresh token
+    const refreshToken = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      type: 'refresh'
     });
 
     // Log registration activity
@@ -91,6 +117,7 @@ class AuthService {
     return {
       user,
       token,
+      refreshToken,
       expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     };
   }
@@ -692,9 +719,9 @@ async checkTelegramSession(loginId) {
     try {
       await getPrismaClient().activityLog.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
+          order: orderId ? { connect: { id: orderId } } : undefined,
           targetUserId,
-          orderId,
           actorType,
           action,
           entity,

@@ -144,7 +144,8 @@ const paginationOptimizer = (req, res, next) => {
     // If data has pagination info, format it consistently
     if (data && typeof data === 'object' && data.pagination) {
       const formattedData = {
-        data: data.data || data.items || data.results,
+        ...data,
+        data: data.data || data.items || data.results || data.discounts,
         pagination: {
           page: data.pagination.page,
           limit: data.pagination.limit,
