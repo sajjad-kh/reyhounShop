@@ -12,97 +12,111 @@ import {
     X,
     LogOut,
     Store,
-    Truck ,Star,CreditCard, MousePointerClick, Tag
+    Truck,
+    Star,
+    CreditCard,
+    MousePointerClick,
+    Tag,
+    ChevronDown,
+    Gift,
+    FileText,
 } from 'lucide-react';
 
+interface NavItem {
+    path: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+}
 
-// const PaymentIcon = () => (
-//     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-//     </svg>
-// );
+interface NavGroup {
+    title: string;
+    items: NavItem[];
+}
 
+const NAV_GROUPS: NavGroup[] = [
+    {
+        title: 'داشبورد',
+        items: [
+            { path: '/admin', label: 'داشبورد', icon: LayoutDashboard },
+        ],
+    },
+    {
+        title: 'مدیریت محصولات',
+        items: [
+            { path: '/admin/products', label: 'محصولات', icon: Package },
+            { path: '/admin/basalam', label: 'باسلام', icon: Store },
+        ],
+    },
+    {
+        title: 'مدیریت سفارشات',
+        items: [
+            { path: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
+            { path: '/admin/shipping', label: 'روش ارسال', icon: Truck },
+        ],
+    },
+    {
+        title: 'مدیریت کاربران',
+        items: [
+            { path: '/admin/users', label: 'کاربران', icon: Users },
+            { path: '/admin/reviews', label: 'نظرات', icon: Star },
+        ],
+    },
+    {
+        title: 'مالی',
+        items: [
+            { path: '/admin/payment-accounts', label: 'حساب‌های پرداخت', icon: CreditCard },
+            { path: '/admin/discounts', label: 'تخفیف‌ها', icon: Tag },
+        ],
+    },
+    {
+        title: 'وفاداری و ابزارها',
+        items: [
+            { path: '/admin/loyalty', label: 'وفاداری', icon: Gift },
+            { path: '/admin/tours', label: 'راهنمای تور', icon: MousePointerClick },
+            { path: '/admin/logs', label: 'لاگ‌ها', icon: FileText },
+        ],
+    },
+];
 
 const AdminLayout: React.FC = () => {
     const { state, logout } = useAuth();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Check if user is admin
+    const getInitialCollapsed = (): Record<string, boolean> => {
+        const state: Record<string, boolean> = {};
+        for (const g of NAV_GROUPS) {
+            const hasActive = g.items.some((item) => {
+                if (item.path === '/admin') return location.pathname === '/admin';
+                return location.pathname.startsWith(item.path);
+            });
+            state[g.title] = !hasActive;
+        }
+        return state;
+    };
+
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(getInitialCollapsed);
+
     if (!state.user || state.user.role !== 'ADMIN') {
         return <Navigate to="/login" replace />;
     }
 
     const user = state.user;
 
-    const navItems = [
-        {
-            path: '/admin',
-            label: 'Dashboard',
-            icon: LayoutDashboard,
-        },
-        {
-            path: '/admin/products',
-            label: 'Products',
-            icon: Package,
-        },
-        {
-            path: '/admin/orders',
-            label: 'Orders',
-            icon: ShoppingCart,
-        },
-        {
-            path: '/admin/users',
-            label: 'Users',
-            icon: Users,
-        },
-        {
-            path: '/admin/basalam',
-            label: 'Basalam',
-            icon: Store,
-        },
-        {
-            path: '/admin/shipping',
-            label: 'Shipping Methods',
-            icon: Truck,
-        },
-        {
-            path: '/admin/reviews',
-            label: 'Review',
-            icon: Star,
-        },
-        {
-            path: '/admin/payment-accounts',
-            label: 'Payment Accounts',
-            icon: CreditCard,
-        },
-        {
-            path: '/admin/logs',
-            label: 'Logs',
-            icon: CreditCard,
-        },
-        {
-            path: '/admin/tours',
-            label: 'Tour Guide',
-            icon: MousePointerClick,
-        },
-        {
-            path: '/admin/loyalty',
-            label: 'Loyalty',
-            icon: Star,
-        },
-        {
-            path: '/admin/discounts',
-            label: 'تخفیف‌ها',
-            icon: Tag,
-        },
-    ];
-
     const isActive = (path: string) => {
-        if (path === '/admin') {
-            return location.pathname === '/admin';
-        }
+        if (path === '/admin') return location.pathname === '/admin';
         return location.pathname.startsWith(path);
+    };
+
+    const toggleGroup = (title: string) => {
+        setCollapsedGroups((prev) => {
+            const next: Record<string, boolean> = {};
+            for (const g of NAV_GROUPS) {
+                next[g.title] = true;
+            }
+            next[title] = false;
+            return next;
+        });
     };
 
     return (
@@ -131,9 +145,7 @@ const AdminLayout: React.FC = () => {
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <p className="text-text-primary text-sm font-medium">
-                                    {user.name}
-                                </p>
+                                <p className="text-text-primary text-sm font-medium">{user.name}</p>
                                 <p className="text-text-muted text-xs">{user.role}</p>
                             </div>
                         </div>
@@ -151,39 +163,71 @@ const AdminLayout: React.FC = () => {
             <div className="flex pt-20">
                 {/* Sidebar */}
                 <aside
-                    className={`fixed lg:sticky top-20 left-0 h-[calc(100vh-5rem)] w-64 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-                        }`}
+                    className={`fixed lg:sticky top-20 left-0 h-[calc(100vh-5rem)] w-64 transition-transform duration-300 z-40 ${
+                        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                    }`}
                 >
                     <div className="h-full p-6">
                         <GlassCard className="h-full p-4">
-                            <nav className="space-y-2">
-                                {navItems.map((item) => {
-                                    const Icon = item.icon;
-                                    const active = isActive(item.path);
+                            <nav className="space-y-4">
+                                {NAV_GROUPS.map((group) => {
+                                    const isCollapsed = collapsedGroups[group.title] ?? false;
+                                    const hasActive = group.items.some((item) => isActive(item.path));
 
                                     return (
-                                        <Link
-                                            key={item.path}
-                                            to={item.path}
-                                            onClick={() => setSidebarOpen(false)}
-                                            className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${active
-                                                ? 'bg-gradient-accent text-white shadow-glass'
-                                                : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+                                        <div key={group.title}>
+                                            <button
+                                                onClick={() => toggleGroup(group.title)}
+                                                className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                                                    hasActive
+                                                        ? 'text-accent-primary'
+                                                        : 'text-text-muted hover:text-text-secondary'
                                                 }`}
-                                        >
-                                            <Icon className="w-5 h-5" />
-                                            <span className="font-medium">{item.label}</span>
-                                        </Link>
+                                            >
+                                                <span>{group.title}</span>
+                                                <ChevronDown
+                                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                                        isCollapsed ? '' : 'rotate-180'
+                                                    }`}
+                                                />
+                                            </button>
+
+                                            {!isCollapsed && (
+                                                <div className="mt-1 space-y-1">
+                                                    {group.items.map((item) => {
+                                                        const Icon = item.icon;
+                                                        const active = isActive(item.path);
+
+                                                        return (
+                                                            <Link
+                                                                key={item.path}
+                                                                to={item.path}
+                                                                onClick={() => setSidebarOpen(false)}
+                                                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${
+                                                                    active
+                                                                        ? 'bg-gradient-accent text-white shadow-glass'
+                                                                        : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+                                                                }`}
+                                                            >
+                                                                <Icon className="w-4 h-4 flex-shrink-0" />
+                                                                <span className="font-medium">{item.label}</span>
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </nav>
 
-                            <div className="mt-4 pt-8 border-t border-border-glass-light">
+                            <div className="mt-4 pt-4 border-t border-border-glass-light">
                                 <Link
                                     to="/"
-                                    className="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all"
+                                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all whitespace-nowrap"
                                 >
-                                    <span className="font-medium">← Back to Store</span>
+                                    <LogOut className="w-4 h-4 rotate-180" />
+                                    <span className="font-medium">بازگشت به فروشگاه</span>
                                 </Link>
                             </div>
                         </GlassCard>

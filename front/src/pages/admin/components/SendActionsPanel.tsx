@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, CheckCircle2, Truck } from "lucide-react";
+import { toast } from '../../../utils/toast';
 
 import type { UnifiedAdminOrderRow } from "../types";
 
@@ -33,7 +34,7 @@ export default function SendActionsPanel({
   const submitShipment = async () => {
     if (isShipped) return;
     if (!trackingCode.trim()) {
-      alert("کد رهگیری یا شماره موبایل پیک را وارد کنید");
+      toast.error("کد رهگیری یا شماره موبایل پیک را وارد کنید");
       return;
     }
     await onSubmitShipment(trackingCode);

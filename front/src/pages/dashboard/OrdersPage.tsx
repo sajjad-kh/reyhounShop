@@ -7,6 +7,7 @@ import { orderService } from '../../services/orderService';
 import { Order } from '../../types/order';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { getImageUrl } from '../../utils/constants';
+import { toast } from '../../utils/toast';
 
 /* ================= ICONS ================= */
 
@@ -89,10 +90,10 @@ export const OrdersPage: React.FC = () => {
             const updated = await orderService.resendPaymentProof(selected.id, file);
             setSelected(updated);
             setOrders(prev => prev.map(o => (o.id === updated.id ? updated : o)));
-            alert('رسید با موفقیت مجدد ارسال شد و در انتظار بررسی ادمین است.');
+            toast.success('رسید با موفقیت مجدد ارسال شد و در انتظار بررسی ادمین است.');
         } catch (error: any) {
             const message = error?.response?.data?.error?.message || error?.message || 'خطا در ارسال مجدد رسید';
-            alert(message);
+            toast.error(message);
         } finally {
             setIsResubmitting(false);
             event.target.value = '';
@@ -105,7 +106,7 @@ export const OrdersPage: React.FC = () => {
             setIsDownloadingPdf(true);
             await orderService.downloadReceiptPdf(selected.id);
         } catch (error) {
-            alert('دانلود PDF رسید با خطا مواجه شد.');
+            toast.error('دانلود PDF رسید با خطا مواجه شد.');
         } finally {
             setIsDownloadingPdf(false);
         }

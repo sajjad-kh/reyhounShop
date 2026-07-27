@@ -148,7 +148,6 @@ export const ProfilePage: React.FC = () => {
         setIsUpdatingProfile(true);
 
         try {
-            // TODO: Implement profile update API call
             const nameValidation = validateName(profileData.name);
             const phoneValidation = validatePhone(profileData.phone);
 
@@ -156,9 +155,6 @@ export const ProfilePage: React.FC = () => {
                 name: nameValidation.sanitized!,
                 phone: phoneValidation.sanitized,
             });
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
             setProfileSuccess('Profile updated successfully!');
         } catch (error) {

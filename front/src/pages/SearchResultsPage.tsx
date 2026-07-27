@@ -8,6 +8,7 @@ import { FilterSidebar } from '../components/ui/FilterSidebar';
 import { Pagination } from '../components/ui/Pagination';
 import { SearchBar } from '../components/ui/SearchBar';
 import { productService } from '../services/productService';
+import { toast } from '../utils/toast';
 import { Product, Category, ProductFilters, ProductSort } from '../types/product';
 import { UI_CONSTANTS } from '../utils/constants';
 
@@ -209,7 +210,7 @@ export const SearchResultsPage: React.FC = () => {
             }
         } catch (error) {
             console.error('Failed to add to cart:', error);
-            alert('خطا در افزودن به سبد خرید');
+            toast.error('خطا در افزودن به سبد خرید');
         }
     };
 

@@ -5,6 +5,7 @@ import { GlassInput } from '../../components/ui/GlassInput';
 import { useAuth } from '../../hooks/useAuth';
 import { Address } from '../../types/auth';
 import { addressService } from '../../services/addressService';
+import { toast } from '../../utils/toast';
 
 // Icons
 const PlusIcon = () => (
@@ -245,7 +246,7 @@ export const AddressesPage: React.FC = () => {
             );
         } catch (error) {
             console.error('Failed to delete address:', error);
-            alert('Failed to delete address. Please try again.');
+            toast.error('خطا در حذف آدرس. لطفاً دوباره تلاش کنید.');
         } finally {
             setIsDeleting(null);
         }
@@ -261,7 +262,7 @@ export const AddressesPage: React.FC = () => {
             );
         } catch (error) {
             console.error('Failed to set default address:', error);
-            alert('Failed to set default address. Please try again.');
+            toast.error('خطا در تنظیم آدرس پیش‌فرض. لطفاً دوباره تلاش کنید.');
         }
     };
 

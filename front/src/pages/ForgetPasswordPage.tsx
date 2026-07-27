@@ -58,12 +58,7 @@ export const ForgetPasswordPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // TODO: API Call
-      // await authService.forgotPassword(email);
-
-      await new Promise(resolve =>
-        setTimeout(resolve, 1500)
-      );
+      await authService.forgotPassword(email);
 
       setEmailSent(true);
     } catch (error) {

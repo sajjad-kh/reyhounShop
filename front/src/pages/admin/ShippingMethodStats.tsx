@@ -5,6 +5,7 @@ import { shippingMethodService } from '../../services/shippingMethodService';
 import { ShippingMethod } from '../../types/shipping';
 import { ShippingMethodModal, ShippingMethodFormData } from '../../components/admin/ShippingMethodModal';
 import { Plus, Edit2, Trash2, RefreshCw, Package, Truck } from 'lucide-react';
+import { toast } from '../../utils/toast';
 
 type TabType = 'basalam' | 'internal';
 
@@ -41,7 +42,7 @@ const ShippingMethodsManagement: React.FC = () => {
         const token = localStorage.getItem('basalam_token');
 
         if (!token?.trim()) {
-            alert('لطفاً ابتدا توکن Basalam را وارد کنید');
+            toast.error('لطفاً ابتدا توکن Basalam را وارد کنید');
             return;
         }
 
@@ -49,10 +50,10 @@ const ShippingMethodsManagement: React.FC = () => {
             setSyncing(true);
             await shippingMethodService.syncShippingMethods(token);
             await fetchShippingMethods();
-            alert('همگام‌سازی با موفقیت انجام شد');
+            toast.success('همگام‌سازی با موفقیت انجام شد');
         } catch (error: any) {
             console.error(error);
-            alert(error.message || 'خطا در همگام‌سازی');
+            toast.error(error.message || 'خطا در همگام‌سازی');
         } finally {
             setSyncing(false);
         }
@@ -72,9 +73,9 @@ const ShippingMethodsManagement: React.FC = () => {
             // 🔥 optimistic remove
             setMethods(prev => prev.filter(m => m.id !== method.id));
 
-            alert('حذف شد');
+            toast.success('حذف شد');
         } catch (error: any) {
-            alert(error.message || 'خطا در حذف');
+            toast.error(error.message || 'خطا در حذف');
         }
     };
 

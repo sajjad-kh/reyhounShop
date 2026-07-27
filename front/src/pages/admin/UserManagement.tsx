@@ -8,6 +8,7 @@ import { adminService } from '../../services/adminService';
 import { User } from '../../types/auth';
 import { Search, Trash2, Shield, Users as UsersIcon } from 'lucide-react';
 import { USER_ROLES } from '../../utils/constants';
+import { toast } from '../../utils/toast';
 
 const getPageRange = (current: number, total: number): (number | '...')[] => {
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -87,7 +88,7 @@ const UserManagement: React.FC = () => {
             await adminService.updateUserRole(userId, newRole);
             fetchUsers();
         } catch (err: any) {
-            alert(err.message || 'Failed to update user role');
+            toast.error(err.message || 'خطا در تغییر نقش کاربر');
         }
     };
 
@@ -99,7 +100,7 @@ const UserManagement: React.FC = () => {
             await adminService.deleteUser(userId);
             fetchUsers();
         } catch (err: any) {
-            alert(err.message || 'Failed to delete user');
+            toast.error(err.message || 'خطا در حذف کاربر');
         }
     };
 

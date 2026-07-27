@@ -20,7 +20,6 @@ export const CartPage: React.FC = () => {
 
   // ✅ Safe fallbacks (فقط لاجیک – بدون تغییر UI)
   const internalItems = cart?.items ?? [];
-  console.log("nterdfsdgdfgdfhgdfg",cart?.items)
   const basalamCart = basalamCartRaw ?? [];
 
   const safeCart = cart ?? {

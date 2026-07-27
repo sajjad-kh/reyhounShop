@@ -252,7 +252,7 @@ export const CheckoutPage: React.FC = () => {
 
         } catch (err) {
             console.error("Order submit failed:", err);
-            alert("خطا در ثبت سفارش");
+            toast.error("خطا در ثبت سفارش");
         }
     };
 

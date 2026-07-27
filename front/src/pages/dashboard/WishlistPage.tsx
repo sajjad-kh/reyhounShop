@@ -6,6 +6,7 @@ import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
 import { cn } from '../../utils';
 import { getImageUrl } from '../../utils/constants';
+import { toast } from '../../utils/toast';
 
 // Icons
 const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
@@ -70,7 +71,7 @@ export const WishlistPage: React.FC = () => {
             await removeFromWishlist(wishlistItemId);
         } catch (err) {
             console.error('Error removing from wishlist:', err);
-            alert('Failed to remove item from wishlist');
+            toast.error('خطا در حذف از علاقه‌مندی‌ها');
         } finally {
             setRemovingItems(prev => {
                 const next = new Set(prev);
@@ -92,7 +93,7 @@ export const WishlistPage: React.FC = () => {
 
         } catch (err) {
             console.error('Error moving to cart:', err);
-            alert('Failed to move item to cart');
+            toast.error('خطا در افزودن به سبد خرید');
         } finally {
             setAddingToCart(prev => {
                 const next = new Set(prev);
@@ -111,7 +112,7 @@ export const WishlistPage: React.FC = () => {
             await clearWishlistHook();
         } catch (err) {
             console.error('Error clearing wishlist:', err);
-            alert('Failed to clear wishlist');
+            toast.error('خطا در پاک کردن علاقه‌مندی‌ها');
         }
     };
 
