@@ -5,7 +5,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { Search, Package, RefreshCw, AlertCircle, Store } from 'lucide-react';
 import { adminService } from '../../services/adminService';
-import toast from 'react-hot-toast';
+import { toast } from '../../utils/toast';
 
 import type { OrderSourceFilter, UnifiedAdminOrderRow } from './types';
 import { fetchBasalamVendorParcels } from './basalamApi';

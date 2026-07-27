@@ -60,15 +60,6 @@ router.get('/tiers', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/benefits', authenticateToken, async (req, res) => {
-  try {
-    const benefits = await loyaltyService.getUserTierBenefits(req.user.id);
-    res.json({ success: true, data: benefits });
-  } catch (error) {
-    res.status(500).json({ success: false, error: { code: 'BENEFITS_ERROR', message: error.message } });
-  }
-});
-
 router.get('/rewards', authenticateToken, async (req, res) => {
   try {
     const rewards = await loyaltyService.listRewards();

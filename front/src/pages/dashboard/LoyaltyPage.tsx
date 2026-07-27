@@ -46,6 +46,7 @@ const LoyaltyPageInner: React.FC = () => {
 
     const dailyLogin = useDailyLogin();
     const birthday = useBirthday();
+    const tiersQ = useLoyaltyTiers();
     const qc = useQueryClient();
 
     const data = pointsQ.data;
@@ -131,6 +132,55 @@ const LoyaltyPageInner: React.FC = () => {
             </div>
 
             {data && <LoyaltyProgress data={data} />}
+
+            {tiersQ.data && tiersQ.data.length > 0 && (
+                <GlassCard>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Crown className="w-5 h-5 text-accent-primary" />
+                        <h2 className="text-xl font-semibold text-text-primary">مزایای سطوح</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr className="text-text-secondary text-xs">
+                                    <th className="text-right py-2 px-3 font-semibold">مزایا</th>
+                                    {tiersQ.data.map((t) => (
+                                        <th key={t.id} className="text-center py-2 px-3 font-semibold">
+                                            <span className="inline-block px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: t.color || '#6e8efb' }}>
+                                                {t.label}
+                                            </span>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {([
+                                    { key: 'discountPercent', label: 'تخفیف سفارش', format: (v: number) => v ? `${v}%` : '-' },
+                                    { key: 'pointsMultiplier', label: 'ضریب امتیاز', format: (v: number) => v && v > 1 ? `${v}x` : '1x' },
+                                    { key: 'freeShipping', label: 'ارسال رایگان', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                    { key: 'freeShippingMinOrder', label: 'حداقل برای ارسال رایگان', format: (v: number) => v ? `${v.toLocaleString('fa-IR')} ریال` : '-' },
+                                    { key: 'giftWrappingFree', label: 'بسته‌بندی هدیه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                    { key: 'birthdayPointsBonus', label: 'امتیاز اضافی تولد', format: (v: number) => v ? `+${v}` : '-' },
+                                    { key: 'returnDays', label: 'مهلت مرجوعی', format: (v: number) => `${v || 7} روز` },
+                                    { key: 'annualGift', label: 'هدیه سالانه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                ] as { key: keyof TierBenefits; label: string; format: (v: any) => React.ReactNode }[]).map(({ key, label, format }) => (
+                                    <tr key={key} className="border-t border-border-glass-light/40">
+                                        <td className="py-2.5 px-3 text-text-primary font-medium whitespace-nowrap">{label}</td>
+                                        {tiersQ.data!.map((t) => {
+                                            const val = t.benefits?.[key];
+                                            return (
+                                                <td key={t.id} className="py-2.5 px-3 text-center text-text-secondary">
+                                                    {format(val)}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </GlassCard>
+            )}
 
             <div className="flex flex-wrap gap-3">
                 <GlassButton variant="accent" onClick={handleDailyLogin} loading={dailyLogin.isPending}>

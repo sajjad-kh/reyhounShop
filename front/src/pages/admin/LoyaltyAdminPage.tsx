@@ -608,11 +608,26 @@ export const LoyaltyAdminPage: React.FC = () => {
                                     setTierForm((f) => ({ ...f, minPoints: Number(v) || 0 }))
                                 }
                             />
-                            <GlassInput
-                                label="رنگ (hex)"
-                                value={tierForm.color}
-                                onChange={(v) => setTierForm((f) => ({ ...f, color: v }))}
-                            />
+                            <div>
+                                <label className="block text-sm text-text-secondary mb-1.5">رنگ سطح</label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="color"
+                                        value={tierForm.color}
+                                        onChange={(e) => setTierForm((f) => ({ ...f, color: e.target.value }))}
+                                        className="w-10 h-10 rounded-lg border border-border-glass-light cursor-pointer bg-transparent p-0.5"
+                                        title="انتخاب رنگ"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={tierForm.color}
+                                        onChange={(e) => setTierForm((f) => ({ ...f, color: e.target.value }))}
+                                        className="flex-1 glass-input bg-glass-light rounded-xl px-3 py-2 text-text-primary text-sm font-mono"
+                                        placeholder="#6e8efb"
+                                        maxLength={7}
+                                    />
+                                </div>
+                            </div>
 
                             <div className="pt-2 pb-1">
                                 <p className="text-sm font-semibold text-text-primary mb-2">مزایای سطح</p>

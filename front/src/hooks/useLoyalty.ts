@@ -52,9 +52,6 @@ export const useLoyaltyTransactions = (page = 1, type?: LoyaltyTransactionSource
 export const useLoyaltyTiers = () =>
     useQuery({ queryKey: loyaltyKeys.tiers, queryFn: () => loyaltyService.getTiers() });
 
-export const useLoyaltyBenefits = () =>
-    useQuery({ queryKey: ['loyalty', 'benefits'], queryFn: () => loyaltyService.getBenefits() });
-
 export const useLoyaltyRewards = () =>
     useQuery({ queryKey: loyaltyKeys.rewards, queryFn: () => loyaltyService.getRewards() });
 

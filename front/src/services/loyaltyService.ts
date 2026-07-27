@@ -287,11 +287,6 @@ class LoyaltyService {
         return this.unwrap(res);
     }
 
-    async getBenefits(): Promise<TierBenefits | null> {
-        const res = await api.get<TierBenefits | null>('/loyalty/benefits');
-        return this.unwrap(res);
-    }
-
     async getReferral(): Promise<LoyaltyReferral> {
         const res = await api.get<LoyaltyReferral>('/loyalty/referral');
         return this.unwrap(res);

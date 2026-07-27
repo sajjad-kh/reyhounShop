@@ -1,7 +1,7 @@
 // components/OrderActivityModal.tsx
 import { apiClient } from '../../../utils/api';
 import React, { useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from '../../../utils/toast';
 
 import { AnimatePresence, motion } from "framer-motion";
 import SendActionsPanel from "./SendActionsPanel";
