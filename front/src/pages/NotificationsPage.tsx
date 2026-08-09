@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Package, CreditCard, Tag, Palette, Gift, KeyRound, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GlassPagination } from '../components/ui/GlassPagination';
+import { Bell, Check, CheckCheck, Package, CreditCard, Tag, Palette, Gift, KeyRound, X, ShoppingBag, Star } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import notificationService, { Notification } from '../services/notificationService';
 
@@ -192,28 +193,12 @@ export const NotificationsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 px-5 py-4 border-t border-white/10">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <span className="text-sm text-white/40">
-                صفحه {page} از {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+          <GlassPagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            className="px-5 py-4 border-t border-white/10"
+          />
         </div>
       </div>
     </div>

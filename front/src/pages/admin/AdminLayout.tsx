@@ -20,6 +20,7 @@ import {
     ChevronDown,
     Gift,
     FileText,
+    Warehouse,
 } from 'lucide-react';
 
 interface NavItem {
@@ -44,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
         title: 'مدیریت محصولات',
         items: [
             { path: '/admin/products', label: 'محصولات', icon: Package },
+            { path: '/admin/inventory', label: 'انبار', icon: Warehouse },
             { path: '/admin/basalam', label: 'باسلام', icon: Store },
         ],
     },
@@ -243,7 +245,7 @@ const AdminLayout: React.FC = () => {
                 )}
 
                 {/* Main Content */}
-                <main className="flex-1 min-h-[calc(100vh-5rem)] w-full overflow-x-hidden">
+                <main className="flex-1 min-h-[calc(100vh-5rem)] w-full overflow-x-hidden p-4 sm:p-6">
                     <Outlet />
                 </main>
             </div>

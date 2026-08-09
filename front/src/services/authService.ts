@@ -157,7 +157,7 @@ export class AuthService {
      */
     async getCurrentUser(): Promise<User> {
         try {
-            const response = await api.get<User>(API_ENDPOINTS.AUTH.PROFILE);
+            const response = await api.get<User>(API_ENDPOINTS.USER.PROFILE);
 
             if (response.success && response.data) {
                 // Update stored user data

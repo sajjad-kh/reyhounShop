@@ -15,6 +15,7 @@ import {
 } from '../../utils/validation';
 import { checkPasswordStrength } from '../../utils/passwordStrength';
 import { cn } from '../../utils';
+import { toast } from '../../utils/toast';
 import { HelpCircle } from 'lucide-react';
 
 // Icons
@@ -57,6 +58,7 @@ const StarIcon = () => (
 interface ProfileFormData {
     name: string;
     phone: string;
+    birthDate: string;
 }
 
 interface PasswordFormData {
@@ -83,7 +85,6 @@ export const ProfilePage: React.FC = () => {
     });
     const [profileErrors, setProfileErrors] = useState<FormErrors>({});
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-    const [profileSuccess, setProfileSuccess] = useState('');
 
     // Password form state
     const [passwordData, setPasswordData] = useState<PasswordFormData>({
@@ -93,15 +94,16 @@ export const ProfilePage: React.FC = () => {
     });
     const [passwordErrors, setPasswordErrors] = useState<FormErrors>({});
     const [isChangingPassword, setIsChangingPassword] = useState(false);
-    const [passwordSuccess, setPasswordSuccess] = useState('');
 
     // Initialize profile data
     useEffect(() => {
         if (state.user) {
+            const bd = state.user.birthDate;
+            const formattedDate = bd ? new Date(bd).toISOString().split('T')[0] : '';
             setProfileData({
                 name: state.user.name || '',
                 phone: state.user.phone || '',
-                birthDate: state.user.birthDate || '',
+                birthDate: formattedDate,
             });
         }
     }, [state.user]);
@@ -113,11 +115,6 @@ export const ProfilePage: React.FC = () => {
         // Clear field error
         if (profileErrors[field]) {
             setProfileErrors(prev => ({ ...prev, [field]: undefined }));
-        }
-
-        // Clear success message
-        if (profileSuccess) {
-            setProfileSuccess('');
         }
     };
 
@@ -154,13 +151,12 @@ export const ProfilePage: React.FC = () => {
             await authService.updateProfile({
                 name: nameValidation.sanitized!,
                 phone: phoneValidation.sanitized,
+                birthDate: profileData.birthDate || undefined,
             });
 
-            setProfileSuccess('Profile updated successfully!');
+            toast.success('پروفایل با موفقیت بروزرسانی شد');
         } catch (error) {
-            setProfileErrors({
-                general: error instanceof Error ? error.message : 'Failed to update profile'
-            });
+            toast.error(error instanceof Error ? error.message : 'خطا در بروزرسانی پروفایل');
         } finally {
             setIsUpdatingProfile(false);
         }
@@ -173,11 +169,6 @@ export const ProfilePage: React.FC = () => {
         // Clear field error
         if (passwordErrors[field]) {
             setPasswordErrors(prev => ({ ...prev, [field]: undefined }));
-        }
-
-        // Clear success message
-        if (passwordSuccess) {
-            setPasswordSuccess('');
         }
     };
 
@@ -225,16 +216,14 @@ export const ProfilePage: React.FC = () => {
                 newPassword: passwordData.newPassword,
             });
 
-            setPasswordSuccess('Password changed successfully!');
             setPasswordData({
                 currentPassword: '',
                 newPassword: '',
                 confirmPassword: '',
             });
+            toast.success('رمز عبور با موفقیت تغییر کرد');
         } catch (error) {
-            setPasswordErrors({
-                general: error instanceof Error ? error.message : 'Failed to change password'
-            });
+            toast.error(error instanceof Error ? error.message : 'خطا در تغییر رمز عبور');
         } finally {
             setIsChangingPassword(false);
         }
@@ -332,20 +321,6 @@ export const ProfilePage: React.FC = () => {
                     </h3>
 
                     <form onSubmit={handleProfileSubmit} className="space-y-6 text-right">
-                        {/* Success Message */}
-                        {profileSuccess && (
-                            <div className="glass-card p-4 bg-green-500/10 border-green-500/20 text-green-400 text-sm rounded-xl">
-                                {profileSuccess}
-                            </div>
-                        )}
-
-                        {/* General Error */}
-                        {profileErrors.general && (
-                            <div className="glass-card p-4 bg-red-500/10 border-red-500/20 text-red-400 text-sm rounded-xl">
-                                {profileErrors.general}
-                            </div>
-                        )}
-
                         {/* Email (Read-only) */}
                         <GlassInput
                             type="email"
@@ -381,15 +356,15 @@ export const ProfilePage: React.FC = () => {
                         />
 
                         {/* Birth Date */}
-                        {/* <GlassInput
+                        <GlassInput
                             type="date"
-                            label="Birth Date"
+                            label="تاریخ تولد"
                             value={profileData.birthDate}
                             onChange={handleProfileInputChange('birthDate')}
                             error={profileErrors.birthDate}
                             icon={<CalendarIcon />}
                             iconPosition="left"
-                        /> */}
+                        />
 
                         {/* Submit Button */}
                         <div className="flex justify-end">
@@ -414,20 +389,6 @@ export const ProfilePage: React.FC = () => {
                     </h3>
 
                     <form onSubmit={handlePasswordSubmit} className="space-y-6">
-                        {/* Success Message */}
-                        {passwordSuccess && (
-                            <div className="glass-card p-4 bg-green-500/10 border-green-500/20 text-green-400 text-sm rounded-xl">
-                                {passwordSuccess}
-                            </div>
-                        )}
-
-                        {/* General Error */}
-                        {passwordErrors.general && (
-                            <div className="glass-card p-4 bg-red-500/10 border-red-500/20 text-red-400 text-sm rounded-xl">
-                                {passwordErrors.general}
-                            </div>
-                        )}
-
                         {/* Current Password */}
                         <GlassInput
                             type="password"

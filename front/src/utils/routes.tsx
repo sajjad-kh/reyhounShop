@@ -30,6 +30,8 @@ import {
     LoyaltyAdminPage,
     DiscountsAdminPage
 } from '../pages/admin';
+import AdminInventory from '../pages/admin/AdminInventory';
+import AdminInventoryItem from '../pages/admin/AdminInventoryItem';
 import BasalamPage from '../pages/admin/BasalamPage';
 import { BasalamCheckoutPage } from '../pages/basalam/BasalamCheckoutPage';
 import { BasalamPaymentCallbackPage } from '../pages/basalam/BasalamPaymentCallbackPage';
@@ -276,6 +278,10 @@ export const adminRoutes: RouteObject[] = [
             {
                 path: 'discounts',
                 element: <DiscountsAdminPage />,
+            },
+            {
+                path: 'inventory',
+                element: <AdminInventoryItem />,
             },
         ],
     },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { Store, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../../services/authService';
 
@@ -594,31 +595,12 @@ const BasalamPage: React.FC = () => {
                 </div>
             </GlassCard>
 
-            {totalPages > 1 && (
-                <div className="mt-6">
-                    <GlassCard className="p-4">
-                        <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                            <button
-                                onClick={() => fetchProducts(userInfo.vendor.id, currentPage - 1)}
-                                disabled={currentPage === 1 || loading}
-                                className="px-4 py-2 bg-glass-light hover:bg-glass-medium rounded-xl transition-all disabled:opacity-50"
-                            >
-                                قبلی
-                            </button>
-                            <span className="text-text-primary px-4">
-                                صفحه {currentPage} از {totalPages}
-                            </span>
-                            <button
-                                onClick={() => fetchProducts(userInfo.vendor.id, currentPage + 1)}
-                                disabled={currentPage === totalPages || loading}
-                                className="px-4 py-2 bg-glass-light hover:bg-glass-medium rounded-xl transition-all disabled:opacity-50"
-                            >
-                                بعدی
-                            </button>
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
+            <GlassPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(p) => fetchProducts(userInfo.vendor.id, p)}
+                className="mt-6"
+            />
         </div>
     );
 };

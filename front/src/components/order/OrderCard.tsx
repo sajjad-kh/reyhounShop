@@ -197,7 +197,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
             if (!doc) return;
 
             // ۲. محاسبه مقادیر اقلام فاکتور
-            const itemsHtml = (order.items ?? []).map((item: any) => `
+            const items = order.items ?? [];
+            const itemsSubtotal = items.reduce((sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1), 0);
+            const hasShipping = (order.shippingCost || 0) > 0;
+            const hasDiscount = (order.discountAmount || 0) > 0;
+            const hasLoyalty = (order.loyaltyDiscount || 0) > 0;
+            const hasAnyDiscount = hasDiscount || hasLoyalty;
+
+            const itemsHtml = items.map((item: any) => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px; text-align: right; color: #334155;">${item.product?.name || 'محصول سفارشی'}</td>
                     <td style="padding: 12px; text-align: center; color: #334155;">${Number(item.quantity || 1).toLocaleString('fa-IR')}</td>
@@ -246,7 +253,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
                     <div class="invoice-box">
                         <table class="header-table">
                             <tr>
-                                <td class="title" style="text-align: right;">پیش‌فاکتور رسمی فروشگاه</td>
+                                <td class="title" style="text-align: right;">فاکتور رسمی فروشگاه</td>
                                 <td class="details" style="text-align: left;">
                                     <strong>شماره پیگیری:</strong> ${order.trackingCode}<br>
                                     <strong>تاریخ ثبت:</strong> ${formattedDate}<br>
@@ -257,7 +264,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
 
                         <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 22px;">
                             <strong>مشخصات خریدار:</strong><br>
-                            نام مشتری: ${order.user?.name || 'مشتری گرامی'} | ایمیل/تلفن: ${order.user?.email || '—'}
+                            نام مشتری: ${order.user?.name || 'مشتری گرامی'} | تلفن: ${order.user?.phone || '—'} | ایمیل: ${order.user?.email || '—'}
                         </div>
 
                         <table class="items-table">
@@ -276,11 +283,31 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, onOrderUpd
 
                         <div class="summary-box">
                             <div class="summary-row">
-                                <span>مبلغ کل اقلام:</span>
-                                <span>${Number(order.totalPrice || 0).toLocaleString('fa-IR')} ریال</span>
+                                <span>جمع قیمت محصولات:</span>
+                                <span>${itemsSubtotal.toLocaleString('fa-IR')} ریال</span>
                             </div>
-                            <div class="summary-row" style="font-weight: bold; font-size: 16px; color: #0284c7; border-top: 1px dashed #cbd5e1; margin-top: 5px; padding-top: 10px;">
-                                <span>مبلغ قابل پرداخت:</span>
+                            ${hasShipping ? `
+                            <div class="summary-row">
+                                <span>هزینه ارسال:</span>
+                                <span>+ ${Number(order.shippingCost).toLocaleString('fa-IR')} ریال</span>
+                            </div>` : ''}
+                            ${hasAnyDiscount ? `
+                            <div class="summary-row" style="border-top: 1px dashed #cbd5e1; margin-top: 5px; padding-top: 8px;">
+                                <span>جمع کل:</span>
+                                <span>${(itemsSubtotal + (order.shippingCost || 0)).toLocaleString('fa-IR')} ریال</span>
+                            </div>` : ''}
+                            ${hasDiscount ? `
+                            <div class="summary-row" style="color: #16a34a;">
+                                <span>کد تخفیف:</span>
+                                <span>- ${Number(order.discountAmount).toLocaleString('fa-IR')} ریال</span>
+                            </div>` : ''}
+                            ${hasLoyalty ? `
+                            <div class="summary-row" style="color: #16a34a;">
+                                <span>تخفیف امتیاز وفاداری (${order.loyaltyPointsUsed || 0} امتیاز):</span>
+                                <span>- ${Number(order.loyaltyDiscount).toLocaleString('fa-IR')} ریال</span>
+                            </div>` : ''}
+                            <div class="summary-row" style="font-weight: bold; font-size: 16px; color: #0284c7; border-top: 2px solid #0284c7; margin-top: 8px; padding-top: 10px;">
+                                <span>مبلغ نهایی قابل پرداخت:</span>
                                 <span>${Number(order.totalPrice || 0).toLocaleString('fa-IR')} ریال</span>
                             </div>
                         </div>

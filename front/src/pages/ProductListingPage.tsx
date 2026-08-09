@@ -6,7 +6,7 @@ import { GlassButton } from '../components/ui/GlassButton';
 import { GlassInput } from '../components/ui/GlassInput';
 import { ProductCard } from '../components/ui/ProductCard';
 import { FilterSidebar } from '../components/ui/FilterSidebar';
-import { Pagination } from '../components/ui/Pagination';
+import { GlassPagination } from '../components/ui/GlassPagination';
 import { productService } from '../services/productService';
 import { Product, Category, ProductFilters, ProductSort } from '../types/product';
 import { UI_CONSTANTS } from '../utils/constants';
@@ -380,7 +380,7 @@ export const ProductListingPage: React.FC = () => {
 
                                 {/* Pagination */}
                                 {totalPages > 1 && (
-                                    <Pagination
+                                    <GlassPagination
                                         currentPage={currentPage}
                                         totalPages={totalPages}
                                         onPageChange={handlePageChange}

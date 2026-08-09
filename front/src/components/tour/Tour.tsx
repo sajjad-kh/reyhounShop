@@ -150,7 +150,7 @@ const Tour: React.FC<TourProps> = ({ steps, isOpen, onClose }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, current, handleClose]);
 
-    if (!isOpen || steps.length === 0) return null;
+    if (!isOpen || steps.length === 0 || current >= steps.length) return null;
 
     const step = steps[current];
     const isLast = current === steps.length - 1;

@@ -4,23 +4,12 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { DropdownSelect } from '../../components/ui/DropdownSelect';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { adminService } from '../../services/adminService';
 import { User } from '../../types/auth';
 import { Search, Trash2, Shield, Users as UsersIcon } from 'lucide-react';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from '../../utils/toast';
-
-const getPageRange = (current: number, total: number): (number | '...')[] => {
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    const pages: (number | '...')[] = [1];
-    const start = Math.max(2, current - 1);
-    const end = Math.min(total - 1, current + 1);
-    if (start > 2) pages.push('...');
-    for (let i = start; i <= end; i++) pages.push(i);
-    if (end < total - 1) pages.push('...');
-    pages.push(total);
-    return pages;
-};
 
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -310,79 +299,12 @@ const UserManagement: React.FC = () => {
                                 </table>
                             </div>
 
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="mt-6 pt-5 border-t border-white/5">
-                                    <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                                        <p className="text-sm text-text-muted" dir="ltr">
-                                            نمایش{' '}
-                                            <span className="text-text-primary font-semibold">
-                                                {((page - 1) * 10 + 1).toLocaleString("fa-IR")}
-                                            </span>{' '}
-                                            تا{' '}
-                                            <span className="text-text-primary font-semibold">
-                                                {Math.min(page * 10, totalUsersCount).toLocaleString("fa-IR")}
-                                            </span>{' '}
-                                            از{' '}
-                                            <span className="text-accent-primary font-semibold">
-                                                {totalUsersCount.toLocaleString("fa-IR")}
-                                            </span>{' '}
-                                            کاربر
-                                        </p>
-                                        <p className="text-sm text-text-muted">
-                                            صفحه{' '}
-                                            <span className="text-text-primary font-semibold">
-                                                {page.toLocaleString("fa-IR")}
-                                            </span>{' '}
-                                            از {totalPages.toLocaleString("fa-IR")}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                        <button
-                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                            disabled={page === 1}
-                                            className="group flex items-center gap-1 px-3.5 py-2 rounded-xl glass-input text-sm text-text-secondary hover:text-text-primary hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
-                                        >
-                                            <span className="text-xs">›</span>
-                                            قبلی
-                                        </button>
-
-                                        {getPageRange(page, totalPages).map((p, i) =>
-                                            p === '...' ? (
-                                                <span
-                                                    key={`e${i}`}
-                                                    className="px-2 py-2 text-text-muted select-none"
-                                                    title="صفحات بیشتر"
-                                                >
-                                                    …
-                                                </span>
-                                            ) : (
-                                                <button
-                                                    key={p}
-                                                    onClick={() => setPage(p)}
-                                                    className={`relative min-w-[40px] px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 ${
-                                                        p === page
-                                                            ? 'bg-gradient-to-l from-accent-primary to-accent-secondary text-white shadow-lg shadow-accent-primary/30 scale-105'
-                                                            : 'glass-input text-text-secondary hover:text-text-primary hover:border-accent-primary/40'
-                                                    }`}
-                                                >
-                                                    {p.toLocaleString("fa-IR")}
-                                                </button>
-                                            )
-                                        )}
-
-                                        <button
-                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                            disabled={page === totalPages}
-                                            className="group flex items-center gap-1 px-3.5 py-2 rounded-xl glass-input text-sm text-text-secondary hover:text-text-primary hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
-                                        >
-                                            بعدی
-                                            <span className="text-xs">‹</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                            <GlassPagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={setPage}
+                                className="mt-6 pt-5 border-t border-white/5"
+                            />
                         </>
                     )}
                 </GlassCard>

@@ -60,6 +60,7 @@ export interface RegisterRequest {
 export interface UpdateProfileRequest {
     name: string;
     phone?: string;
+    birthDate?: string;
 }
 
 export interface ChangePasswordRequest {

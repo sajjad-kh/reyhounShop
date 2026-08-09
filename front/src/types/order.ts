@@ -20,6 +20,13 @@ export interface Order {
 
     items: OrderItem[];
 
+    user?: {
+        id: number;
+        name: string;
+        email?: string;
+        phone?: string;
+    };
+
     reviewedProductIds?: number[];
 
     addressId: number; // ✅ مهم‌ترین fix

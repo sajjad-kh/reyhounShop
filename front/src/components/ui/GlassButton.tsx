@@ -24,18 +24,18 @@ const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
     }, ref) => {
         const [isRippling, setIsRippling] = useState(false);
 
-        const baseClasses = 'glass-button relative overflow-hidden font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed';
+        const baseClasses = 'glass-button relative overflow-hidden font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed flex items-center';
 
         const variantClasses = {
-            primary: 'bg-glass-medium hover:bg-glass-heavy text-text-primary border-border-glass-light',
-            secondary: 'bg-glass-light hover:bg-glass-medium text-text-secondary border-border-glass-light',
-            accent: 'bg-gradient-accent text-white border-transparent hover:brightness-110'
+            primary: 'bg-gradient-to-br from-accent-primary to-[#5670e0] text-white border-accent-primary/30 shadow-lg shadow-accent-primary/25 hover:shadow-accent-primary/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200',
+            secondary: 'bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-sm text-text-secondary hover:text-text-primary border border-white/[0.08] hover:border-white/[0.2] transition-all duration-200',
+            accent: 'bg-gradient-accent text-white border-transparent shadow-lg shadow-accent-secondary/20 hover:shadow-accent-secondary/30 hover:-translate-y-0.5 transition-all duration-200'
         };
 
         const sizeClasses = {
-            sm: 'px-1.5 py-1 text-xs rounded-lg',
-            md: 'px-4 py-2.5 text-base rounded-xl',
-            lg: 'px-6 py-3 text-lg rounded-2xl'
+            sm: 'px-1.5 py-1 text-xs rounded-lg gap-1',
+            md: 'px-4 py-2.5 text-base rounded-xl gap-2',
+            lg: 'px-6 py-3 text-lg rounded-2xl gap-2'
         };
 
         const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {

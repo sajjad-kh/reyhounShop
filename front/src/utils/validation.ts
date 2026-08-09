@@ -86,13 +86,13 @@ export const validateName = (name: string): ValidationResult => {
         return { isValid: false, error: 'Name must be less than 50 characters' };
     }
 
-    // Allow letters from all languages, spaces, hyphens, and apostrophes
-    const nameRegex = /^[\p{L}\s'-]+$/u;
+    // Allow letters from all languages (including Persian/Arabic), digits, spaces, hyphens, apostrophes, and dots
+    const nameRegex = /^[\p{L}\p{N}\p{M}\s'.\-]+$/u;
 
     if (!nameRegex.test(sanitized)) {
         return {
             isValid: false,
-            error: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+            error: 'Name can only contain letters, digits, spaces, hyphens, and apostrophes',
         };
     }
 
@@ -110,7 +110,8 @@ export const validatePhone = (phone: string): ValidationResult => {
         .replace(/[\s\-().]/g, '');
 
     // E.164 format: optional '+' followed by 7-15 digits, first digit cannot be 0
-    const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+    // Also accept local formats starting with 0 (e.g. 09121112233)
+    const phoneRegex = /^(\+[1-9]\d{6,14}|0\d{9,14})$/;
 
     if (!phoneRegex.test(sanitized)) {
         return {

@@ -41,7 +41,7 @@ import type {
     TierBenefits,
 } from '../../services/loyaltyService';
 import { toast } from '../../utils/toast';
-import { Database, Clock, Trash2, Plus, Edit } from 'lucide-react';
+import { Database, Clock, Trash2, Plus, Edit, ChevronDown, ChevronLeft, Gift, Info } from 'lucide-react';
 import { cn } from '../../utils';
 
 type AdminTab = 'tiers' | 'rules' | 'campaigns' | 'rewards' | 'referrals';
@@ -159,6 +159,7 @@ export const LoyaltyAdminPage: React.FC = () => {
     const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
     const [editingCampaignId, setEditingCampaignId] = useState<number | null>(null);
     const [editingRewardId, setEditingRewardId] = useState<number | null>(null);
+    const [expandedTiers, setExpandedTiers] = useState<Set<number>>(new Set());
 
     // ----- Tier form -----
     const defaultBenefits: TierBenefits = {
@@ -522,6 +523,36 @@ export const LoyaltyAdminPage: React.FC = () => {
             {tab === 'tiers' && (
                 <>
                     <TabGuide tab="tiers" />
+
+                    {/* Birthday gift description */}
+                    <GlassCard className="bg-pink-500/5 border border-pink-500/20">
+                        <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-xl bg-pink-500/10 shrink-0">
+                                <Gift className="w-5 h-5 text-pink-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-pink-400 mb-1.5">هدیه تولد چیست و چگونه کار می‌کند؟</h3>
+                                <p className="text-xs text-text-secondary leading-relaxed">
+                                    سیستم وفاداری به صورت خودکار تاریخ تولد کاربران را از پروفایل آن‌ها دریافت می‌کند. در روز تولد کاربر، امتیازهای جایزه (birthday bonus) به صورت خودکار به حساب او اضافه می‌شود.
+                                </p>
+                                <div className="mt-2 space-y-1">
+                                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                                        <Info className="w-3 h-3 shrink-0" />
+                                        <span>مقدار امتیاز تولد از فیلد <code className="text-pink-400 bg-pink-500/10 px-1 rounded">امتیاز اضافی تولد</code> در تنظیمات هر سطح خوانده می‌شود.</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                                        <Info className="w-3 h-3 shrink-0" />
+                                        <span>اگر کاربر تاریخ تولد خود را ثبت نکرده باشد، این امتیاز اعمال نمی‌شود.</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                                        <Info className="w-3 h-3 shrink-0" />
+                                        <span>کاربر می‌تواند تاریخ تولد خود را از بخش پروفایل وارد کند و در صورت ثبت، امتیاز به صورت خودکار اعمال می‌شود.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <GlassCard>
                         <h2 className="text-lg font-semibold text-text-primary mb-3">سطوح موجود</h2>
@@ -529,59 +560,82 @@ export const LoyaltyAdminPage: React.FC = () => {
                             <LoadingSpinner />
                         ) : (
                             <div className="space-y-2">
-                                {tiersQ.data?.map((t) => (
+                                {tiersQ.data?.map((t) => {
+                                    const isExpanded = expandedTiers.has(t.id);
+                                    return (
                                     <div
                                         key={t.id}
-                                        className="flex items-center justify-between glass-card bg-glass-light p-3 rounded-xl"
+                                        className="glass-card bg-glass-light rounded-xl overflow-hidden transition-all duration-200"
                                     >
-                                        <div>
-                                            <p className="font-medium text-text-primary">{t.label}</p>
-                                            <p className="text-xs text-text-muted">
-                                                {formatNumber(t.minPoints)} تا{' '}
-                                                {t.maxPoints ? formatNumber(t.maxPoints) : '∞'} امتیاز
-                                            </p>
-                                            {t.benefits && (
-                                                <div className="flex flex-wrap gap-1 mt-1">
+                                        {/* Collapsed header */}
+                                        <div
+                                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors"
+                                            onClick={() => setExpandedTiers(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
+                                                return next;
+                                            })}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-text-primary truncate">{t.label}</p>
+                                                    <p className="text-xs text-text-muted">
+                                                        {formatNumber(t.minPoints)} تا{' '}
+                                                        {t.maxPoints ? formatNumber(t.maxPoints) : '∞'} امتیاز
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); startEditTier(t); }}
+                                                    className="p-1.5 rounded-lg hover:bg-white/10 text-text-secondary"
+                                                    title="ویرایش"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteTier(t.id); }}
+                                                    className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400"
+                                                    title="حذف"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                                <ChevronDown className={cn('w-4 h-4 text-text-muted transition-transform duration-200', isExpanded && 'rotate-90')} />
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded benefits */}
+                                        {isExpanded && t.benefits && (
+                                            <div className="px-3 pb-3 border-t border-white/5">
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
                                                     {t.benefits.discountPercent > 0 && (
-                                                        <span className="text-[10px] bg-accent-primary/10 text-accent-primary px-1.5 py-0.5 rounded-full">{t.benefits.discountPercent}% تخفیف</span>
+                                                        <span className="text-[11px] bg-accent-primary/10 text-accent-primary px-2 py-1 rounded-lg">{t.benefits.discountPercent}% تخفیف</span>
                                                     )}
                                                     {t.benefits.freeShipping && (
-                                                        <span className="text-[10px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded-full">ارسال رایگان</span>
+                                                        <span className="text-[11px] bg-green-500/10 text-green-400 px-2 py-1 rounded-lg">ارسال رایگان</span>
                                                     )}
                                                     {t.benefits.giftWrappingFree && (
-                                                        <span className="text-[10px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded-full">بسته‌بندی هدیه</span>
+                                                        <span className="text-[11px] bg-purple-500/10 text-purple-400 px-2 py-1 rounded-lg">بسته‌بندی هدیه</span>
                                                     )}
                                                     {t.benefits.pointsMultiplier > 1 && (
-                                                        <span className="text-[10px] bg-yellow-500/10 text-yellow-400 px-1.5 py-0.5 rounded-full">{t.benefits.pointsMultiplier}x امتیاز</span>
+                                                        <span className="text-[11px] bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-lg">{t.benefits.pointsMultiplier}x امتیاز</span>
                                                     )}
                                                     {t.benefits.annualGift && (
-                                                        <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full">هدیه سالانه</span>
+                                                        <span className="text-[11px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded-lg">هدیه سالانه</span>
+                                                    )}
+                                                    {t.benefits.birthdayPointsBonus > 0 && (
+                                                        <span className="text-[11px] bg-pink-500/10 text-pink-400 px-2 py-1 rounded-lg">تولد +{formatNumber(t.benefits.birthdayPointsBonus)} امتیاز</span>
+                                                    )}
+                                                    {t.benefits.returnDays > 7 && (
+                                                        <span className="text-[11px] bg-orange-500/10 text-orange-400 px-2 py-1 rounded-lg">{t.benefits.returnDays} روز مهلت مرجوعی</span>
                                                     )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className="w-5 h-5 rounded-full"
-                                                style={{ backgroundColor: t.color }}
-                                            />
-                                            <button
-                                                onClick={() => startEditTier(t)}
-                                                className="p-1.5 rounded-lg hover:bg-white/10 text-text-secondary"
-                                                title="ویرایش"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteTier(t.id)}
-                                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400"
-                                                title="حذف"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </GlassCard>

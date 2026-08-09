@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import type { LoyaltyTransactionSourceType, TierBenefits } from '../../services/loyaltyService';
 import { toast } from '../../utils/toast';
-import { Copy, Gift, CalendarDays, PartyPopper, ArrowUpRight, ArrowDownRight, Crown, Check, X } from 'lucide-react';
+import { Copy, Gift, CalendarDays, PartyPopper, ArrowUpRight, ArrowDownRight, Crown, Check, X, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils';
 
 type Tab = 'rewards' | 'transactions' | 'expiration';
@@ -32,6 +32,7 @@ const LoyaltyPageInner: React.FC = () => {
     const [tab, setTab] = useState<Tab>('rewards');
     const [txnType, setTxnType] = useState<LoyaltyTransactionSourceType | undefined>(undefined);
     const [txnPage, setTxnPage] = useState(1);
+    const [showBenefits, setShowBenefits] = useState(false);
 
     const { state } = useAuth();
     const userId = state.user?.id;
@@ -135,50 +136,61 @@ const LoyaltyPageInner: React.FC = () => {
 
             {tiersQ.data && tiersQ.data.length > 0 && (
                 <GlassCard>
-                    <div className="flex items-center gap-2 mb-4">
-                        <Crown className="w-5 h-5 text-accent-primary" />
-                        <h2 className="text-xl font-semibold text-text-primary">مزایای سطوح</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse">
-                            <thead>
-                                <tr className="text-text-secondary text-xs">
-                                    <th className="text-right py-2 px-3 font-semibold">مزایا</th>
-                                    {tiersQ.data.map((t) => (
-                                        <th key={t.id} className="text-center py-2 px-3 font-semibold">
-                                            <span className="inline-block px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: t.color || '#6e8efb' }}>
-                                                {t.label}
-                                            </span>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {([
-                                    { key: 'discountPercent', label: 'تخفیف سفارش', format: (v: number) => v ? `${v}%` : '-' },
-                                    { key: 'pointsMultiplier', label: 'ضریب امتیاز', format: (v: number) => v && v > 1 ? `${v}x` : '1x' },
-                                    { key: 'freeShipping', label: 'ارسال رایگان', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
-                                    { key: 'freeShippingMinOrder', label: 'حداقل برای ارسال رایگان', format: (v: number) => v ? `${v.toLocaleString('fa-IR')} ریال` : '-' },
-                                    { key: 'giftWrappingFree', label: 'بسته‌بندی هدیه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
-                                    { key: 'birthdayPointsBonus', label: 'امتیاز اضافی تولد', format: (v: number) => v ? `+${v}` : '-' },
-                                    { key: 'returnDays', label: 'مهلت مرجوعی', format: (v: number) => `${v || 7} روز` },
-                                    { key: 'annualGift', label: 'هدیه سالانه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
-                                ] as { key: keyof TierBenefits; label: string; format: (v: any) => React.ReactNode }[]).map(({ key, label, format }) => (
-                                    <tr key={key} className="border-t border-border-glass-light/40">
-                                        <td className="py-2.5 px-3 text-text-primary font-medium whitespace-nowrap">{label}</td>
-                                        {tiersQ.data!.map((t) => {
-                                            const val = t.benefits?.[key];
-                                            return (
-                                                <td key={t.id} className="py-2.5 px-3 text-center text-text-secondary">
-                                                    {format(val)}
-                                                </td>
-                                            );
-                                        })}
+                    <button
+                        onClick={() => setShowBenefits(!showBenefits)}
+                        className="w-full flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-accent-primary" />
+                            <h2 className="text-xl font-semibold text-text-primary">مزایای سطوح</h2>
+                        </div>
+                        <ChevronDown className={cn(
+                            'w-5 h-5 text-text-secondary transition-transform duration-200',
+                            showBenefits && 'rotate-180'
+                        )} />
+                    </button>
+                    {showBenefits && (
+                        <div className="overflow-x-auto mt-4">
+                            <table className="w-full text-sm border-collapse">
+                                <thead>
+                                    <tr className="text-text-secondary text-xs">
+                                        <th className="text-right py-2 px-3 font-semibold">مزایا</th>
+                                        {tiersQ.data.map((t) => (
+                                            <th key={t.id} className="text-center py-2 px-3 font-semibold">
+                                                <span className="inline-block px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: t.color || '#6e8efb' }}>
+                                                    {t.label}
+                                                </span>
+                                            </th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {([
+                                        { key: 'discountPercent', label: 'تخفیف سفارش', format: (v: number) => v ? `${v}%` : '-' },
+                                        { key: 'pointsMultiplier', label: 'ضریب امتیاز', format: (v: number) => v && v > 1 ? `${v}x` : '1x' },
+                                        { key: 'freeShipping', label: 'ارسال رایگان', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                        { key: 'freeShippingMinOrder', label: 'حداقل برای ارسال رایگان', format: (v: number) => v ? `${v.toLocaleString('fa-IR')} ریال` : '-' },
+                                        { key: 'giftWrappingFree', label: 'بسته‌بندی هدیه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                        { key: 'birthdayPointsBonus', label: 'امتیاز اضافی تولد', format: (v: number) => v ? `+${v}` : '-' },
+                                        { key: 'returnDays', label: 'مهلت مرجوعی', format: (v: number) => `${v || 7} روز` },
+                                        { key: 'annualGift', label: 'هدیه سالانه', format: (v: boolean) => v ? <Check className="w-4 h-4 text-green-400 mx-auto" /> : <X className="w-4 h-4 text-text-muted mx-auto" /> },
+                                    ] as { key: keyof TierBenefits; label: string; format: (v: any) => React.ReactNode }[]).map(({ key, label, format }) => (
+                                        <tr key={key} className="border-t border-border-glass-light/40">
+                                            <td className="py-2.5 px-3 text-text-primary font-medium whitespace-nowrap">{label}</td>
+                                            {tiersQ.data!.map((t) => {
+                                                const val = t.benefits?.[key];
+                                                return (
+                                                    <td key={t.id} className="py-2.5 px-3 text-center text-text-secondary">
+                                                        {format(val)}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </GlassCard>
             )}
 
@@ -186,9 +198,18 @@ const LoyaltyPageInner: React.FC = () => {
                 <GlassButton variant="accent" onClick={handleDailyLogin} loading={dailyLogin.isPending}>
                     <CalendarDays className="w-5 h-5 ml-2" /> ورود روزانه
                 </GlassButton>
-                <GlassButton variant="secondary" onClick={handleBirthday} loading={birthday.isPending}>
-                    <PartyPopper className="w-5 h-5 ml-2" /> هدیه تولد
-                </GlassButton>
+                <div className="relative group">
+                    <GlassButton variant="secondary" onClick={handleBirthday} loading={birthday.isPending}>
+                        <PartyPopper className="w-5 h-5 ml-2" /> هدیه تولد
+                    </GlassButton>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl bg-slate-800/95 backdrop-blur-md border border-border-glass-light text-xs text-text-secondary leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 shadow-lg">
+                        <p className="mb-1 text-amber-300 font-semibold">هدیه تولد</p>
+                        امتیاز هدیه تولد بر اساس تاریخ تولدی که در پروفایل شما ثبت شده محاسبه می‌شود.
+                        لطفاً مطمئن شوید تاریخ تولد خود را در صفحه پروفایل وارد کرده‌اید.
+                        در روز تولدتان، با فشردن این دکمه امتیاز ویژه خود را دریافت کنید.
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800/95 border-r border-b border-border-glass-light rotate-45 -mt-1"></div>
+                    </div>
+                </div>
             </div>
 
             <GlassCard>

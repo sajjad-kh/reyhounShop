@@ -4,6 +4,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { adminService } from '../../services/adminService';
 import { categoryService } from '../../services/categoryService';
@@ -510,33 +511,12 @@ const ProductManagement: React.FC = () => {
                                 ))}
                             </div>
 
-                            {/* Pagination */}
-
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-center space-x-2 mt-6" role="navigation" aria-label="صفحه‌بندی محصولات">
-                                    <GlassButton
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                        disabled={page === 1}
-                                        aria-label={`رفتن به صفحه قبلی (صفحه ${page - 1})`}
-                                    >
-                                        قبلی
-                                    </GlassButton>
-                                    <span className="text-text-secondary px-4" aria-current="page" aria-label={`صفحه فعلی ${page} از ${totalPages}`}>
-                                        صفحه {page} از {totalPages}
-                                    </span>
-                                    <GlassButton
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                        disabled={page === totalPages}
-                                        aria-label={`رفتن به صفحه بعدی (صفحه ${page + 1})`}
-                                    >
-                                        بعدی
-                                    </GlassButton>
-                                </div>
-                            )}
+                            <GlassPagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={setPage}
+                                className="mt-6"
+                            />
                         </>
                     )}
                 </GlassCard>

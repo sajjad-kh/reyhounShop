@@ -5,7 +5,7 @@ import { DropdownSelect } from '../components/ui/DropdownSelect';
 import { GlassButton } from '../components/ui/GlassButton';
 import { ProductCard } from '../components/ui/ProductCard';
 import { FilterSidebar } from '../components/ui/FilterSidebar';
-import { Pagination } from '../components/ui/Pagination';
+import { GlassPagination } from '../components/ui/GlassPagination';
 import { SearchBar } from '../components/ui/SearchBar';
 import { productService } from '../services/productService';
 import { toast } from '../utils/toast';
@@ -418,7 +418,7 @@ export const SearchResultsPage: React.FC = () => {
 
                                 {/* Pagination */}
                                 {totalPages > 1 && (
-                                    <Pagination
+                                    <GlassPagination
                                         currentPage={currentPage}
                                         totalPages={totalPages}
                                         onPageChange={handlePageChange}

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { tourService } from '../../services/tourService';
 import { api } from '../../utils/api';
 import { cn } from '../../utils';
@@ -146,12 +147,6 @@ export const TourManagement: React.FC = () => {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const safePage = Math.min(page, totalPages);
     const paged = processed.slice((safePage - 1) * pageSize, safePage * pageSize);
-
-    const pageNumbers = useMemo(() => {
-        if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-        const set = new Set<number>([1, totalPages, safePage, safePage - 1, safePage + 1]);
-        return [...set].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
-    }, [totalPages, safePage]);
 
     const PAGE_PATHS: Record<string, string> = {
         home: '/',
@@ -446,50 +441,12 @@ export const TourManagement: React.FC = () => {
                             </span>
 
                             <div className="flex items-center gap-3">
-                                <GlassButton
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={safePage <= 1}
-                                    onClick={() => setPage(safePage - 1)}
-                                    className="!bg-transparent !border-transparent hover:bg-white/10 shadow-none"
-                                >
-                                    قبلی
-                                </GlassButton>
-
-                                <div className="flex items-center gap-1">
-                                    {pageNumbers.map((n, i) => {
-                                        const prevN = i === 0 ? 0 : pageNumbers[i - 1];
-                                        return (
-                                            <React.Fragment key={n}>
-                                                {n - prevN > 1 && (
-                                                    <span className="px-1 text-text-muted">...</span>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPage(n)}
-                                                    className={cn(
-                                                        'min-w-[32px] h-8 px-2 rounded-lg text-sm transition-colors',
-                                                        n === safePage
-                                                            ? 'bg-accent-primary text-white'
-                                                            : 'hover:bg-glass-light text-text-primary'
-                                                    )}
-                                                >
-                                                    {n}
-                                                </button>
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </div>
-
-                                <GlassButton
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={safePage >= totalPages}
-                                    onClick={() => setPage(safePage + 1)}
-                                    className="!bg-transparent !border-transparent hover:bg-white/10 shadow-none"
-                                >
-                                    بعدی
-                                </GlassButton>
+                                <GlassPagination
+                                    currentPage={safePage}
+                                    totalPages={totalPages}
+                                    onPageChange={(n) => setPage(n)}
+                                    showInfo={false}
+                                />
 
                                 <div className="flex items-center gap-2 whitespace-nowrap">
                                     <span>در صفحه:</span>

@@ -17,6 +17,7 @@ class UserService {
         email: true,
         name: true,
         phone: true,
+        birthDate: true,
         role: true,
         isActive: true,
         is2FAEnabled: true,
@@ -31,8 +32,6 @@ class UserService {
             city: true,
             province: true,
             postalCode: true,
-            lat: true,
-            lng: true,
             isDefault: true
           },
           orderBy: {
@@ -56,7 +55,7 @@ class UserService {
    * @returns {Promise<Object>} Updated user profile
    */
   async updateProfile(userId, updateData) {
-    const { name, phone, currentPassword, newPassword } = updateData;
+    const { name, phone, birthDate, currentPassword, newPassword } = updateData;
 
     // Check if user exists
     const existingUser = await getPrismaClient().user.findUnique({
@@ -89,6 +88,7 @@ class UserService {
         updateFields.name = name.trim();
     }
     if (phone !== undefined) updateFields.phone = phone || null;
+    if (birthDate !== undefined) updateFields.birthDate = birthDate ? new Date(birthDate) : null;
 
     // Handle password change
     if (newPassword) {
@@ -115,6 +115,7 @@ class UserService {
           email: true,
           name: true,
           phone: true,
+          birthDate: true,
           role: true,
           isActive: true,
           is2FAEnabled: true,

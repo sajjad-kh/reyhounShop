@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
-import { Pagination } from '../../components/ui/Pagination';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { BasalamOrderListItemSkeleton } from '../../components/basalam/BasalamSkeletons';
 import { useBasalamOrders } from '../../hooks/basalam/useBasalamOrders';
 import { OrderStatus } from '../../types/basalam';
@@ -210,10 +210,11 @@ export const BasalamOrderListPage: React.FC = () => {
                     {/* Pagination */}
                     {pagination && pagination.total > limit && (
                         <div className="mt-8 flex justify-center">
-                            <Pagination
+                            <GlassPagination
                                 currentPage={page}
                                 totalPages={Math.ceil(pagination.total / limit)}
                                 onPageChange={setPage}
+                                showInfo={false}
                             />
                         </div>
                     )}

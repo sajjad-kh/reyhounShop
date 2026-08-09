@@ -156,6 +156,7 @@ class OrderService {
     const orders = await prisma.order.findMany({
       where: { userId: Number(userId) },
       include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
         items: { include: { product: { include: { images: true } } } },
         messages: { include: { user: true, attachments: true }, orderBy: { createdAt: 'asc' } },
         designFiles: true,
@@ -198,6 +199,8 @@ class OrderService {
       discountAmount: order.discountAmount || 0,
       loyaltyPointsUsed: order.loyaltyPointsUsed || 0,
       loyaltyDiscount: order.loyaltyDiscount || 0,
+
+      user: order.user ? { id: order.user.id, name: order.user.name, email: order.user.email, phone: order.user.phone } : null,
 
       paymentProofUrl: paymentReceipt ? normalize(paymentReceipt.url) : null,
 

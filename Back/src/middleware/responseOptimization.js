@@ -82,6 +82,14 @@ const cacheHeaders = (req, res, next) => {
       'Expires': '0'
     });
   }
+  // Inventory endpoints - no cache (mutable stock data)
+  else if (path.includes('/inventory-items')) {
+    res.set({
+      'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+  }
   // Default - short cache
   else {
     res.set({

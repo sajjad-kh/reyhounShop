@@ -14,9 +14,8 @@ import {
     CheckCircle,
     Activity,
     Shield,
-    ChevronLeft,
-    ChevronRight,
 } from 'lucide-react';
+import { GlassPagination } from '../../components/ui/GlassPagination';
 import { STORAGE_KEYS } from '../../utils/constants';
 import { secureStorage } from '../../utils/security';
 
@@ -764,58 +763,11 @@ const LogsMethodsManagement: React.FC = () => {
             )}
 
             {/* PAGINATION */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                    <p className="text-xs text-white/40">
-                        صفحه {page.toLocaleString('fa-IR')} از {totalPages.toLocaleString('fa-IR')}
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="p-2 rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-white/30 disabled:opacity-30 transition"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-
-                        <div className="flex gap-1">
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                let pageNum: number;
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1;
-                                } else if (page <= 3) {
-                                    pageNum = i + 1;
-                                } else if (page >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i;
-                                } else {
-                                    pageNum = page - 2 + i;
-                                }
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => setPage(pageNum)}
-                                        className={`w-8 h-8 rounded-lg text-xs transition ${
-                                            pageNum === page
-                                                ? 'bg-white/20 text-white border border-white/30'
-                                                : 'border border-white/10 text-white/50 hover:text-white hover:border-white/30'
-                                        }`}
-                                    >
-                                        {pageNum.toLocaleString('fa-IR')}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="p-2 rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-white/30 disabled:opacity-30 transition"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            <GlassPagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+            />
 
         </div>
     );
