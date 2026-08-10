@@ -6,10 +6,11 @@ import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { GlassPagination } from '../../components/ui/GlassPagination';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { GlassModal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/GlassModal';
 import { adminService } from '../../services/adminService';
 import { categoryService } from '../../services/categoryService';
 import { Product, ProductImage } from '../../types/product';
-import { Plus, Edit, Trash2, Search, X, CheckCircle, AlertCircle, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, X, CheckCircle, AlertCircle, Upload, Package } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { validateImagesWithDimensions, ERROR_MESSAGES } from '../../utils/imageValidation';
 import ImagePreviewCard from '../../components/ui/ImagePreviewCard';
@@ -997,27 +998,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="product-form-title"
-        >
-            <GlassCard className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 id="product-form-title" className="text-2xl font-bold text-text-primary">
-                        {product ? 'ویرایش محصول' : 'ایجاد محصول'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-lg bg-glass-light hover:bg-glass-medium transition-colors"
-                        aria-label="بستن فرم محصول"
-                    >
-                        <X className="w-5 h-5 text-text-primary" aria-hidden="true" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <GlassModal isOpen={true} onClose={onClose} size="lg">
+            <ModalHeader
+                title={product ? 'ویرایش محصول' : 'ایجاد محصول'}
+                subtitle={product ? 'اطلاعات کالا را ویرایش کنید' : 'اطلاعات کالای جدید را وارد کنید'}
+                onClose={onClose}
+                icon={<Package className="w-5 h-5" />}
+            />
+                <ModalBody>
+                <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="product-name" className="block text-text-secondary text-sm mb-2">
                             نام محصول
@@ -1177,67 +1166,68 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                             </div>
                         )}
                     </div>
+                    </form>
 
-                    <div className="flex items-center justify-end space-x-4 pt-4">
-                        <GlassButton
-                            type="button"
-                            variant="secondary"
-                            onClick={onClose}
-                            disabled={loading || uploadingImages}
-                            aria-label="لغو و بستن فرم بدون ذخیره تغییرات"
-                        >
-                            لغو
-                        </GlassButton>
-                        <GlassButton
-                            type="submit"
-                            variant="accent"
-                            loading={loading || uploadingImages}
-                            disabled={loading || uploadingImages || formData.categoryId === 0}
-                            aria-label={product ? 'ذخیره تغییرات محصول' : 'ایجاد محصول جدید'}
-                        >
-                            {formData.categoryId === 0
-                                ? 'در حال تنظیم دسته‌بندی...'
-                                : uploadingImages
-                                    ? 'در حال آپلود تصاویر...'
-                                    : loading
-                                        ? 'در حال ذخیره...'
-                                        : product ? 'بروزرسانی محصول' : 'ایجاد محصول'
-                            }
-                        </GlassButton>
-                    </div>
-                </form>
-
-                {/* Upload Progress Overlay */}
-                {uploadingImages && (
-                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
-                        <div className="glass-card p-6 flex flex-col items-center space-y-4 max-w-md">
-                            <div className="glass-spinner w-12 h-12" />
-                            <p className="text-text-primary font-medium">
-                                در حال آپلود تصاویر...
-                            </p>
-                            {retryCount > 0 && (
-                                <p className="text-warning-color text-sm">
-                                    تلاش مجدد {retryCount} از {MAX_RETRIES}
+                    {/* Upload Progress Overlay */}
+                    {uploadingImages && (
+                        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                            <div className="glass-card p-6 flex flex-col items-center space-y-4 max-w-md">
+                                <div className="glass-spinner w-12 h-12" />
+                                <p className="text-text-primary font-medium">
+                                    در حال آپلود تصاویر...
                                 </p>
-                            )}
-                            {uploadError && (
-                                <div className="bg-error-color/10 border border-error-color/30 rounded-lg p-3 w-full">
-                                    <p className="text-error-color text-sm text-center">
-                                        {uploadError}
+                                {retryCount > 0 && (
+                                    <p className="text-warning-color text-sm">
+                                        تلاش مجدد {retryCount} از {MAX_RETRIES}
                                     </p>
-                                </div>
-                            )}
-                            <p className="text-text-muted text-sm text-center">
-                                {uploadError
-                                    ? 'در حال تلاش مجدد...'
-                                    : 'لطفاً صبر کنید'
-                                }
-                            </p>
+                                )}
+                                {uploadError && (
+                                    <div className="bg-error-color/10 border border-error-color/30 rounded-lg p-3 w-full">
+                                        <p className="text-error-color text-sm text-center">
+                                            {uploadError}
+                                        </p>
+                                    </div>
+                                )}
+                                <p className="text-text-muted text-sm text-center">
+                                    {uploadError
+                                        ? 'در حال تلاش مجدد...'
+                                        : 'لطفاً صبر کنید'
+                                    }
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </GlassCard>
-        </div>
+                    )}
+                </ModalBody>
+
+                <ModalFooter>
+                    <GlassButton
+                        type="button"
+                        variant="secondary"
+                        onClick={onClose}
+                        disabled={loading || uploadingImages}
+                        aria-label="لغو و بستن فرم بدون ذخیره تغییرات"
+                    >
+                        لغو
+                    </GlassButton>
+                    <GlassButton
+                        type="submit"
+                        form="product-form"
+                        variant="accent"
+                        loading={loading || uploadingImages}
+                        disabled={loading || uploadingImages || formData.categoryId === 0}
+                        aria-label={product ? 'ذخیره تغییرات محصول' : 'ایجاد محصول جدید'}
+                    >
+                        {formData.categoryId === 0
+                            ? 'در حال تنظیم دسته‌بندی...'
+                            : uploadingImages
+                              ? 'در حال آپلود تصاویر...'
+                              : loading
+                                ? 'در حال ذخیره...'
+                                : product ? 'بروزرسانی محصول' : 'ایجاد محصول'
+                        }
+                    </GlassButton>
+                </ModalFooter>
+        </GlassModal>
     );
 };
 

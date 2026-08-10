@@ -4,6 +4,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { GlassPagination } from '../../components/ui/GlassPagination';
+import GlowCircle from '../../components/ui/GlowCircle';
 import { inventoryService, InventoryItem, InventoryStats, InventoryQuery } from '../../services/inventoryService';
 import { Search, AlertTriangle, Package, TrendingUp, ArrowUpDown, Edit2, Check, X } from 'lucide-react';
 import { toast } from '../../utils/toast';
@@ -130,26 +131,30 @@ const AdminInventory: React.FC = () => {
             </div>
 
             {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <GlassCard className="p-4">
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <GlassCard className="relative overflow-visible p-4">
+                        <GlowCircle size="lg" color="accent" position="top-right" />
                         <div className="text-sm text-text-muted">کل محصولات</div>
                         <div className="text-2xl font-bold text-text-primary">
                             {stats.totalProducts.toLocaleString('fa-IR')}
                         </div>
                     </GlassCard>
-                    <GlassCard className="p-4">
+                    <GlassCard className="relative overflow-visible p-4">
+                        <GlowCircle size="lg" color="success" position="top-right" />
                         <div className="text-sm text-text-muted">موجود</div>
                         <div className="text-2xl font-bold text-emerald-400">
                             {stats.inStockProducts.toLocaleString('fa-IR')}
                         </div>
                     </GlassCard>
-                    <GlassCard className="p-4">
+                    <GlassCard className="relative overflow-visible p-4">
+                        <GlowCircle size="lg" color="warning" position="top-right" />
                         <div className="text-sm text-text-muted">کم موجود</div>
                         <div className="text-2xl font-bold text-amber-400">
                             {stats.lowStockProducts.toLocaleString('fa-IR')}
                         </div>
                     </GlassCard>
-                    <GlassCard className="p-4">
+                    <GlassCard className="relative overflow-visible p-4">
+                        <GlowCircle size="lg" color="error" position="top-right" />
                         <div className="text-sm text-text-muted">ناموجود</div>
                         <div className="text-2xl font-bold text-red-400">
                             {stats.outOfStockProducts.toLocaleString('fa-IR')}

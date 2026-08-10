@@ -5,6 +5,7 @@ import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { DropdownSelect } from '../../components/ui/DropdownSelect';
 import { GlassPagination } from '../../components/ui/GlassPagination';
+import GlowCircle from '../../components/ui/GlowCircle';
 import { adminService } from '../../services/adminService';
 import { User } from '../../types/auth';
 import { Search, Trash2, Shield, Users as UsersIcon } from 'lucide-react';
@@ -111,7 +112,7 @@ const UserManagement: React.FC = () => {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <GlassCard className="relative overflow-hidden p-6">
-                        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-accent-primary/20 blur-2xl" />
+                        <GlowCircle size="2xl" color="accent" position="top-right" opacity={0.4} />
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-text-muted text-sm mb-1">کل کاربران</p>
@@ -129,7 +130,7 @@ const UserManagement: React.FC = () => {
                     </GlassCard>
 
                     <GlassCard className="relative overflow-hidden p-6">
-                        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-warning-color/20 blur-2xl" />
+                        <GlowCircle size="2xl" color="warning" position="top-right" opacity={0.4} />
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-text-muted text-sm mb-1">مدیران</p>
@@ -147,7 +148,7 @@ const UserManagement: React.FC = () => {
                     </GlassCard>
 
                     <GlassCard className="relative overflow-hidden p-6">
-                        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-success-color/20 blur-2xl" />
+                        <GlowCircle size="2xl" color="success" position="top-right" opacity={0.4} />
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-text-muted text-sm mb-1">مجموع امتیازات وفاداری</p>

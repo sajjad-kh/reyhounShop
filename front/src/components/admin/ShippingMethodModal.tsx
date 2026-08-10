@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { GlassButton } from '../ui/GlassButton';
 import { GlassInput } from '../ui/GlassInput';
+import { GlassModal, ModalHeader, ModalBody, ModalFooter } from '../ui/GlassModal';
 import { ShippingMethod } from '../../types/shipping';
-import { X } from 'lucide-react';
+import { Truck } from 'lucide-react';
 
 interface ShippingMethodModalProps {
     isOpen: boolean;
@@ -130,22 +131,14 @@ export const ShippingMethodModal: React.FC<ShippingMethodModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="glass-card w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-text-primary">
-                        {mode === 'add' ? 'افزودن روش ارسال جدید' : 'ویرایش روش ارسال'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-glass-light transition-colors"
-                    >
-                        <X className="w-5 h-5 text-text-secondary" />
-                    </button>
-                </div>
+        <GlassModal isOpen={isOpen} onClose={onClose} size="lg">
+            <ModalHeader
+                icon={<Truck className="w-5 h-5 text-accent-primary" />}
+                title={mode === 'add' ? 'افزودن روش ارسال جدید' : 'ویرایش روش ارسال'}
+                onClose={onClose}
+            />
 
-                {/* Form */}
+            <ModalBody>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Name */}
                     <div>
@@ -242,29 +235,26 @@ export const ShippingMethodModal: React.FC<ShippingMethodModalProps> = ({
                             فعال
                         </label>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-4">
-                        <GlassButton
-                            type="submit"
-                            variant="accent"
-                            loading={loading}
-                            className="flex-1"
-                        >
-                            {mode === 'add' ? 'افزودن' : 'ذخیره تغییرات'}
-                        </GlassButton>
-                        <GlassButton
-                            type="button"
-                            variant="secondary"
-                            onClick={onClose}
-                            disabled={loading}
-                            className="flex-1"
-                        >
-                            انصراف
-                        </GlassButton>
-                    </div>
                 </form>
-            </div>
-        </div>
+            </ModalBody>
+
+            <ModalFooter>
+                <GlassButton
+                    type="button"
+                    variant="secondary"
+                    onClick={onClose}
+                    disabled={loading}
+                >
+                    انصراف
+                </GlassButton>
+                <GlassButton
+                    variant="accent"
+                    loading={loading}
+                    type="submit"
+                >
+                    {mode === 'add' ? 'افزودن' : 'ذخیره تغییرات'}
+                </GlassButton>
+            </ModalFooter>
+        </GlassModal>
     );
 };

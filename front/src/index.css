@@ -368,10 +368,10 @@ body {
 
 /* Loading Spinner */
 .glass-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--glass-bg-light);
-    border-top: 3px solid var(--accent-primary);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--glass-bg-light);
+    border-top: 2px solid var(--accent-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }

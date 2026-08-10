@@ -2,7 +2,23 @@
  * Format a number as currency in Persian Rial
  */
 export const formatCurrency = (amount: number): string => {
-    return `${amount.toLocaleString('fa-IR')} ریال`;
+    return `${toPersianDigits(amount.toLocaleString('fa-IR'))} ریال`;
+};
+
+/**
+ * Convert English digits to Persian digits
+ */
+export const toPersianDigits = (input: string | number): string => {
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return String(input).replace(/[0-9]/g, (d) => persianDigits[parseInt(d)]);
+};
+
+/**
+ * Format a number with Persian digits and separators
+ */
+export const formatNumber = (n: number | null | undefined): string => {
+    if (n == null) return '-';
+    return toPersianDigits(n.toLocaleString('fa-IR'));
 };
 
 /**

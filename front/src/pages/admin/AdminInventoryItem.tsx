@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
 import { GlassPagination } from '../../components/ui/GlassPagination';
 import { DropdownSelect } from '../../components/ui/DropdownSelect';
+import GlowCircle from '../../components/ui/GlowCircle';
 import {
   inventoryItemService,
   InventoryItemData,
@@ -27,8 +28,13 @@ import {
   X,
   Check,
   History,
+  Upload,
 } from 'lucide-react';
 import { toast } from '../../utils/toast';
+import { ImportPreviewModal } from './ImportPreviewModal';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { formatNumber, toPersianDigits } from '../../utils/format';
+import { GlassModal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/GlassModal';
 
 const STATUS_CONFIG = {
   IN_STOCK: { label: 'موجود', color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/30' },
@@ -76,6 +82,18 @@ const AdminInventoryItem: React.FC = () => {
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [previewData, setPreviewData] = useState<{
+    file: File;
+    items: any[];
+    parseErrors: any[];
+    totalRows: number;
+    validRows: number;
+  } | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: number | null; name: string }>({ isOpen: false, id: null, name: '' });
 
   const fetchItems = async () => {
     try {
@@ -157,13 +175,15 @@ const AdminInventoryItem: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('آیا مطمئن هستید؟')) return;
+    setConfirmDelete({ isOpen: false, id: null, name: '' });
     try {
       const result = await inventoryItemService.delete(id);
       if (result.success) {
         toast.success('کالا حذف شد');
         setRefreshKey((k) => k + 1);
         fetchStats();
+      } else {
+        toast.error(result.error || 'خطا در حذف');
       }
     } catch {
       toast.error('خطا در حذف');
@@ -186,6 +206,47 @@ const AdminInventoryItem: React.FC = () => {
     } catch {
       toast.error('خطا در بروزرسانی موجودی');
     }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await inventoryItemService.importFromExcel(file);
+      if (result.success && result.data) {
+        const { items, parseErrors, totalRows, validRows } = result.data;
+        if (items.length === 0 && parseErrors.length === 0) {
+          toast.error('فایل خالی است');
+          return;
+        }
+        setPreviewData({ file, items, parseErrors, totalRows, validRows });
+      } else {
+        toast.error(result.error || 'خطا در خواندن فایل');
+      }
+    } catch {
+      toast.error('خطا در آپلود فایل');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadSampleTemplate = () => {
+    const headers = ['نام', 'کد', 'تعداد', 'واحد', 'قیمت خرید', 'قیمت فروش', 'حد هشدار', 'محل', 'تامین کننده', 'توضیحات'];
+    const sampleRows = [
+      ['کلاه آبی', 'KL-001', 50, 'عدد', 15000, 25000, 10, 'انبار اصلی', 'تامین کننده الف', 'نمونه'],
+    ];
+    const csvContent = [headers.join(','), ...sampleRows.map(r => r.join(','))].join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_inventory.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('فایل نمونه دانلود شد');
   };
 
   const openEdit = (item: InventoryItemData) => {
@@ -236,29 +297,67 @@ const AdminInventoryItem: React.FC = () => {
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-xl sm:text-2xl font-bold text-text-primary">مدیریت انبار (مستقل)</h1>
-        <GlassButton onClick={() => { setEditingId(null); setForm({ ...emptyForm }); setShowForm(true); }} className="w-full sm:w-auto justify-center">
-          <Plus className="w-4 h-4 ml-2 shrink-0" />
-          <span>افزودن کالا</span>
-        </GlassButton>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <GlassButton variant="secondary" onClick={downloadSampleTemplate} className="flex-1 sm:flex-none w-full sm:w-auto justify-center">
+            <span>دانلود فایل نمونه</span>
+          </GlassButton>
+          <GlassButton variant="secondary" loading={importing} onClick={() => fileInputRef.current?.click()} className="flex-1 sm:flex-none w-full sm:w-auto justify-center">
+            <Upload className="w-4 h-4 ml-2 shrink-0" />
+            <span>ورود از اکسل</span>
+          </GlassButton>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} className="hidden" />
+          <GlassButton onClick={() => { setEditingId(null); setForm({ ...emptyForm }); setShowForm(true); }} className="flex-1 sm:flex-none w-full sm:w-auto justify-center">
+            <Plus className="w-4 h-4 ml-2 shrink-0" />
+            <span>افزودن کالا</span>
+          </GlassButton>
+        </div>
       </div>
 
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <GlassCard className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-text-muted">کل اقلام</div>
-            <div className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalItems.toLocaleString('fa-IR')}</div>
+          <GlassCard className="relative overflow-hidden p-3 sm:p-4">
+            <GlowCircle size="md" color="accent" position="top-right" opacity={0.5} />
+            <div className="flex items-center justify-between">
+              <div>
+                 <p className="text-xs sm:text-sm text-white">کل اقلام</p>
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-text-primary" dir="ltr">
+                {formatNumber(stats.totalItems)}
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-text-muted">موجود</div>
-            <div className="text-xl sm:text-2xl font-bold text-emerald-400">{(stats.totalItems - stats.lowStockItems).toLocaleString('fa-IR')}</div>
+          <GlassCard className="relative overflow-hidden p-3 sm:p-4">
+            <GlowCircle size="md" color="success" position="top-right" opacity={0.5} />
+            <div className="flex items-center justify-between">
+              <div>
+                 <p className="text-xs sm:text-sm text-white">موجود</p>
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-emerald-400" dir="ltr">
+                {formatNumber(stats.totalItems - stats.lowStockItems)}
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-text-muted">کم موجود</div>
-            <div className="text-xl sm:text-2xl font-bold text-amber-400">{stats.lowStockItems.toLocaleString('fa-IR')}</div>
+          <GlassCard className="relative overflow-hidden p-3 sm:p-4">
+            <GlowCircle size="md" color="warning" position="top-right" opacity={0.5} />
+            <div className="flex items-center justify-between">
+              <div>
+                  <p className="text-xs sm:text-sm text-text-muted">کم موجود</p>
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-amber-400" dir="ltr">
+                {formatNumber(stats.lowStockItems)}
+              </div>
+            </div>
           </GlassCard>
-          <GlassCard className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-text-muted">ناموجود</div>
-            <div className="text-xl sm:text-2xl font-bold text-red-400">{stats.outOfStockItems.toLocaleString('fa-IR')}</div>
+          <GlassCard className="relative overflow-hidden p-3 sm:p-4">
+            <GlowCircle size="md" color="error" position="top-right" opacity={0.5} />
+            <div className="flex items-center justify-between">
+              <div>
+                 <p className="text-xs sm:text-sm text-white">ناموجود</p>
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-red-400" dir="ltr">
+                {formatNumber(stats.outOfStockItems)}
+              </div>
+            </div>
           </GlassCard>
         </div>
       )}
@@ -283,7 +382,7 @@ const AdminInventoryItem: React.FC = () => {
             >
               <AlertTriangle className={`w-4 h-4 ml-2 ${lowStockOnly ? 'text-amber-400' : ''}`} />
               فقط کم موجود
-              {lowStockOnly && stats && <span className="mr-1.5 px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-400 text-xs font-bold">{stats.lowStockItems.toLocaleString('fa-IR')}</span>}
+              {lowStockOnly && stats && <span className="mr-1.5 px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-400 text-xs font-bold">{formatNumber(stats.lowStockItems)}</span>}
             </GlassButton>
           </div>
         </div>
@@ -324,11 +423,11 @@ const AdminInventoryItem: React.FC = () => {
                     <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
                       <td className="py-3 px-4 text-text-primary font-medium">{item.name}</td>
                       <td className="py-3 px-4 text-text-secondary font-mono text-xs">{item.sku || '-'}</td>
-                      <td className="py-3 px-4 font-medium text-text-primary">{item.quantity.toLocaleString('fa-IR')}</td>
+                      <td className="py-3 px-4 font-medium text-text-primary">{formatNumber(item.quantity)}</td>
                       <td className="py-3 px-4 text-text-secondary">{item.unit || '-'}</td>
-                      <td className="py-3 px-4 text-text-secondary">{item.lowStockAlert.toLocaleString('fa-IR')}</td>
-                      <td className="py-3 px-4 text-text-secondary">{item.costPrice ? item.costPrice.toLocaleString('fa-IR') : '-'}</td>
-                      <td className="py-3 px-4 text-text-secondary">{item.sellPrice ? item.sellPrice.toLocaleString('fa-IR') : '-'}</td>
+                      <td className="py-3 px-4 text-text-secondary">{formatNumber(item.lowStockAlert)}</td>
+                      <td className="py-3 px-4 text-text-secondary">{formatNumber(item.costPrice)}</td>
+                      <td className="py-3 px-4 text-text-secondary">{formatNumber(item.sellPrice)}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color} ${cfg.border} border`}>
                           {cfg.label}
@@ -345,7 +444,7 @@ const AdminInventoryItem: React.FC = () => {
                           <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/10" title="ویرایش">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-400/10" title="حذف">
+                          <button onClick={() => setConfirmDelete({ isOpen: true, id: item.id, name: item.name })} className="p-1.5 rounded-lg text-red-400 hover:bg-red-400/10" title="حذف">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -366,177 +465,154 @@ const AdminInventoryItem: React.FC = () => {
         />
       </GlassCard>
 
-      {showForm && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md" dir="rtl">
-          <GlassCard className="w-full max-w-2xl max-h-[90vh] !p-0 flex flex-col border-0" style={{ background: 'linear-gradient(145deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)' }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 rounded-t-2xl" style={{ background: 'linear-gradient(180deg, rgba(51,65,85,0.9) 0%, rgba(30,41,59,0.85) 100%)', backdropFilter: 'blur(16px)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border border-accent-primary/20 flex items-center justify-center">
-                  {editingId ? <Edit2 className="w-5 h-5 text-accent-primary" /> : <Package className="w-5 h-5 text-accent-primary" />}
+      <GlassModal isOpen={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} size="lg">
+        <ModalHeader
+          icon={editingId ? <Edit2 className="w-5 h-5 text-accent-primary" /> : <Package className="w-5 h-5 text-accent-primary" />}
+          title={editingId ? 'ویرایش کالا' : 'افزودن کالای جدید'}
+          subtitle={editingId ? 'اطلاعات کالا را ویرایش کنید' : 'اطلاعات کالای جدید را وارد کنید'}
+          onClose={() => { setShowForm(false); setEditingId(null); }}
+        />
+
+        <ModalBody className="!space-y-6">
+          {/* بخش اطلاعات پایه */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-4 rounded-full bg-accent-primary" />
+              <h3 className="text-sm font-semibold text-text-primary">اطلاعات پایه</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">نام کالا <span className="text-red-400">*</span></label>
+                <GlassInput value={form.name} onChange={(value) => setForm({ ...form, name: value })} placeholder="مثال: جوهر چاپ CMYK" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">کد کالا (SKU)</label>
+                  <GlassInput value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} placeholder="اختیاری" className="font-mono" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-text-primary leading-tight">{editingId ? 'ویرایش کالا' : 'افزودن کالای جدید'}</h2>
-                  <p className="text-xs text-text-muted mt-0.5">{editingId ? 'اطلاعات کالا را ویرایش کنید' : 'اطلاعات کالای جدید را وارد کنید'}</p>
-                </div>
-              </div>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 flex items-center justify-center transition-all duration-200">
-                <X className="w-4 h-4 text-text-muted hover:text-red-400" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* بخش اطلاعات پایه */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-4 rounded-full bg-accent-primary" />
-                  <h3 className="text-sm font-semibold text-text-primary">اطلاعات پایه</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">نام کالا <span className="text-red-400">*</span></label>
-                    <GlassInput value={form.name} onChange={(value) => setForm({ ...form, name: value })} placeholder="مثال: جوهر چاپ CMYK" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-text-muted mb-1.5">کد کالا (SKU)</label>
-                      <GlassInput value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} placeholder="اختیاری" className="font-mono" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-muted mb-1.5">واحد</label>
-                      <DropdownSelect
-                        options={[
-                          { value: 'عدد', label: 'عدد' },
-                          { value: 'کیلوگرم', label: 'کیلوگرم' },
-                          { value: 'گرم', label: 'گرم' },
-                          { value: 'متر', label: 'متر' },
-                          { value: 'سانتی‌متر', label: 'سانتی‌متر' },
-                          { value: 'لیتر', label: 'لیتر' },
-                          { value: 'بسته', label: 'بسته' },
-                          { value: 'رول', label: 'رول' },
-                          { value: 'ورق', label: 'ورق' },
-                        ]}
-                        value={form.unit || 'عدد'}
-                        onChange={(v) => setForm({ ...form, unit: v })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-muted mb-1.5">حداقل سفارش</label>
-                      <input type="number" min={1} value={form.minOrderQty || 1} onChange={(e) => setForm({ ...form, minOrderQty: parseInt(e.target.value) || 1 })} className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary/50" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">توضیحات</label>
-                    <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="توضیحات تکمیلی درباره کالا..." className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary/50" />
-                  </div>
-                </div>
-              </div>
-
-              {/* بخش موجودی و قیمت */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-4 rounded-full bg-emerald-400" />
-                  <h3 className="text-sm font-semibold text-text-primary">موجودی و قیمت</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">
-                      {editingId ? 'تعداد فعلی (قابل تغییر از تعدیل)' : 'تعداد اولیه'}
-                    </label>
-                    {editingId ? (
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-text-primary">{(form.quantity || 0).toLocaleString('fa-IR')}</span>
-                        <span className="text-[10px] text-text-muted">فقط از طریق تعدیل</span>
-                      </div>
-                    ) : (
-                      <input type="number" min={0} value={form.quantity || 0} onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 bg-transparent border-0 text-text-primary text-lg font-bold focus:outline-none" />
-                    )}
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className={`w-2 h-2 rounded-full ${(form.quantity || 0) <= 0 ? 'bg-red-400' : (form.quantity || 0) <= (form.lowStockAlert || 5) ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-                      <span className="text-[10px] text-text-muted">
-                        {(form.quantity || 0) <= 0 ? 'ناموجود' : (form.quantity || 0) <= (form.lowStockAlert || 5) ? 'کم موجود' : 'موجود'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">هشدار کم موجودی</label>
-                    <input type="number" min={0} value={form.lowStockAlert || 5} onChange={(e) => setForm({ ...form, lowStockAlert: parseInt(e.target.value) || 5 })} className="w-full px-3 py-2 bg-transparent border-0 text-amber-400 text-lg font-bold focus:outline-none" />
-                    <div className="text-[10px] text-text-muted mt-1">زیر این تعداد هشدار داده می‌شود</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">قیمت تمام شده (تومان)</label>
-                    <input type="number" min={0} value={form.costPrice || ''} onChange={(e) => setForm({ ...form, costPrice: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="0" className="w-full px-3 py-2 bg-transparent border-0 text-text-primary text-lg font-bold placeholder:text-text-muted/30 focus:outline-none" />
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">قیمت فروش (تومان)</label>
-                    <input type="number" min={0} value={form.sellPrice || ''} onChange={(e) => setForm({ ...form, sellPrice: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="0" className="w-full px-3 py-2 bg-transparent border-0 text-accent-primary text-lg font-bold placeholder:text-accent-primary/30 focus:outline-none" />
-                    {form.costPrice && form.sellPrice && (
-                      <div className="text-[10px] text-emerald-400 mt-1">
-                        سود: {((form.sellPrice - form.costPrice) / form.costPrice * 100).toFixed(1)}%
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* بخش محل نگهداری */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-4 rounded-full bg-blue-400" />
-                  <h3 className="text-sm font-semibold text-text-primary">محل نگهداری و تامین</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-text-muted mb-1.5">محل نگهداری</label>
-                    <GlassInput value={form.location || ''} onChange={(value) => setForm({ ...form, location: value })} placeholder="رف ۳، طبقه ۲، ردیف B" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-text-muted mb-1.5">تامین کننده</label>
-                    <GlassInput value={form.supplier || ''} onChange={(value) => setForm({ ...form, supplier: value })} placeholder="نام شرکت تامین کننده" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 rounded-b-2xl" style={{ background: 'linear-gradient(0deg, rgba(51,65,85,0.9) 0%, rgba(30,41,59,0.85) 100%)', backdropFilter: 'blur(16px)' }}>
-              <GlassButton variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>
-                انصراف
-              </GlassButton>
-              <GlassButton variant="primary" onClick={handleCreate}>
-                <Check className="w-4 h-4 ml-2 shrink-0" />
-                {editingId ? 'بروزرسانی' : 'ذخیره کالا'}
-              </GlassButton>
-            </div>
-          </GlassCard>
-        </div>
-      )}
-
-      {showAdjust && adjustItem && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-3 sm:p-4 bg-gradient-to-b from-indigo-950/60 via-slate-900/70 to-slate-950/80 backdrop-blur-sm" dir="rtl">
-          <GlassCard className="w-full max-w-md !p-0 !border-accent-primary/10">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 rounded-t-2xl" style={{ background: 'linear-gradient(180deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.85) 100%)', backdropFilter: 'blur(20px)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border border-accent-primary/20 flex items-center justify-center">
-                  <ArrowUp className="w-5 h-5 text-accent-primary" />
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">واحد</label>
+                  <DropdownSelect
+                    options={[
+                      { value: 'عدد', label: 'عدد' },
+                      { value: 'کیلوگرم', label: 'کیلوگرم' },
+                      { value: 'گرم', label: 'گرم' },
+                      { value: 'متر', label: 'متر' },
+                      { value: 'سانتی‌متر', label: 'سانتی‌متر' },
+                      { value: 'لیتر', label: 'لیتر' },
+                      { value: 'بسته', label: 'بسته' },
+                      { value: 'رول', label: 'رول' },
+                      { value: 'ورق', label: 'ورق' },
+                    ]}
+                    value={form.unit || 'عدد'}
+                    onChange={(v) => setForm({ ...form, unit: v })}
+                  />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-text-primary leading-tight">تعدیل موجودی</h2>
-                  <p className="text-xs text-text-muted mt-0.5">{adjustItem.name}</p>
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">حداقل سفارش</label>
+                  <input type="number" min={1} value={form.minOrderQty || 1} onChange={(e) => setForm({ ...form, minOrderQty: parseInt(e.target.value) || 1 })} className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary/50" />
                 </div>
               </div>
-              <button onClick={() => { setShowAdjust(false); setAdjustItem(null); }} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 flex items-center justify-center transition-all duration-200">
-                <X className="w-4 h-4 text-text-muted hover:text-red-400" />
-              </button>
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">توضیحات</label>
+                <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="توضیحات تکمیلی درباره کالا..." className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary/50" />
+              </div>
             </div>
+          </div>
 
-            <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4">
+          {/* بخش موجودی و قیمت */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-4 rounded-full bg-emerald-400" />
+              <h3 className="text-sm font-semibold text-text-primary">موجودی و قیمت</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
+                  {editingId ? 'تعداد فعلی (قابل تغییر از تعدیل)' : 'تعداد اولیه'}
+                </label>
+                {editingId ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-text-primary">{formatNumber(form.quantity || 0)}</span>
+                    <span className="text-[10px] text-text-muted">فقط از طریق تعدیل</span>
+                  </div>
+                ) : (
+                  <input type="number" min={0} value={form.quantity || 0} onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 bg-transparent border-0 text-text-primary text-lg font-bold focus:outline-none" />
+                )}
+                <div className="flex items-center gap-1 mt-1">
+                  <div className={`w-2 h-2 rounded-full ${(form.quantity || 0) <= 0 ? 'bg-red-400' : (form.quantity || 0) <= (form.lowStockAlert || 5) ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                  <span className="text-[10px] text-text-muted">
+                    {(form.quantity || 0) <= 0 ? 'ناموجود' : (form.quantity || 0) <= (form.lowStockAlert || 5) ? 'کم موجود' : 'موجود'}
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">هشدار کم موجودی</label>
+                <input type="number" min={0} value={form.lowStockAlert || 5} onChange={(e) => setForm({ ...form, lowStockAlert: parseInt(e.target.value) || 5 })} className="w-full px-3 py-2 bg-transparent border-0 text-amber-400 text-lg font-bold focus:outline-none" />
+                <div className="text-[10px] text-text-muted mt-1">زیر این تعداد هشدار داده می‌شود</div>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">قیمت تمام شده (تومان)</label>
+                <input type="number" min={0} value={form.costPrice || ''} onChange={(e) => setForm({ ...form, costPrice: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="0" className="w-full px-3 py-2 bg-transparent border-0 text-text-primary text-lg font-bold placeholder:text-text-muted/30 focus:outline-none" />
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">قیمت فروش (تومان)</label>
+                <input type="number" min={0} value={form.sellPrice || ''} onChange={(e) => setForm({ ...form, sellPrice: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="0" className="w-full px-3 py-2 bg-transparent border-0 text-accent-primary text-lg font-bold placeholder:text-accent-primary/30 focus:outline-none" />
+                {form.costPrice && form.sellPrice && (
+                  <div className="text-[10px] text-emerald-400 mt-1">
+                    سود: {((form.sellPrice - form.costPrice) / form.costPrice * 100).toFixed(1)}%
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* بخش محل نگهداری */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-4 rounded-full bg-blue-400" />
+              <h3 className="text-sm font-semibold text-text-primary">محل نگهداری و تامین</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">محل نگهداری</label>
+                <GlassInput value={form.location || ''} onChange={(value) => setForm({ ...form, location: value })} placeholder="رف ۳، طبقه ۲، ردیف B" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">تامین کننده</label>
+                <GlassInput value={form.supplier || ''} onChange={(value) => setForm({ ...form, supplier: value })} placeholder="نام شرکت تامین کننده" />
+              </div>
+            </div>
+          </div>
+        </ModalBody>
+
+        <ModalFooter>
+          <GlassButton variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>
+            انصراف
+          </GlassButton>
+          <GlassButton variant="primary" onClick={handleCreate}>
+            <Check className="w-4 h-4 ml-2 shrink-0" />
+            {editingId ? 'بروزرسانی' : 'ذخیره کالا'}
+          </GlassButton>
+        </ModalFooter>
+      </GlassModal>
+
+      <GlassModal isOpen={showAdjust} onClose={() => { setShowAdjust(false); setAdjustItem(null); }} size="md">
+        <ModalHeader
+          icon={<ArrowUp className="w-5 h-5 text-accent-primary" />}
+          title="تعدیل موجودی"
+          subtitle={adjustItem?.name}
+          onClose={() => { setShowAdjust(false); setAdjustItem(null); }}
+        />
+
+        <ModalBody>
+          {adjustItem && (
+            <>
               <div className="flex items-center justify-center p-4 rounded-xl bg-white/5 border border-white/5">
                 <div className="text-center">
                   <div className="text-xs text-text-muted mb-1">موجودی فعلی</div>
                   <div className="text-2xl sm:text-3xl font-bold text-text-primary">
-                    {adjustItem.quantity.toLocaleString('fa-IR')}
+                    {formatNumber(adjustItem.quantity)}
                   </div>
                   <div className="text-xs text-text-muted mt-1">{adjustItem.unit}</div>
                 </div>
@@ -570,10 +646,11 @@ const AdminInventoryItem: React.FC = () => {
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1.5">تعداد</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   min={1}
-                  value={adjustForm.quantity}
-                  onChange={(e) => setAdjustForm({ ...adjustForm, quantity: parseInt(e.target.value) || 1 })}
+                  value={toPersianDigits(adjustForm.quantity)}
+                  onChange={(e) => setAdjustForm({ ...adjustForm, quantity: parseInt(e.target.value.replace(/[^\d۰-۹]/g, '').replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776))) || 1 })}
                   className="w-full px-4 py-3 bg-glass-light border border-glass-border rounded-xl text-text-primary text-center text-xl sm:text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
                 />
               </div>
@@ -582,75 +659,87 @@ const AdminInventoryItem: React.FC = () => {
                 <label className="block text-xs font-medium text-text-muted mb-1.5">توضیح (اختیاری)</label>
                 <GlassInput value={adjustForm.note || ''} onChange={(value) => setAdjustForm({ ...adjustForm, note: value })} placeholder="دلیل تعدیل..." />
               </div>
-            </div>
+            </>
+          )}
+        </ModalBody>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 rounded-b-2xl" style={{ background: 'linear-gradient(0deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.85) 100%)', backdropFilter: 'blur(20px)' }}>
-                <GlassButton variant="primary" onClick={handleAdjust}>
-                  <Check className="w-4 h-4 ml-2 shrink-0" />
-                  تایید تعدیل
-                </GlassButton>
-                <GlassButton variant="secondary" onClick={() => { setShowAdjust(false); setAdjustItem(null); }}>لغو</GlassButton>
-            </div>
-          </GlassCard>
-        </div>
-      )}
+        <ModalFooter>
+          <GlassButton variant="secondary" onClick={() => { setShowAdjust(false); setAdjustItem(null); }}>لغو</GlassButton>
+          <GlassButton variant="primary" onClick={handleAdjust}>
+            <Check className="w-4 h-4 ml-2 shrink-0" />
+            تایید تعدیل
+          </GlassButton>
+        </ModalFooter>
+      </GlassModal>
 
-      {showHistory && historyItem && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-3 sm:p-4 bg-gradient-to-b from-indigo-950/60 via-slate-900/70 to-slate-950/80 backdrop-blur-sm" dir="rtl">
-          <GlassCard className="w-full max-w-lg max-h-[90vh] !p-0 flex flex-col !border-accent-primary/10">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 rounded-t-2xl shrink-0" style={{ background: 'linear-gradient(180deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.85) 100%)', backdropFilter: 'blur(20px)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-400/10 border border-blue-400/20 flex items-center justify-center">
-                  <History className="w-5 h-5 text-blue-400" />
+      <GlassModal isOpen={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(null); }} size="md">
+        <ModalHeader
+          icon={<History className="w-5 h-5 text-blue-400" />}
+          title="تاریخچه تغییرات"
+          subtitle={historyItem?.name}
+          onClose={() => { setShowHistory(false); setHistoryItem(null); }}
+        />
+
+        <ModalBody className="!space-y-2">
+          {historyLoading ? (
+            <div className="flex justify-center py-8"><LoadingSpinner /></div>
+          ) : historyMovements.length === 0 ? (
+            <div className="text-center py-8 text-text-muted">تاریخچه‌ای وجود ندارد</div>
+          ) : (
+            historyMovements.map((m) => (
+              <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                <div className={`p-2 rounded-lg shrink-0 ${m.type === 'IN' || m.type === 'RETURN' ? 'bg-emerald-400/10 text-emerald-400' : 'bg-red-400/10 text-red-400'}`}>
+                  {m.type === 'IN' || m.type === 'RETURN' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
                 </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-text-primary leading-tight">تاریخچه تغییرات</h2>
-                  <p className="text-xs text-text-muted mt-0.5">{historyItem.name}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-text-primary">
+                    {m.type === 'IN' ? 'ورود' : m.type === 'OUT' ? 'خروج' : m.type === 'RETURN' ? 'برگشت' : 'اصلاح'}: {formatNumber(m.quantity)}
+                  </div>
+                  {m.note && <div className="text-xs text-text-muted mt-0.5 truncate">{m.note}</div>}
+                </div>
+                <div className="text-xs text-text-muted shrink-0">
+                  {new Date(m.createdAt).toLocaleDateString('fa-IR')}
                 </div>
               </div>
-              <button onClick={() => { setShowHistory(false); setHistoryItem(null); }} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 flex items-center justify-center transition-all duration-200 shrink-0">
-                <X className="w-4 h-4 text-text-muted hover:text-red-400" />
-              </button>
-            </div>
+            ))
+          )}
+        </ModalBody>
 
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-              {historyLoading ? (
-                <div className="flex justify-center py-8"><LoadingSpinner /></div>
-              ) : historyMovements.length === 0 ? (
-                <div className="text-center py-8 text-text-muted">تاریخچه‌ای وجود ندارد</div>
-              ) : (
-                <div className="space-y-2">
-                  {historyMovements.map((m) => (
-                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                      <div className={`p-2 rounded-lg shrink-0 ${m.type === 'IN' || m.type === 'RETURN' ? 'bg-emerald-400/10 text-emerald-400' : 'bg-red-400/10 text-red-400'}`}>
-                        {m.type === 'IN' || m.type === 'RETURN' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-text-primary">
-                          {m.type === 'IN' ? 'ورود' : m.type === 'OUT' ? 'خروج' : m.type === 'RETURN' ? 'برگشت' : 'اصلاح'}: {m.quantity.toLocaleString('fa-IR')}
-                        </div>
-                        {m.note && <div className="text-xs text-text-muted mt-0.5 truncate">{m.note}</div>}
-                      </div>
-                      <div className="text-xs text-text-muted shrink-0">
-                        {new Date(m.createdAt).toLocaleDateString('fa-IR')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+        {historyTotalPages > 1 && (
+          <div className="px-4 sm:px-6 pb-4">
+            <GlassPagination
+              currentPage={historyPage}
+              totalPages={historyTotalPages}
+              onPageChange={setHistoryPage}
+            />
+          </div>
+        )}
+      </GlassModal>
 
-            {historyTotalPages > 1 && (
-              <div className="px-4 sm:px-6 pb-4">
-                <GlassPagination
-                  currentPage={historyPage}
-                  totalPages={historyTotalPages}
-                  onPageChange={setHistoryPage}
-                />
-              </div>
-            )}
-          </GlassCard>
-        </div>
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="حذف کالا"
+        message={`آیا از حذف "${confirmDelete.name}" مطمئن هستید؟`}
+        confirmText="حذف"
+        cancelText="لغو"
+        type="danger"
+        onConfirm={() => confirmDelete.id && handleDelete(confirmDelete.id)}
+        onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
+      />
+
+      {previewData && (
+        <ImportPreviewModal
+          file={previewData.file}
+          items={previewData.items}
+          parseErrors={previewData.parseErrors}
+          totalRows={previewData.totalRows}
+          validRows={previewData.validRows}
+          onClose={() => setPreviewData(null)}
+          onSuccess={() => {
+            setRefreshKey((k) => k + 1);
+            fetchStats();
+          }}
+        />
       )}
     </div>
   );

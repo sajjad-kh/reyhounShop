@@ -224,6 +224,65 @@ class InventoryItemService {
 
     return getPrismaClient().inventoryItem.delete({ where: { id } });
   }
+
+  async findDuplicates(items) {
+    const prisma = getPrismaClient();
+    const names = items.map(i => i.name).filter(Boolean);
+    const skus = items.map(i => i.sku).filter(Boolean);
+
+    const [existingByName, existingBySku] = await Promise.all([
+      prisma.inventoryItem.findMany({ where: { name: { in: names } }, select: { id: true, name: true } }),
+      skus.length > 0
+        ? prisma.inventoryItem.findMany({ where: { sku: { in: skus } }, select: { id: true, name: true, sku: true } })
+        : [],
+    ]);
+
+    const nameMap = new Map(existingByName.map(i => [i.name, i.id]));
+    const skuMap = new Map(existingBySku.map(i => [i.sku, i.id]));
+
+    return items.map((item, index) => {
+      const duplicateByName = nameMap.has(item.name);
+      const duplicateBySku = item.sku && skuMap.has(item.sku);
+      return {
+        ...item,
+        rowIndex: index,
+        isDuplicate: duplicateByName || duplicateBySku,
+        duplicateType: duplicateByName ? 'name' : duplicateBySku ? 'sku' : null,
+        existingId: duplicateByName ? nameMap.get(item.name) : duplicateBySku ? skuMap.get(item.sku) : null,
+      };
+    });
+  }
+
+  async bulkCreate(items) {
+    const prisma = getPrismaClient();
+    const results = { success: 0, errors: [], created: [] };
+
+    for (const item of items) {
+      try {
+        const created = await prisma.inventoryItem.create({
+          data: {
+            name: item.name,
+            sku: item.sku || null,
+            description: item.description || null,
+            quantity: item.quantity || 0,
+            lowStockAlert: item.lowStockAlert || 5,
+            unit: item.unit || 'عدد',
+            costPrice: item.costPrice || null,
+            sellPrice: item.sellPrice || null,
+            location: item.location || null,
+            supplier: item.supplier || null,
+            minOrderQty: item.minOrderQty || 1,
+          },
+        });
+        results.success++;
+        results.created.push(created);
+      } catch (err) {
+        results.errors.push({ name: item.name, error: err.message });
+      }
+    }
+
+    return results;
+  }
 }
 
 module.exports = new InventoryItemService();

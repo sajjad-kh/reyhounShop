@@ -86,7 +86,8 @@ function apiSuccess<T>(data: T): ApiResponse<T> {
 }
 
 function apiError(error: any): ApiResponse<any> {
-  const msg = error?.response?.data?.error || error?.message || 'خطای غیرمنتظره';
+  const errData = error?.response?.data?.error;
+  const msg = typeof errData === 'object' ? errData?.message : errData || error?.message || 'خطای غیرمنتظره';
   return { success: false, data: null as any, error: msg };
 }
 
@@ -166,6 +167,34 @@ export const inventoryItemService = {
   getMovements: async (id: number, page: number = 1, limit: number = 10): Promise<ApiResponse<{ movements: InventoryMovement[]; pagination: { page: number; limit: number; total: number; pages: number } }>> => {
     try {
       const response = await api.get(`/inventory-items/${id}/movements?page=${page}&limit=${limit}`);
+      return apiSuccess(response.data);
+    } catch (error) {
+      return apiError(error);
+    }
+  },
+
+  importFromExcel: async (file: File): Promise<ApiResponse<{ items: (InventoryItemData & { rowIndex: number; isDuplicate: boolean; duplicateType: string | null; existingId: number | null })[]; parseErrors: { row: number; name: string; error: string }[]; totalRows: number; validRows: number }>> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/inventory-items/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return apiSuccess(response.data);
+    } catch (error) {
+      return apiError(error);
+    }
+  },
+
+  confirmImport: async (file: File, items: any[]): Promise<ApiResponse<{ success: number; errors: { name: string; error: string }[]; parseErrors: any[] }>> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('confirm', 'true');
+      formData.append('items', JSON.stringify(items));
+      const response = await api.post('/inventory-items/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return apiSuccess(response.data);
     } catch (error) {
       return apiError(error);

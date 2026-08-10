@@ -218,7 +218,7 @@ export const LoadingState: React.FC<{ message?: string }> = ({
     return (
         <div className="flex flex-col items-center justify-center py-16 scale-in">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-glass-light flex items-center justify-center pulse-glow">
-                <div className="glass-spinner" />
+                <div className="glass-spinner w-8 h-8" />
             </div>
             <p className="text-text-primary font-medium">{message}</p>
             <div className="mt-4 flex items-center space-x-2 space-x-reverse">

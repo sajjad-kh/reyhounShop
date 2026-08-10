@@ -165,7 +165,7 @@ export const ImageLightbox = ({
                 <div className="glass-modal p-4 scale-in">
                     {isLoading && (
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="glass-spinner" />
+                            <div className="glass-spinner w-8 h-8" />
                         </div>
                     )}
                     <img

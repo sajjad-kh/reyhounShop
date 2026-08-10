@@ -9,6 +9,7 @@ import { cn } from '../../utils';
 import { TourStep, TourStepInput, TourPlacement } from '../../types/tour';
 import { Plus, Pencil, Trash2, MousePointerClick, Crosshair, X, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from '../../utils/toast';
+import { GlassModal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/GlassModal';
 
 const PLACEMENTS: { value: TourPlacement; label: string }[] = [
     { value: 'auto', label: 'خودکار' },
@@ -469,161 +470,158 @@ export const TourManagement: React.FC = () => {
                 )}
             </GlassCard>
 
-            {/* Add / Edit Modal */}
-            {modalOpen && (
-                <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <GlassCard className="w-full max-w-xl p-5 max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-lg font-bold text-text-primary mb-4">
-                            {editing ? 'ویرایش مرحله تور' : 'افزودن مرحله تور'}
-                        </h2>
+{/* Add / Edit Modal */}
+            <GlassModal isOpen={modalOpen} onClose={() => setModalOpen(false)} size="md">
+                <ModalHeader
+                    title={editing ? 'ویرایش مرحله تور' : 'افزودن مرحله تور'}
+                    onClose={() => setModalOpen(false)}
+                />
 
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                        صفحه (page) *
-                                    </label>
-                                    <select
-                                        value={form.page}
-                                        onChange={(e) => setField('page', e.target.value)}
-                                        dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
-                                    >
-                                        <option className={OPTION_CLASS} value="">انتخاب صفحه...</option>
-                                        {PAGE_OPTIONS.map((p) => (
-                                            <option key={p.value} className={OPTION_CLASS} value={p.value}>
-                                                {p.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                        موقعیت نمایش
-                                    </label>
-                                    <select
-                                        value={form.placement}
-                                        onChange={(e) =>
-                                            setField('placement', e.target.value as TourPlacement)
-                                        }
-                                        dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
-                                    >
-                                        {PLACEMENTS.map((p) => (
-                                            <option key={p.value} className={OPTION_CLASS} value={p.value}>
-                                                {p.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
+                <ModalBody>
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                    سلکتور (CSS selector) *
+                                    صفحه (page) *
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="flex-1">
-                                        <GlassInput
-                                            value={form.selector}
-                                            onChange={(v) => setField('selector', v)}
-                                            placeholder="مثال: [data-tour='search']"
-                                            dir="ltr"
-                                        />
-                                    </div>
-                                    <GlassButton
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={openPicker}
-                                        title="انتخاب المان با کلیک روی صفحه"
-                                        className="whitespace-nowrap flex items-center gap-1"
-                                    >
-                                        <Crosshair className="w-5 h-5" />
-                                        انتخاب با کلیک
-                                    </GlassButton>
-                                </div>
-                                <p className="text-xs text-text-muted mt-1">
-                                    المانی که باید هایلایت شود. برای راحتی روی «انتخاب با کلیک» بزنید و المان را در صفحه انتخاب کنید.
-                                </p>
+                                <select
+                                    value={form.page}
+                                    onChange={(e) => setField('page', e.target.value)}
+                                    dir="rtl"
+                                    className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+                                >
+                                    <option className={OPTION_CLASS} value="">انتخاب صفحه...</option>
+                                    {PAGE_OPTIONS.map((p) => (
+                                        <option key={p.value} className={OPTION_CLASS} value={p.value}>
+                                            {p.label}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-
                             <div>
                                 <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                    عنوان *
+                                    موقعیت نمایش
                                 </label>
+                                <select
+                                    value={form.placement}
+                                    onChange={(e) =>
+                                        setField('placement', e.target.value as TourPlacement)
+                                    }
+                                    dir="rtl"
+                                    className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+                                >
+                                    {PLACEMENTS.map((p) => (
+                                        <option key={p.value} className={OPTION_CLASS} value={p.value}>
+                                            {p.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-text-primary mb-1.5">
+                                سلکتور (CSS selector) *
+                            </label>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
                                     <GlassInput
-                                        value={form.title}
-                                        onChange={(v) => setField('title', v)}
-                                        placeholder="مثال: جستجوی محصولات"
+                                        value={form.selector}
+                                        onChange={(v) => setField('selector', v)}
+                                        placeholder="مثال: [data-tour='search']"
+                                        dir="ltr"
                                     />
+                                </div>
+                                <GlassButton
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={openPicker}
+                                    title="انتخاب المان با کلیک روی صفحه"
+                                    className="whitespace-nowrap flex items-center gap-1"
+                                >
+                                    <Crosshair className="w-5 h-5" />
+                                    انتخاب با کلیک
+                                </GlassButton>
                             </div>
+                            <p className="text-xs text-text-muted mt-1">
+                                المانی که باید هایلایت شود. برای راحتی روی «انتخاب با کلیک» بزنید و المان را در صفحه انتخاب کنید.
+                            </p>
+                        </div>
 
+                        <div>
+                            <label className="block text-sm font-medium text-text-primary mb-1.5">
+                                عنوان *
+                            </label>
+                                <GlassInput
+                                    value={form.title}
+                                    onChange={(v) => setField('title', v)}
+                                    placeholder="مثال: جستجوی محصولات"
+                                />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-text-primary mb-1.5">
+                                توضیحات
+                            </label>
+                            <textarea
+                                value={form.description}
+                                onChange={(e) => setField('description', e.target.value)}
+                                rows={3}
+                                placeholder="توضیحات این مرحله از تور..."
+                                className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                    توضیحات
+                                    ترتیب (order)
                                 </label>
-                                <textarea
-                                    value={form.description}
-                                    onChange={(e) => setField('description', e.target.value)}
-                                    rows={3}
-                                    placeholder="توضیحات این مرحله از تور..."
-                                    className="w-full px-4 py-2.5 bg-glass-light border border-glass-border rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+                                <GlassInput
+                                    type="number"
+                                    min={1}
+                                    value={form.order}
+                                    onChange={(v) =>
+                                        setField('order', Number(v))
+                                    }
                                 />
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                                        ترتیب (order)
-                                    </label>
-                                    <GlassInput
-                                        type="number"
-                                        min={1}
-                                        value={form.order}
-                                        onChange={(v) =>
-                                            setField('order', Number(v))
-                                        }
-                                    />
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-glass-light rounded-xl self-end">
-                                    <input
-                                        type="checkbox"
-                                        id="isActive"
-                                        checked={form.isActive}
-                                        onChange={(e) => setField('isActive', e.target.checked)}
-                                        className="w-5 h-5 rounded border-glass-border text-accent-primary focus:ring-2 focus:ring-accent-primary/50"
-                                    />
-                                    <label
-                                        htmlFor="isActive"
-                                        className="text-sm font-medium text-text-primary cursor-pointer"
-                                    >
-                                        فعال
-                                    </label>
-                                </div>
+                            <div className="flex items-center gap-3 p-3 bg-glass-light rounded-xl self-end">
+                                <input
+                                    type="checkbox"
+                                    id="isActive"
+                                    checked={form.isActive}
+                                    onChange={(e) => setField('isActive', e.target.checked)}
+                                    className="w-5 h-5 rounded border-glass-border text-accent-primary focus:ring-2 focus:ring-accent-primary/50"
+                                />
+                                <label
+                                    htmlFor="isActive"
+                                    className="text-sm font-medium text-text-primary cursor-pointer"
+                                >
+                                    فعال
+                                </label>
                             </div>
                         </div>
+                    </div>
+                </ModalBody>
 
-                        <div className="flex gap-3 pt-4">
-                            <GlassButton
-                                variant="accent"
-                                onClick={handleSave}
-                                loading={saving}
-                                className="flex-1"
-                            >
-                                {editing ? 'ذخیره تغییرات' : 'ایجاد'}
-                            </GlassButton>
-                            <GlassButton
-                                variant="secondary"
-                                onClick={() => setModalOpen(false)}
-                                disabled={saving}
-                                className="flex-1"
-                            >
-                                انصراف
-                            </GlassButton>
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
+                <ModalFooter>
+                    <GlassButton
+                        variant="secondary"
+                        onClick={() => setModalOpen(false)}
+                        disabled={saving}
+                    >
+                        انصراف
+                    </GlassButton>
+                    <GlassButton
+                        variant="accent"
+                        onClick={handleSave}
+                        loading={saving}
+                    >
+                        {editing ? 'ذخیره تغییرات' : 'ایجاد'}
+                    </GlassButton>
+                </ModalFooter>
+            </GlassModal>
 
             {/* Element picker modal */}
             {pickerOpen && (
