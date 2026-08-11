@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassInput } from '../../components/ui/GlassInput';
+import { GlassModal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/GlassModal';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAuth } from '../../hooks/useAuth';
 import { Address } from '../../types/auth';
 import { addressService } from '../../services/addressService';
@@ -86,6 +88,7 @@ export const AddressesPage: React.FC = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState<number | null>(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Load addresses from API
@@ -231,24 +234,27 @@ export const AddressesPage: React.FC = () => {
     };
 
     const handleDelete = async (addressId: number) => {
-        if (!confirm('Are you sure you want to delete this address?')) {
-            return;
-        }
+        setDeleteConfirmId(addressId);
+    };
 
-        setIsDeleting(addressId);
+    const confirmDelete = async () => {
+        if (deleteConfirmId === null) return;
+
+        setIsDeleting(deleteConfirmId);
 
         try {
-            
-            await addressService.deleteAddress(addressId);
+            await addressService.deleteAddress(deleteConfirmId);
 
             setAddresses(prev =>
-                prev.filter(a => a.id !== addressId)
+                prev.filter(a => a.id !== deleteConfirmId)
             );
+            toast.success('آدرس با موفقیت حذف شد');
         } catch (error) {
             console.error('Failed to delete address:', error);
             toast.error('خطا در حذف آدرس. لطفاً دوباره تلاش کنید.');
         } finally {
             setIsDeleting(null);
+            setDeleteConfirmId(null);
         }
     };
 
@@ -390,143 +396,148 @@ export const AddressesPage: React.FC = () => {
             )}
 
             {/* Address Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <GlassCard className="p-8">
-                            <h2 className="text-xl font-semibold text-text-primary mb-6">
-                                {editingAddress ? 'Edit Address' : 'Add New Address'}
-                            </h2>
+            <GlassModal isOpen={isModalOpen} onClose={closeModal} size="md">
+                <ModalHeader
+                    icon={<LocationIcon />}
+                    title={editingAddress ? 'ویرایش آدرس' : 'افزودن آدرس جدید'}
+                    subtitle={editingAddress ? 'ویرایش اطلاعات آدرس' : 'افزودن آدرس جدید به لیست'}
+                    onClose={closeModal}
+                />
+                <ModalBody>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* General Error */}
+                        {errors.general && (
+                            <div className="glass-card p-4 bg-red-500/10 border-red-500/20 text-red-400 text-sm rounded-xl">
+                                {errors.general}
+                            </div>
+                        )}
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* General Error */}
-                                {errors.general && (
-                                    <div className="glass-card p-4 bg-red-500/10 border-red-500/20 text-red-400 text-sm rounded-xl">
-                                        {errors.general}
-                                    </div>
-                                )}
+                        {/* Address Title */}
+                        <GlassInput
+                            type="text"
+                            label="عنوان آدرس"
+                            value={formData.title}
+                            onChange={(value) =>setFormData(prev => ({ ...prev, title: value }))}
+                            error={errors.title}
+                            placeholder="مثال: منزل، محل کار و..."
+                            required
+                        />
 
-                                {/* Address Title */}
-                                <GlassInput
-                                    type="text"
-                                    label="Address Title"
-                                    value={formData.title}
-                                    onChange={(value) =>setFormData(prev => ({ ...prev, title: value }))}
-                                    error={errors.title}
-                                    placeholder="e.g., Home, Office, etc."
-                                    required
-                                />
+                        {/* Full Name */}
+                        <GlassInput
+                            type="text"
+                            label="نام و نام خانوادگی"
+                            value={formData.fullName}
+                            onChange={(value) =>setFormData(prev => ({ ...prev, fullName: value }))}                                    
+                            error={errors.fullName}
+                            icon={<UserIcon />}
+                            iconPosition="left"
+                            required
+                        />
 
-                                {/* Full Name */}
-                                <GlassInput
-                                    type="text"
-                                    label="Full Name"
-                                    value={formData.fullName}
-                                    onChange={(value) =>setFormData(prev => ({ ...prev, fullName: value }))}                                    
-                                    error={errors.fullName}
-                                    icon={<UserIcon />}
-                                    iconPosition="left"
-                                    required
-                                />
+                        {/* Phone */}
+                        <GlassInput
+                            type="tel"
+                            label="شماره تماس"
+                            value={formData.phone}
+                            onChange={(value) =>setFormData(prev => ({ ...prev, phone: value }))}                                    
+                            error={errors.phone}
+                            icon={<PhoneIcon />}
+                            iconPosition="left"
+                            required
+                        />
 
-                                {/* Phone */}
-                                <GlassInput
-                                    type="tel"
-                                    label="Phone Number"
-                                    value={formData.phone}
-                                    onChange={(value) =>setFormData(prev => ({ ...prev, phone: value }))}                                    
-                                    error={errors.phone}
-                                    icon={<PhoneIcon />}
-                                    iconPosition="left"
-                                    required
-                                />
+                        {/* Address */}
+                        <GlassInput
+                            type="text"
+                            label="آدرس"
+                            value={formData.address}
+                            onChange={(value) =>setFormData(prev => ({ ...prev, address: value }))}                                    
+                            error={errors.address}
+                            icon={<LocationIcon />}
+                            iconPosition="left"
+                            required
+                        />
 
-                                {/* Address */}
-                                <GlassInput
-                                    type="text"
-                                    label="Street Address"
-                                    value={formData.address}
-                                    onChange={(value) =>setFormData(prev => ({ ...prev, address: value }))}                                    
-                                    error={errors.address}
-                                    icon={<LocationIcon />}
-                                    iconPosition="left"
-                                    required
-                                />
+                        {/* City and State */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <GlassInput
+                                type="text"
+                                label="شهر"
+                                value={formData.city}
+                                onChange={(value) =>setFormData(prev => ({ ...prev, city: value }))}                                    
+                                error={errors.city}
+                                required
+                            />
 
-                                {/* City and State */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <GlassInput
-                                        type="text"
-                                        label="City"
-                                        value={formData.city}
-                                        onChange={(value) =>setFormData(prev => ({ ...prev, city: value }))}                                    
-                                        error={errors.city}
-                                        required
-                                    />
+                            <GlassInput
+                                type="text"
+                                label="استان"
+                                value={formData.state}
+                                onChange={(value) =>setFormData(prev => ({ ...prev, state: value }))}                                    
+                                error={errors.state}
+                                required
+                            />
+                        </div>
 
-                                    <GlassInput
-                                        type="text"
-                                        label="State"
-                                        value={formData.state}
-                                        onChange={(value) =>setFormData(prev => ({ ...prev, state: value }))}                                    
-                                        error={errors.state}
-                                        required
-                                    />
-                                </div>
+                        {/* Postal Code */}
+                        <GlassInput
+                            type="text"
+                            label="کد پستی"
+                            value={formData.postalCode}
+                            onChange={(value) =>setFormData(prev => ({ ...prev, postalCode: value }))}                                    
+                            error={errors.postalCode}
+                            required
+                        />
 
-                                {/* Postal Code */}
-                                <GlassInput
-                                    type="text"
-                                    label="Postal Code"
-                                    value={formData.postalCode}
-                                    onChange={(value) =>setFormData(prev => ({ ...prev, postalCode: value }))}                                    
-                                    error={errors.postalCode}
-                                    required
-                                />
+                        {/* Default Address Checkbox */}
+                        <div className="flex items-center space-x-3">
+                            <input
+                                type="checkbox"
+                                id="isDefault"
+                                checked={formData.isDefault}
+                                onChange={handleInputChange('isDefault')}
+                                className="w-4 h-4 text-accent-primary bg-glass-light border-border-glass-light rounded focus:ring-accent-primary focus:ring-2"
+                            />
+                            <label htmlFor="isDefault" className="text-sm text-text-secondary">
+                                تنظیم به عنوان آدرس پیش‌فرض
+                            </label>
+                        </div>
+                    </form>
+                </ModalBody>
+                <ModalFooter>
+                    <GlassButton
+                        type="button"
+                        variant="secondary"
+                        onClick={closeModal}
+                    >
+                        لغو
+                    </GlassButton>
+                    <GlassButton
+                        type="submit"
+                        variant="accent"
+                        loading={isSubmitting}
+                        onClick={handleSubmit}
+                        ripple
+                    >
+                        {isSubmitting
+                            ? (editingAddress ? 'در حال بروزرسانی...' : 'در حال افزودن...')
+                            : (editingAddress ? 'بروزرسانی آدرس' : 'افزودن آدرس')
+                        }
+                    </GlassButton>
+                </ModalFooter>
+            </GlassModal>
 
-                                {/* Default Address Checkbox */}
-                                <div className="flex items-center space-x-3">
-                                    <input
-                                        type="checkbox"
-                                        id="isDefault"
-                                        checked={formData.isDefault}
-                                        onChange={handleInputChange('isDefault')}
-                                        className="w-4 h-4 text-accent-primary bg-glass-light border-border-glass-light rounded focus:ring-accent-primary focus:ring-2"
-                                    />
-                                    <label htmlFor="isDefault" className="text-sm text-text-secondary">
-                                        Set as default address
-                                    </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex space-x-4 pt-4">
-                                    <GlassButton
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={closeModal}
-                                        className="flex-1"
-                                    >
-                                        Cancel
-                                    </GlassButton>
-
-                                    <GlassButton
-                                        type="submit"
-                                        variant="accent"
-                                        loading={isSubmitting}
-                                        className="flex-1"
-                                        ripple
-                                    >
-                                        {isSubmitting
-                                            ? (editingAddress ? 'Updating...' : 'Adding...')
-                                            : (editingAddress ? 'Update Address' : 'Add Address')
-                                        }
-                                    </GlassButton>
-                                </div>
-                            </form>
-                        </GlassCard>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                isOpen={deleteConfirmId !== null}
+                title="حذف آدرس"
+                message="آیا مطمئن هستید که می‌خواهید این آدرس را حذف کنید؟ این عمل قابل بازگشت نیست."
+                confirmText="حذف"
+                cancelText="لغو"
+                type="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteConfirmId(null)}
+            />
         </div>
     );
 };
