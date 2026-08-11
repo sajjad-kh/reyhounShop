@@ -10,6 +10,7 @@ import { Product, Category } from '../types/product';
 import { cn } from '../utils';
 import { useCart } from '../context/CartContext';
 import { useCart as useBasalamCart } from '../hooks/basalam/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { BasalamProduct } from '../types/basalam';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { toast } from '../utils/toast';
@@ -18,6 +19,7 @@ import { Search, ChevronLeft, ChevronRight, Sparkles, TrendingUp, Clock, ArrowLe
 export const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { addToCart } = useCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
 
     console.log('🏠 HomePage loaded');
 
@@ -105,6 +107,21 @@ export const HomePage: React.FC = () => {
         } catch (error) {
             console.error('Failed to add to cart:', error);
             toast.error('خطا در افزودن به سبد خرید');
+        }
+    };
+
+    const handleAddToWishlist = async (product: Product) => {
+        try {
+            const wasInWishlist = isInWishlist(product.id);
+            await toggleWishlist(product.id);
+            if (wasInWishlist) {
+                toast.success('از علاقه‌مندی‌ها حذف شد');
+            } else {
+                toast.success('به علاقه‌مندی‌ها اضافه شد');
+            }
+        } catch (error) {
+            console.error('Failed to toggle wishlist:', error);
+            toast.error('خطا در تغییر علاقه‌مندی');
         }
     };
 
@@ -209,6 +226,8 @@ export const HomePage: React.FC = () => {
                                                 product={product}
                                                 className="w-full"
                                                 onAddToCart={handleAddToCart}
+                                                onAddToWishlist={handleAddToWishlist}
+                                                isInWishlist={isInWishlist(product.id)}
                                             />
                                         </div>
                                     ))}
@@ -260,6 +279,8 @@ export const HomePage: React.FC = () => {
                                     product={product}
                                     className="w-full"
                                     onAddToCart={handleAddToCart}
+                                    onAddToWishlist={handleAddToWishlist}
+                                    isInWishlist={isInWishlist(product.id)}
                                 />
                             </div>
                         ))}
@@ -292,6 +313,8 @@ export const HomePage: React.FC = () => {
                                     product={product}
                                     className="w-full"
                                     onAddToCart={handleAddToCart}
+                                    onAddToWishlist={handleAddToWishlist}
+                                    isInWishlist={isInWishlist(product.id)}
                                 />
                             </div>
                         ))}

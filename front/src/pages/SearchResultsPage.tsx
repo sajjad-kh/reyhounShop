@@ -24,6 +24,7 @@ const SORT_OPTIONS = [
 
 import { useCart } from '../context/CartContext';
 import { useCart as useBasalamCart } from '../hooks/basalam/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { BasalamProduct } from '../types/basalam';
 
 // Fixed: Prevent undefined length errors on filters.categories
@@ -183,6 +184,7 @@ export const SearchResultsPage: React.FC = () => {
     // Handle add to cart
     const { addToCart } = useCart();
     const { addItem: addBasalamItem } = useBasalamCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
 
     const handleAddToCart = async (product: Product) => {
         try {
@@ -214,10 +216,20 @@ export const SearchResultsPage: React.FC = () => {
         }
     };
 
-    // Handle add to wishlist (placeholder)
-    const handleAddToWishlist = (product: Product) => {
-        // TODO: Implement wishlist functionality
-        console.log('Add to wishlist:', product);
+    // Handle add to wishlist
+    const handleAddToWishlist = async (product: Product) => {
+        try {
+            const wasInWishlist = isInWishlist(product.id);
+            await toggleWishlist(product.id);
+            if (wasInWishlist) {
+                toast.success('از علاقه‌مندی‌ها حذف شد');
+            } else {
+                toast.success('به علاقه‌مندی‌ها اضافه شد');
+            }
+        } catch (error) {
+            console.error('Failed to toggle wishlist:', error);
+            toast.error('خطا در تغییر علاقه‌مندی');
+        }
     };
 
     // Get search result summary
@@ -412,6 +424,7 @@ export const SearchResultsPage: React.FC = () => {
                                             product={product}
                                             onAddToCart={handleAddToCart}
                                             onAddToWishlist={handleAddToWishlist}
+                                            isInWishlist={isInWishlist(product.id)}
                                         />
                                     ))}
                                 </div>

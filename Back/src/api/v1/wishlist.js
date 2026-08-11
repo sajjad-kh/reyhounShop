@@ -14,6 +14,10 @@ const addToWishlistSchema = Joi.object({
   productId: Joi.number().integer().required()
 });
 
+const toggleWishlistSchema = Joi.object({
+  productId: Joi.number().integer().required()
+});
+
 const moveToCartSchema = Joi.object({
   quantity: Joi.number().integer().min(1).optional().default(1)
 });
@@ -241,6 +245,73 @@ router.get('/',
 
 /**
  * @swagger
+ * /api/v1/wishlist/toggle:
+ *   post:
+ *     summary: Toggle product in wishlist (add if not exists, remove if exists)
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *             properties:
+ *               productId:
+ *                 type: integer
+ *                 description: Product ID to toggle
+ *     responses:
+ *       200:
+ *         description: Product toggled successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Product not found
+ */
+router.post('/toggle',
+  authenticateToken,
+  validateInput(toggleWishlistSchema),
+  asyncHandler(async (req, res) => {
+    const { productId } = req.body;
+
+    try {
+      const result = await wishlistService.toggleWishlist(req.user.userId, productId);
+      
+      res.json({
+        success: true,
+        ...result
+      });
+    } catch (error) {
+      if (error.message === 'Product not found') {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'PRODUCT_NOT_FOUND',
+            message: 'Product not found'
+          }
+        });
+      }
+      
+      if (error.message === 'This product is not available') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'PRODUCT_UNAVAILABLE',
+            message: 'This product is not available'
+          }
+        });
+      }
+      
+      throw error;
+    }
+  })
+);
+
+/**
+ * @swagger
  * /api/v1/wishlist/{id}:
  *   delete:
  *     summary: Remove product from wishlist
@@ -271,6 +342,18 @@ router.get('/',
  *       404:
  *         description: Wishlist item not found
  */
+router.delete('/clear',
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const result = await wishlistService.clearWishlist(req.user.userId);
+    
+    res.json({
+      success: true,
+      data: result
+    });
+  })
+);
+
 router.delete('/:id',
   authenticateToken,
   asyncHandler(async (req, res) => {
@@ -439,16 +522,5 @@ router.post('/:id/move-to-cart',
  *       401:
  *         description: Unauthorized
  */
-router.delete('/clear',
-  authenticateToken,
-  asyncHandler(async (req, res) => {
-    const result = await wishlistService.clearWishlist(req.user.userId);
-    
-    res.json({
-      success: true,
-      data: result
-    });
-  })
-);
 
 module.exports = router;

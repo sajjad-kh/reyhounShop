@@ -12,6 +12,7 @@ export interface ProductCardProps {
     onAddToWishlist?: (product: Product) => void;
     showAddToCart?: boolean;
     showWishlist?: boolean;
+    isInWishlist?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -20,7 +21,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     onAddToCart,
     onAddToWishlist,
     showAddToCart = true,
-    showWishlist = true
+    showWishlist = true,
+    isInWishlist = false
 }) => {
     const primaryImage = product.images?.find(img => img.isMain) || product.images?.[0] || null;
     const hasDiscount = product.discountPrice && product.discountPrice < product.price;
@@ -91,9 +93,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                         {showWishlist && (
                             <button
                                 onClick={handleAddToWishlist}
-                                className="w-8 h-8 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all"
+                                className={cn(
+                                    "w-8 h-8 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all",
+                                    isInWishlist ? "text-red-500 hover:text-red-400" : "text-white/70 hover:text-white hover:bg-white/20"
+                                )}
                             >
-                                <Heart className="w-3.5 h-3.5" />
+                                <Heart className="w-3.5 h-3.5" fill={isInWishlist ? 'currentColor' : 'none'} />
                             </button>
                         )}
                         {showAddToCart && product.stock > 0 && (

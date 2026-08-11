@@ -8,6 +8,7 @@ import { cn } from '../utils';
 import { cartService } from '../services/cartService';
 import { toast } from '../utils/toast';
 import { ArrowLeft, ShoppingCart, Minus, Plus, Package, Truck, Shield, Star } from 'lucide-react';
+import { WishlistButton } from '../components/wishlist/WishlistButton';
 
 export const ProductDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -291,6 +292,15 @@ export const ProductDetailPage: React.FC = () => {
                                     <ShoppingCart className="w-4 h-4" />
                                     افزودن به سبد خرید
                                 </button>
+
+                                {/* Wishlist Button */}
+                                <div className="flex items-center justify-center">
+                                    <WishlistButton
+                                        productId={product.id}
+                                        size="md"
+                                        showLabel
+                                    />
+                                </div>
                             </div>
                         )}
 

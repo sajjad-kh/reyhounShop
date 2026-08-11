@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { WishlistItem } from '../../services/wishlistService';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -11,7 +12,7 @@ import { toast } from '../../utils/toast';
 // Icons
 const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
     <svg
-        className="w-5 h-5"
+        className={cn('w-5 h-5', filled ? 'text-red-500' : 'text-text-muted')}
         fill={filled ? 'currentColor' : 'none'}
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -61,6 +62,7 @@ const EmptyWishlistIcon = () => (
 export const WishlistPage: React.FC = () => {
     const [removingItems, setRemovingItems] = useState<Set<number>>(new Set());
     const [addingToCart, setAddingToCart] = useState<Set<number>>(new Set());
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     const { addToCart } = useCart();
     const { wishlist, isLoading, error, removeFromWishlist, clearWishlist: clearWishlistHook, refreshWishlist } = useWishlist();
@@ -104,12 +106,10 @@ export const WishlistPage: React.FC = () => {
     };
 
     const handleClearWishlist = async () => {
-        if (!window.confirm('Are you sure you want to clear your entire wishlist?')) {
-            return;
-        }
-
         try {
             await clearWishlistHook();
+            setShowClearConfirm(false);
+            toast.success('تمام علاقه‌مندی‌ها پاک شد');
         } catch (err) {
             console.error('Error clearing wishlist:', err);
             toast.error('خطا در پاک کردن علاقه‌مندی‌ها');
@@ -121,7 +121,7 @@ export const WishlistPage: React.FC = () => {
         return (
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-text-primary">My Wishlist</h1>
+                    <h1 className="text-3xl font-bold text-text-primary">علاقه‌مندی‌های من</h1>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map(i => (
@@ -140,11 +140,11 @@ export const WishlistPage: React.FC = () => {
     if (error) {
         return (
             <div className="space-y-6">
-                <h1 className="text-3xl font-bold text-text-primary">My Wishlist</h1>
+                <h1 className="text-3xl font-bold text-text-primary">علاقه‌مندی‌های من</h1>
                 <GlassCard className="text-center py-12">
                     <p className="text-accent-error mb-4">{error}</p>
                     <GlassButton onClick={refreshWishlist} variant="primary">
-                        Try Again
+                        تلاش مجدد
                     </GlassButton>
                 </GlassCard>
             </div>
@@ -155,22 +155,22 @@ export const WishlistPage: React.FC = () => {
     if (wishlist.length === 0) {
         return (
             <div className="space-y-6">
-                <h1 className="text-3xl font-bold text-text-primary">My Wishlist</h1>
+                <h1 className="text-3xl font-bold text-text-primary">علاقه‌مندی‌های من</h1>
                 <GlassCard className="text-center py-16">
                     <div className="flex justify-center mb-6">
                         <EmptyWishlistIcon />
                     </div>
                     <h2 className="text-xl font-semibold text-text-primary mb-2">
-                        Your wishlist is empty
+                        لیست علاقه‌مندی‌های شما خالی است
                     </h2>
                     <p className="text-text-secondary mb-6">
-                        Start adding products you love to your wishlist
+                        محصولات مورد علاقه خود را به لیست اضافه کنید
                     </p>
                     <GlassButton
                         variant="primary"
                         onClick={() => window.location.href = '/products'}
                     >
-                        Browse Products
+                        مشاهده محصولات
                     </GlassButton>
                 </GlassCard>
             </div>
@@ -182,9 +182,9 @@ export const WishlistPage: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-text-primary">My Wishlist</h1>
+                    <h1 className="text-3xl font-bold text-text-primary">علاقه‌مندی‌های من</h1>
                     <p className="text-text-secondary mt-1">
-                        {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'}
+                        {wishlist.length} آیتم
                     </p>
                 </div>
 
@@ -192,10 +192,10 @@ export const WishlistPage: React.FC = () => {
                     <GlassButton
                         variant="secondary"
                         size="sm"
-                        onClick={handleClearWishlist}
+                        onClick={() => setShowClearConfirm(true)}
                     >
                         <TrashIcon />
-                        <span className="ml-2">Clear All</span>
+                        <span className="ml-2">پاک کردن همه</span>
                     </GlassButton>
                 )}
             </div>
@@ -243,7 +243,7 @@ export const WishlistPage: React.FC = () => {
                                 {product.stock === 0 && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                         <span className="glass-card bg-glass-heavy px-3 py-1 text-sm font-medium text-text-primary">
-                                            Out of Stock
+                                            ناموجود
                                         </span>
                                     </div>
                                 )}
@@ -253,7 +253,7 @@ export const WishlistPage: React.FC = () => {
                                     onClick={() => handleRemoveFromWishlist(item.id)}
                                     disabled={isRemoving}
                                     className="absolute top-2 right-2 glass-card bg-glass-medium hover:bg-accent-error/20 p-2 rounded-lg transition-all duration-200"
-                                    aria-label="Remove from wishlist"
+                                    aria-label="حذف از علاقه‌مندی‌ها"
                                 >
                                     {isRemoving ? (
                                         <div className="glass-spinner w-4 h-4" />
@@ -329,7 +329,7 @@ export const WishlistPage: React.FC = () => {
                                         ripple
                                     >
                                         <ShoppingCartIcon />
-                                        <span className="ml-2">Add to Cart</span>
+                                        <span className="ml-2">افزودن به سبد خرید</span>
                                     </GlassButton>
 
                                     <GlassButton
@@ -337,7 +337,7 @@ export const WishlistPage: React.FC = () => {
                                         size="sm"
                                         onClick={() => window.location.href = `/products/${product.id}`}
                                     >
-                                        View
+                                        نمایش
                                     </GlassButton>
                                 </div>
                             </div>
@@ -345,6 +345,17 @@ export const WishlistPage: React.FC = () => {
                     );
                 })}
             </div>
+
+            <ConfirmModal
+                isOpen={showClearConfirm}
+                title="پاک کردن علاقه‌مندی‌ها"
+                message="آیا مطمئن هستید که می‌خواهید تمام علاقه‌مندی‌ها را پاک کنید؟ این عمل قابل بازگشت نیست."
+                confirmText="پاک کردن"
+                cancelText="لغو"
+                type="danger"
+                onConfirm={handleClearWishlist}
+                onCancel={() => setShowClearConfirm(false)}
+            />
         </div>
     );
 };

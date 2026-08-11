@@ -13,6 +13,7 @@ import { UI_CONSTANTS } from '../utils/constants';
 import { cn } from '../utils';
 import { useCart } from '../context/CartContext';
 import { useCart as useBasalamCart } from '../hooks/basalam/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { BasalamProduct } from '../types/basalam';
 import { ArrowLeft, SlidersHorizontal, X, Search } from 'lucide-react';
 import { toast } from '../utils/toast';
@@ -151,6 +152,7 @@ export const ProductListingPage: React.FC = () => {
 
     const { addToCart } = useCart();
     const { addItem: addBasalamItem } = useBasalamCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
 
     const handleAddToCart = async (product: Product) => {
         try {
@@ -181,8 +183,19 @@ export const ProductListingPage: React.FC = () => {
         }
     };
 
-    const handleAddToWishlist = (product: Product) => {
-        console.log('Add to wishlist:', product);
+    const handleAddToWishlist = async (product: Product) => {
+        try {
+            const wasInWishlist = isInWishlist(product.id);
+            await toggleWishlist(product.id);
+            if (wasInWishlist) {
+                toast.success('از علاقه‌مندی‌ها حذف شد');
+            } else {
+                toast.success('به علاقه‌مندی‌ها اضافه شد');
+            }
+        } catch (error) {
+            console.error('Failed to toggle wishlist:', error);
+            toast.error('خطا در تغییر علاقه‌مندی');
+        }
     };
 
     const hasActiveFilters = !!(
@@ -374,6 +387,7 @@ export const ProductListingPage: React.FC = () => {
                                             product={product}
                                             onAddToCart={handleAddToCart}
                                             onAddToWishlist={handleAddToWishlist}
+                                            isInWishlist={isInWishlist(product.id)}
                                         />
                                     ))}
                                 </div>

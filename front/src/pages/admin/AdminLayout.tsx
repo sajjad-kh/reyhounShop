@@ -211,8 +211,8 @@ const AdminLayout: React.FC = () => {
                                                                         : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
                                                                 }`}
                                                             >
+                                                                <span className="flex-1 text-right">{item.label}</span>
                                                                 <Icon className="w-4 h-4 flex-shrink-0" />
-                                                                <span className="font-medium">{item.label}</span>
                                                             </Link>
                                                         );
                                                     })}
@@ -228,8 +228,8 @@ const AdminLayout: React.FC = () => {
                                     to="/"
                                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all whitespace-nowrap"
                                 >
+                                    <span className="flex-1 text-right">بازگشت به فروشگاه</span>
                                     <LogOut className="w-4 h-4 rotate-180" />
-                                    <span className="font-medium">بازگشت به فروشگاه</span>
                                 </Link>
                             </div>
                         </GlassCard>

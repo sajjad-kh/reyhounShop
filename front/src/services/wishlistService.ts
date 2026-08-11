@@ -30,7 +30,14 @@ export class WishlistService {
             const response = await api.get<WishlistItem[]>(API_ENDPOINTS.USER.WISHLIST);
 
             if (response.success && response.data) {
-                return response.data;
+                // Backend returns { data: { items: [...], pagination: {...}, stats: {...} } }
+                if (Array.isArray((response.data as any).items)) {
+                    return (response.data as any).items;
+                }
+                // Fallback: if data is directly an array
+                if (Array.isArray(response.data)) {
+                    return response.data;
+                }
             }
 
             return [];
@@ -94,7 +101,7 @@ export class WishlistService {
      */
     async clearWishlist(): Promise<void> {
         try {
-            const response = await api.delete(API_ENDPOINTS.USER.WISHLIST);
+            const response = await api.delete(`${API_ENDPOINTS.USER.WISHLIST}/clear`);
 
             if (!response.success) {
                 throw new Error('Failed to clear wishlist');

@@ -63,7 +63,7 @@ export const API_ENDPOINTS = {
     USER: {
         PROFILE: '/users/profile',
         ADDRESSES: '/users/addresses',
-        WISHLIST: '/users/wishlist',
+        WISHLIST: '/wishlist',
         LOYALTY_POINTS: '/users/loyalty-points',
     },
 

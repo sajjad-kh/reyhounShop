@@ -69,9 +69,9 @@ class WishlistService {
     await prisma.activityLog.create({
       data: {
         user: { connect: { id: userId } },
-        action: 'wishlist.added',
+        action: 'SYSTEM_EVENT',
         entity: 'SYSTEM',
-        entityId: wishlistItem.id,
+        entityId: String(wishlistItem.id),
         actorType: 'USER',
         metadata: {
           productId,
@@ -129,6 +129,9 @@ class WishlistService {
               reviews: {
                 where: { isApproved: true },
                 select: { rating: true }
+              },
+              category: {
+                select: { name: true }
               }
             }
           }
@@ -213,9 +216,9 @@ class WishlistService {
     await prisma.activityLog.create({
       data: {
         user: { connect: { id: userId } },
-        action: 'wishlist.removed',
+        action: 'SYSTEM_EVENT',
         entity: 'SYSTEM',
-        entityId: wishlistItemId,
+        entityId: String(wishlistItemId),
         actorType: 'USER',
         metadata: {
           productId: wishlistItem.productId,
@@ -329,9 +332,9 @@ class WishlistService {
     await prisma.activityLog.create({
       data: {
         user: { connect: { id: userId } },
-        action: 'wishlist.moved_to_cart',
+        action: 'SYSTEM_EVENT',
         entity: 'SYSTEM',
-        entityId: wishlistItemId,
+        entityId: String(wishlistItemId),
         actorType: 'USER',
         metadata: {
           productId: product.id,
@@ -366,7 +369,7 @@ class WishlistService {
     await prisma.activityLog.create({
       data: {
         user: { connect: { id: userId } },
-        action: 'wishlist.cleared',
+        action: 'SYSTEM_EVENT',
         entity: 'SYSTEM',
         actorType: 'USER',
         metadata: {
@@ -379,6 +382,108 @@ class WishlistService {
       removedCount: count,
       message: `Removed ${count} items from wishlist`
     };
+  }
+
+  /**
+   * Toggle product in user's wishlist (add if not exists, remove if exists)
+   * @param {number} userId - User ID
+   * @param {number} productId - Product ID
+   * @returns {Promise<Object>} Result with added status
+   */
+  async toggleWishlist(userId, productId) {
+    // Check if product exists
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, name: true, isActive: true }
+    });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    if (!product.isActive) {
+      throw new Error('This product is not available');
+    }
+
+    // Check if already in wishlist
+    const existingItem = await prisma.wishlist.findFirst({
+      where: { userId, productId }
+    });
+
+    if (existingItem) {
+      // Remove from wishlist
+      await prisma.wishlist.delete({
+        where: { id: existingItem.id }
+      });
+
+      // Decrement wishlistCount
+      await prisma.product.update({
+        where: { id: productId },
+        data: { wishlistCount: { decrement: 1 } }
+      });
+
+      // Log the activity
+      await prisma.activityLog.create({
+        data: {
+          user: { connect: { id: userId } },
+          action: 'SYSTEM_EVENT',
+          entity: 'SYSTEM',
+          entityId: existingItem.id.toString(),
+          actorType: 'USER',
+          metadata: {
+            productId,
+            productName: product.name
+          }
+        }
+      });
+
+      return {
+        added: false,
+        message: 'Product removed from wishlist',
+        productName: product.name,
+        productId,
+        wishlistId: existingItem.id
+      };
+    } else {
+      // Add to wishlist
+      const newItem = await prisma.wishlist.create({
+        data: {
+          userId,
+          productId,
+          notifyPriceChange: true,
+          notifyStockRestock: true
+        }
+      });
+
+      // Increment wishlistCount
+      await prisma.product.update({
+        where: { id: productId },
+        data: { wishlistCount: { increment: 1 } }
+      });
+
+      // Log the activity
+      await prisma.activityLog.create({
+        data: {
+          user: { connect: { id: userId } },
+          action: 'SYSTEM_EVENT',
+          entity: 'SYSTEM',
+          entityId: newItem.id.toString(),
+          actorType: 'USER',
+          metadata: {
+            productId,
+            productName: product.name
+          }
+        }
+      });
+
+      return {
+        added: true,
+        message: 'Product added to wishlist',
+        productName: product.name,
+        productId,
+        wishlistId: newItem.id
+      };
+    }
   }
 
   /**
@@ -404,33 +509,31 @@ class WishlistService {
    * @returns {Promise<Object>} Wishlist statistics
    */
   async getWishlistStats(userId) {
-    const [totalItems, totalValue, availableItems] = await Promise.all([
-      prisma.wishlist.count({ where: { userId } }),
-      prisma.wishlist.aggregate({
-        where: { userId },
-        _sum: {
-          product: {
-            price: true
+    const items = await prisma.wishlist.findMany({
+      where: { userId },
+      select: {
+        product: {
+          select: {
+            price: true,
+            discountPrice: true,
+            stock: true
           }
         }
-      }),
-      prisma.wishlist.count({
-        where: {
-          userId,
-          product: {
-            stock: {
-              gt: 0
-            }
-          }
-        }
-      })
-    ]);
+      }
+    });
+
+    const totalItems = items.length;
+    const availableItems = items.filter(item => item.product.stock > 0).length;
+    const estimatedValue = items.reduce((sum, item) => {
+      const effectivePrice = item.product.discountPrice || item.product.price;
+      return sum + effectivePrice;
+    }, 0);
 
     return {
       totalItems,
       availableItems,
       outOfStockItems: totalItems - availableItems,
-      estimatedValue: totalValue._sum?.product?.price || 0
+      estimatedValue
     };
   }
 }
