@@ -64,7 +64,7 @@ export const UserLayout: React.FC = () => {
         refetchOnWindowFocus: true,
     });
 
-    const ordersCount = data?.data?.length ?? 0;
+    const ordersCount = (data?.data?.filter((o: { status: string }) => o.status !== 'DELIVERED') ?? []).length;
 
     const hasOrders = ordersCount > 0;
 
