@@ -243,13 +243,23 @@ const sanitizeInput = (req, res, next) => {
  */
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',')
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
-    
+
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
+    // Always reflect the origin in development (covers localhost, tunnels, etc.)
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, origin);
+    }
+
+    // Allow any localhost / 127.0.0.1 origin (dev convenience)
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {

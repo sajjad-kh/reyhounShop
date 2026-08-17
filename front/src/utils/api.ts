@@ -87,6 +87,11 @@ const createApiClient = (): AxiosInstance => {
     // Request interceptor for adding auth token, CSRF token, and cache checking
     client.interceptors.request.use(
         (config) => {
+            // Prevent browser disk cache for API requests
+            config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+            config.headers['Pragma'] = 'no-cache';
+            config.headers['Expires'] = '0';
+
             // Add auth token with validation
             const token = secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
             if (token && validateJWTStructure(token)) {

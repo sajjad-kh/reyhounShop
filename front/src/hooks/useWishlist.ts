@@ -58,12 +58,14 @@ export const useWishlist = () => {
     }, []);
 
     // Toggle wishlist (add if not in wishlist, remove if in wishlist)
-    const toggleWishlist = useCallback(async (productId: number): Promise<void> => {
+    const toggleWishlist = useCallback(async (productId: number): Promise<{ added: boolean }> => {
         const item = getWishlistItem(productId);
         if (item) {
             await removeFromWishlist(item.id);
+            return { added: false };
         } else {
             await addToWishlist(productId);
+            return { added: true };
         }
     }, [getWishlistItem, addToWishlist, removeFromWishlist]);
 

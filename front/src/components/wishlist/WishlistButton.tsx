@@ -67,8 +67,9 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
             const result = await toggleWishlist(productId);
             setIsInList(result.added);
             onToggle?.(result.added);
+            toast.success(result.added ? 'به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
         } catch (error) {
-            // Error is handled by the hook
+            toast.error('خطا در تغییر علاقه‌مندی');
         } finally {
             setToggling(false);
         }
@@ -86,6 +87,36 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         );
     }
 
+    if (showLabel) {
+        return (
+            <button
+                onClick={handleToggle}
+                disabled={toggling || isLoading}
+                className={cn(
+                    'flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-medium',
+                    'transition-all duration-300',
+                    isInList
+                        ? 'bg-gradient-to-l from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40'
+                        : 'bg-white/[0.06] border border-white/10 text-text-secondary hover:text-pink-400 hover:border-pink-400/30 hover:bg-pink-500/[0.08]',
+                    toggling && 'opacity-50 cursor-not-allowed',
+                    !toggling && 'hover:scale-[1.03] active:scale-[0.97]',
+                    className
+                )}
+                aria-label={isInList ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+            >
+                {toggling ? (
+                    <div className="glass-spinner w-4 h-4" />
+                ) : (
+                    <HeartIcon
+                        filled={isInList}
+                        className={cn('transition-all duration-300', isInList && 'drop-shadow-sm')}
+                    />
+                )}
+                <span>{isInList ? 'در لیست علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}</span>
+            </button>
+        );
+    }
+
     return (
         <button
             onClick={handleToggle}
@@ -96,8 +127,8 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
                 'flex items-center justify-center',
                 'transition-all duration-300',
                 isInList
-                    ? 'bg-accent-primary text-white hover:bg-accent-primary/80 shadow-lg shadow-accent-primary/30'
-                    : 'bg-glass-medium hover:bg-glass-heavy text-text-secondary hover:text-text-primary',
+                    ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25'
+                    : 'bg-black/30 backdrop-blur-md border border-white/20 text-white/90 hover:text-pink-400 hover:border-pink-400/40 hover:bg-black/40',
                 toggling && 'opacity-50 cursor-not-allowed',
                 !toggling && 'hover:scale-110 active:scale-95',
                 className
@@ -109,14 +140,8 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
             ) : (
                 <HeartIcon
                     filled={isInList}
-                    className={config.icon}
+                    className={cn('transition-all duration-300', isInList && 'drop-shadow-sm')}
                 />
-            )}
-
-            {showLabel && (
-                <span className="mr-2 text-sm font-medium">
-                    {isInList ? 'در لیست علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
-                </span>
             )}
         </button>
     );

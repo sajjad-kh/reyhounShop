@@ -154,10 +154,19 @@ export const ProductDetailPage: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 mb-10 lg:mb-16">
                     {/* Image Gallery */}
                     <div className="lg:sticky lg:top-24 lg:self-start">
-                        <ImageGallery
-                            images={product.images}
-                            productName={product.name}
-                        />
+                        <div className="relative">
+                            <ImageGallery
+                                images={product.images}
+                                productName={product.name}
+                            />
+                            {/* Wishlist overlay button */}
+                            <div className="absolute top-3 left-3 z-10">
+                                <WishlistButton
+                                    productId={product.id}
+                                    size="lg"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Product Info */}
@@ -292,15 +301,6 @@ export const ProductDetailPage: React.FC = () => {
                                     <ShoppingCart className="w-4 h-4" />
                                     افزودن به سبد خرید
                                 </button>
-
-                                {/* Wishlist Button */}
-                                <div className="flex items-center justify-center">
-                                    <WishlistButton
-                                        productId={product.id}
-                                        size="md"
-                                        showLabel
-                                    />
-                                </div>
                             </div>
                         )}
 

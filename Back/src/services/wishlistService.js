@@ -100,9 +100,11 @@ class WishlistService {
     const skip = (page - 1) * limit;
 
     // Build orderBy clause
+    // Note: Wishlist model has no `createdAt`; use `id` (autoincrement) to
+    // preserve insertion order when client requests createdAt sorting.
     let orderBy = {};
     if (sortBy === 'createdAt') {
-      orderBy = { createdAt: sortOrder };
+      orderBy = { id: sortOrder };
     } else if (sortBy === 'productName') {
       orderBy = { product: { name: sortOrder } };
     } else if (sortBy === 'price') {

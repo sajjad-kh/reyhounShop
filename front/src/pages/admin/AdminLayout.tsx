@@ -111,7 +111,7 @@ const AdminLayout: React.FC = () => {
     };
 
     const toggleGroup = (title: string) => {
-        setCollapsedGroups((prev) => {
+        setCollapsedGroups(() => {
             const next: Record<string, boolean> = {};
             for (const g of NAV_GROUPS) {
                 next[g.title] = true;
@@ -130,6 +130,7 @@ const AdminLayout: React.FC = () => {
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="lg:hidden p-2 rounded-lg bg-glass-light hover:bg-glass-medium transition-colors"
+                            aria-label={sidebarOpen ? 'بستن منو' : 'باز کردن منو'}
                         >
                             {sidebarOpen ? (
                                 <X className="w-6 h-6 text-text-primary" />
@@ -137,7 +138,7 @@ const AdminLayout: React.FC = () => {
                                 <Menu className="w-6 h-6 text-text-primary" />
                             )}
                         </button>
-                        <h1 className="text-xl font-bold text-text-primary">Admin Panel</h1>
+                        <h1 className="text-xl font-bold text-text-primary">پنل مدیریت</h1>
                     </div>
 
                     <div className="flex items-center space-x-4">
@@ -154,7 +155,7 @@ const AdminLayout: React.FC = () => {
                         <button
                             onClick={logout}
                             className="p-2 rounded-lg bg-glass-light hover:bg-glass-medium transition-colors"
-                            title="Logout"
+                            title="خروج"
                         >
                             <LogOut className="w-5 h-5 text-text-primary" />
                         </button>
@@ -165,82 +166,97 @@ const AdminLayout: React.FC = () => {
             <div className="flex pt-20">
                 {/* Sidebar */}
                 <aside
-                    className={`fixed lg:sticky top-20 left-0 h-[calc(100vh-5rem)] w-64 transition-transform duration-300 z-40 ${
-                        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                    className={`fixed lg:sticky top-20 right-0 h-[calc(100vh-5rem)] w-full lg:w-64 transition-transform duration-300 ease-out z-40 ${
+                        sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
                     }`}
                 >
-                    <div className="h-full p-6">
-                        <GlassCard className="h-full p-4">
-                            <nav className="space-y-4">
-                                {NAV_GROUPS.map((group) => {
-                                    const isCollapsed = collapsedGroups[group.title] ?? false;
-                                    const hasActive = group.items.some((item) => isActive(item.path));
+                    <div className="h-full flex flex-col">
+                        {/* Mobile Header */}
+                        <div className="lg:hidden flex items-center justify-between px-4 py-3 mb-4">
+                            <h2 className="text-base font-semibold text-white">منوی مدیریت</h2>
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                                aria-label="بستن منو"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
 
-                                    return (
-                                        <div key={group.title}>
-                                            <button
-                                                onClick={() => toggleGroup(group.title)}
-                                                className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
-                                                    hasActive
-                                                        ? 'text-accent-primary'
-                                                        : 'text-text-muted hover:text-text-secondary'
-                                                }`}
-                                            >
-                                                <span>{group.title}</span>
-                                                <ChevronDown
-                                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                                        isCollapsed ? '' : 'rotate-180'
+                        <div className="flex-1 overflow-y-auto p-6 lg:p-4">
+                            <GlassCard className="h-full p-0 lg:p-4 rounded-none lg:rounded-2xl border-0 lg:border">
+                                <nav className="space-y-4">
+                                    {NAV_GROUPS.map((group) => {
+                                        const isCollapsed = collapsedGroups[group.title] ?? false;
+                                        const hasActive = group.items.some((item) => isActive(item.path));
+
+                                        return (
+                                            <div key={group.title}>
+                                                <button
+                                                    onClick={() => toggleGroup(group.title)}
+                                                    className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                                                        hasActive
+                                                            ? 'text-accent-primary'
+                                                            : 'text-text-muted hover:text-text-secondary'
                                                     }`}
-                                                />
-                                            </button>
+                                                >
+                                                    <span>{group.title}</span>
+                                                    <ChevronDown
+                                                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                                            isCollapsed ? '' : 'rotate-180'
+                                                        }`}
+                                                    />
+                                                </button>
 
-                                            {!isCollapsed && (
-                                                <div className="mt-1 space-y-1">
-                                                    {group.items.map((item) => {
-                                                        const Icon = item.icon;
-                                                        const active = isActive(item.path);
+                                                {!isCollapsed && (
+                                                    <div className="mt-1 space-y-1">
+                                                        {group.items.map((item) => {
+                                                            const Icon = item.icon;
+                                                            const active = isActive(item.path);
 
-                                                        return (
-                                                            <Link
-                                                                key={item.path}
-                                                                to={item.path}
-                                                                onClick={() => setSidebarOpen(false)}
-                                                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${
-                                                                    active
-                                                                        ? 'bg-gradient-accent text-white shadow-glass'
-                                                                        : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
-                                                                }`}
-                                                            >
-                                                                <span className="flex-1 text-right">{item.label}</span>
-                                                                <Icon className="w-4 h-4 flex-shrink-0" />
-                                                            </Link>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </nav>
+                                                            return (
+                                                                <Link
+                                                                    key={item.path}
+                                                                    to={item.path}
+                                                                    onClick={() => setSidebarOpen(false)}
+                                                                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${
+                                                                        active
+                                                                            ? 'bg-gradient-accent text-white shadow-glass'
+                                                                            : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+                                                                    }`}
+                                                                >
+                                                                    <Icon className="w-4 h-4 flex-shrink-0" />
+                                                                    <span className="flex-1 text-right">{item.label}</span>
+                                                                </Link>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </nav>
 
-                            <div className="mt-4 pt-4 border-t border-border-glass-light">
-                                <Link
-                                    to="/"
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all whitespace-nowrap"
-                                >
-                                    <span className="flex-1 text-right">بازگشت به فروشگاه</span>
-                                    <LogOut className="w-4 h-4 rotate-180" />
-                                </Link>
-                            </div>
-                        </GlassCard>
+                                <div className="mt-4 pt-4 border-t border-border-glass-light">
+                                    <Link
+                                        to="/"
+                                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all whitespace-nowrap"
+                                    >
+                                        <LogOut className="w-4 h-4 rotate-180" />
+                                        <span className="flex-1 text-right">بازگشت به فروشگاه</span>
+                                    </Link>
+                                </div>
+                            </GlassCard>
+                        </div>
                     </div>
                 </aside>
 
                 {/* Overlay for mobile */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
+                        aria-hidden="true"
                     />
                 )}
 

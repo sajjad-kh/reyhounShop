@@ -84,7 +84,7 @@ export const TourLauncher: React.FC = () => {
                 onClick={launch}
                 title="راهنمای صفحه"
                 aria-label="راهنمای صفحه"
-                className="fixed bottom-6 left-6 z-[900] w-12 h-12 rounded-full bg-gradient-accent text-white shadow-glass flex items-center justify-center hover:brightness-110 transition-all"
+                className="fixed bottom-20 sm:bottom-6 left-6 z-[900] w-12 h-12 rounded-full bg-gradient-accent text-white shadow-glass flex items-center justify-center hover:brightness-110 transition-all"
             >
                 <HelpCircle className="w-6 h-6" />
             </button>

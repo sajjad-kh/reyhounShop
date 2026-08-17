@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { GlassCard } from '../components/ui/GlassCard';
 import { DropdownSelect } from '../components/ui/DropdownSelect';
-import { GlassButton } from '../components/ui/GlassButton';
-import { GlassInput } from '../components/ui/GlassInput';
 import { ProductCard } from '../components/ui/ProductCard';
 import { FilterSidebar } from '../components/ui/FilterSidebar';
 import { GlassPagination } from '../components/ui/GlassPagination';
 import { productService } from '../services/productService';
 import { Product, Category, ProductFilters, ProductSort } from '../types/product';
 import { UI_CONSTANTS } from '../utils/constants';
-import { cn } from '../utils';
 import { useCart } from '../context/CartContext';
 import { useCart as useBasalamCart } from '../hooks/basalam/useCart';
 import { useWishlist } from '../hooks/useWishlist';
@@ -42,6 +38,21 @@ export const ProductListingPage: React.FC = () => {
     const [totalProducts, setTotalProducts] = useState(0);
 
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+    const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+    const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+
+    // Keep the visible input in sync when searchQuery resets externally (clear filters, back nav)
+    useEffect(() => {
+        setSearchInput(searchQuery);
+    }, [searchQuery]);
+
+    const onSearchChange = (value: string) => {
+        setSearchInput(value);
+        if (searchTimer.current) clearTimeout(searchTimer.current);
+        searchTimer.current = setTimeout(() => {
+            handleSearch(value);
+        }, 400);
+    };
     const [filters, setFilters] = useState<ProductFilters>({
         categories: searchParams.get('category') ? [parseInt(searchParams.get('category')!)] : undefined,
         minPrice: searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined,
@@ -254,13 +265,17 @@ export const ProductListingPage: React.FC = () => {
                         <input
                             type="text"
                             placeholder="جستجوی محصولات..."
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
+                            value={searchInput}
+                            onChange={(e) => onSearchChange(e.target.value)}
                             className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs sm:text-sm placeholder:text-white/25 focus:outline-none focus:border-accent-primary/40 focus:bg-white/[0.06] transition-all"
                         />
-                        {searchQuery && (
+                        {searchInput && (
                             <button
-                                onClick={() => handleSearch('')}
+                                onClick={() => {
+                                    setSearchInput('');
+                                    if (searchTimer.current) clearTimeout(searchTimer.current);
+                                    handleSearch('');
+                                }}
                                 className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -292,8 +307,6 @@ export const ProductListingPage: React.FC = () => {
                                 filters={filters}
                                 onFiltersChange={handleFiltersChange}
                                 onClearFilters={handleClearFilters}
-                                isOpen={true}
-                                onToggle={() => { }}
                             />
                         </div>
                     </div>
@@ -305,7 +318,7 @@ export const ProductListingPage: React.FC = () => {
                                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                                 onClick={() => setFiltersOpen(false)}
                             />
-                            <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-[#0A0F1C] border-l border-white/[0.08] overflow-y-auto">
+                            <div className="absolute right-0 top-0 bottom-0 w-full bg-[#0A0F1C] border-l border-white/[0.08] overflow-y-auto">
                                 <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
                                     <span className="text-sm font-semibold text-white">فیلترها</span>
                                     <button
@@ -321,8 +334,6 @@ export const ProductListingPage: React.FC = () => {
                                         filters={filters}
                                         onFiltersChange={handleFiltersChange}
                                         onClearFilters={handleClearFilters}
-                                        isOpen={true}
-                                        onToggle={() => setFiltersOpen(false)}
                                     />
                                 </div>
                             </div>
