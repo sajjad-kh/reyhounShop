@@ -136,7 +136,7 @@ export const UserLayout: React.FC = () => {
         <div className="min-h-screen bg-gradient-primary">
 
             {/* ===== TOP NAVBAR ===== */}
-            <nav dir="rtl" className="glass-navbar fixed top-0 left-0 right-0 z-50">
+            <nav dir="rtl" className="glass-navbar">
                 <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
 
                     {/* Right: Logo + Name */}
@@ -297,20 +297,22 @@ export const UserLayout: React.FC = () => {
 
             {/* ===== DASHBOARD SIDEBAR (admin style) ===== */}
             <DashboardSidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, closeSidebar }}>
-                <DashboardSidebar
-                    isOpen={isSidebarOpen}
-                    onClose={closeSidebar}
-                    isAdmin={isAdmin}
-                />
+                <div className="flex pt-16 sm:pt-20 pb-20 sm:pb-0">
+                    <DashboardSidebar
+                        isOpen={isSidebarOpen}
+                        onClose={closeSidebar}
+                        isAdmin={isAdmin}
+                    />
 
-                <main className="pt-16 sm:pt-20 pb-20 sm:pb-0">
-                    <Outlet />
-                </main>
+                    <main className="flex-1 min-w-0">
+                        <Outlet />
+                    </main>
+                </div>
             </DashboardSidebarContext.Provider>
 
             {/* ===== BOTTOM NAVIGATION (Mobile Only) ===== */}
             {user && (
-                <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-white/10">
+                <nav className="sm:hidden fixed bottom-2 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-white/10">
                     <div className="flex items-center justify-around py-2 px-2">
                         <button
                             onClick={() => navigate('/')}

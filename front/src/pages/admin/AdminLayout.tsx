@@ -124,7 +124,7 @@ const AdminLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-primary">
             {/* Top Navigation Bar */}
-            <nav dir="ltr" className="glass-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
+            <nav dir="ltr" className="glass-navbar px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <button

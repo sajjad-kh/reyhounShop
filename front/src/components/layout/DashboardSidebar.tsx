@@ -86,7 +86,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         <>
             <aside
                 className={cn(
-                    'fixed lg:sticky top-20 right-0 h-[calc(100vh-5rem)] w-full lg:w-64 transition-transform duration-300 ease-out z-40 bg-[#0A0F1C]/75 backdrop-blur-sm',
+                    'fixed lg:sticky top-20 right-0 h-[calc(100vh-5rem)] w-full lg:w-64 transition-transform duration-300 ease-out z-40',
                     isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
                     className
                 )}
@@ -147,7 +147,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             </aside>
 
             {/* Overlay for mobile */}
-            {isMobile && isOpen && (
+            {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
                     onClick={onClose}

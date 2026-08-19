@@ -158,7 +158,7 @@ export const HomePage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#080B14]">
+        <div className="min-h-screen bg-gradient-primary">
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 px-4 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-accent-primary/5 to-transparent"></div>
