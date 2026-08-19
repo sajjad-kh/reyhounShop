@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
@@ -6,10 +6,25 @@ import { useCart as useBasalamCart } from '../../hooks/basalam/useCart';
 import { LogOut, ShoppingCart, Package, Home, Search, Heart, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '../notification/NotificationBell';
+import { DashboardSidebar } from './DashboardSidebar';
 
 import { STORAGE_KEYS } from '../../utils/constants';
 import { secureStorage } from '../../utils/security';
 import { TourLauncher } from '../tour/TourLauncher';
+
+interface DashboardSidebarContextType {
+    isSidebarOpen: boolean;
+    toggleSidebar: () => void;
+    closeSidebar: () => void;
+}
+
+export const DashboardSidebarContext = createContext<DashboardSidebarContextType>({
+    isSidebarOpen: false,
+    toggleSidebar: () => {},
+    closeSidebar: () => {},
+});
+
+export const useDashboardSidebar = () => useContext(DashboardSidebarContext);
 
 export const UserLayout: React.FC = () => {
     const { state, logout } = useAuth();
@@ -18,7 +33,21 @@ export const UserLayout: React.FC = () => {
     const location = useLocation();
     const [showCartDropdown, setShowCartDropdown] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+    const closeSidebar = () => setIsSidebarOpen(false);
+    const isAdmin = user?.role === 'ADMIN';
+
+    // Lock body scroll when sidebar is open
+    useEffect(() => {
+        if (isSidebarOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isSidebarOpen]);
 
     // =========================
     // CARTS
@@ -69,16 +98,6 @@ export const UserLayout: React.FC = () => {
     const ordersCount = (data?.data?.filter((o: { status: string }) => o.status !== 'DELIVERED') ?? []).length;
 
     const hasOrders = ordersCount > 0;
-
-    // Lock body scroll when mobile menu is open
-    useEffect(() => {
-        if (showMobileMenu) {
-            document.body.style.overflow = 'hidden';
-        }
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [showMobileMenu]);
 
     // =========================
     // OUTSIDE CLICK
@@ -262,9 +281,9 @@ export const UserLayout: React.FC = () => {
                             </button>
                         )}
 
-                        {/* Hamburger (mobile only) */}
+                        {/* HAMBURGER — opens dashboard sidebar */}
                         <button
-                            onClick={() => setShowMobileMenu(true)}
+                            onClick={toggleSidebar}
                             className="sm:hidden p-2 rounded-xl text-text-primary hover:text-accent-primary hover:bg-white/10 transition-all duration-200"
                             aria-label="منو"
                         >
@@ -276,81 +295,18 @@ export const UserLayout: React.FC = () => {
                 </div>
             </nav>
 
-            <main className="pt-16 sm:pt-20 pb-20 sm:pb-0">
-                <Outlet />
-            </main>
+            {/* ===== DASHBOARD SIDEBAR (admin style) ===== */}
+            <DashboardSidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, closeSidebar }}>
+                <DashboardSidebar
+                    isOpen={isSidebarOpen}
+                    onClose={closeSidebar}
+                    isAdmin={isAdmin}
+                />
 
-            {/* ===== MOBILE MENU DRAWER ===== */}
-            {showMobileMenu && (
-                <div className="fixed inset-0 z-[60] lg:hidden">
-                    <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowMobileMenu(false)}
-                        aria-hidden="true"
-                    />
-                    <div className="absolute right-0 top-0 bottom-0 w-full bg-[#0A0F1C] border-l border-white/[0.08] overflow-y-auto flex flex-col">
-                        <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
-                            <h2 className="text-base font-semibold text-white">منو</h2>
-                            <button
-                                onClick={() => setShowMobileMenu(false)}
-                                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                                aria-label="بستن منو"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <nav className="flex-1 overflow-y-auto py-2">
-                            <MobileNavItem
-                                icon={<Home className="w-5 h-5" />}
-                                label="خانه"
-                                active={isActive('/') && !isActive('/dashboard')}
-                                onClick={() => { setShowMobileMenu(false); navigate('/'); }}
-                            />
-                            <MobileNavItem
-                                icon={<Search className="w-5 h-5" />}
-                                label="جستجو"
-                                active={isActive('/products')}
-                                onClick={() => { setShowMobileMenu(false); navigate('/products'); }}
-                            />
-                            <MobileNavItem
-                                icon={<ShoppingCart className="w-5 h-5" />}
-                                label="سبد خرید"
-                                active={isActive('/cart')}
-                                onClick={() => { setShowMobileMenu(false); handleCartClick(); }}
-                            />
-                            <MobileNavItem
-                                icon={<Package className="w-5 h-5" />}
-                                label="سفارشات"
-                                active={isActive('/dashboard/orders')}
-                                onClick={() => { setShowMobileMenu(false); navigate('/dashboard/orders'); }}
-                            />
-                            <MobileNavItem
-                                icon={<Heart className="w-5 h-5" />}
-                                label="علاقه‌مندی‌ها"
-                                active={isActive('/dashboard/wishlist')}
-                                onClick={() => { setShowMobileMenu(false); navigate('/dashboard/wishlist'); }}
-                            />
-                            {user && user.role === 'ADMIN' && (
-                                <MobileNavItem
-                                    icon={<Package className="w-5 h-5" />}
-                                    label="پنل مدیریت"
-                                    active={isActive('/admin')}
-                                    onClick={() => { setShowMobileMenu(false); navigate('/admin'); }}
-                                />
-                            )}
-                            {user && (
-                                <MobileNavItem
-                                    icon={<User className="w-5 h-5" />}
-                                    label="خروج"
-                                    onClick={() => { setShowMobileMenu(false); logout(); }}
-                                />
-                            )}
-                        </nav>
-                    </div>
-                </div>
-            )}
+                <main className="pt-16 sm:pt-20 pb-20 sm:pb-0">
+                    <Outlet />
+                </main>
+            </DashboardSidebarContext.Provider>
 
             {/* ===== BOTTOM NAVIGATION (Mobile Only) ===== */}
             {user && (
@@ -414,31 +370,10 @@ export const UserLayout: React.FC = () => {
             )}
 
             {/* Global tour / guide launcher for all user sections */}
-            <TourLauncher />
+            {!isSidebarOpen && <TourLauncher />}
 
         </div>
     );
 };
-
-interface MobileNavItemProps {
-    icon: React.ReactNode;
-    label: string;
-    active?: boolean;
-    onClick: () => void;
-}
-
-const MobileNavItem: React.FC<MobileNavItemProps> = ({ icon, label, active, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-3.5 px-4 py-3 text-sm transition-colors ${
-            active
-                ? 'text-accent-primary bg-accent-primary/10'
-                : 'text-white/70 hover:text-white hover:bg-white/[0.04]'
-        }`}
-    >
-        <span className={active ? 'text-accent-primary' : 'text-white/50'}>{icon}</span>
-        <span className="flex-1 text-right">{label}</span>
-    </button>
-);
 
 export default UserLayout;

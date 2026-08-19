@@ -219,6 +219,9 @@ model User {
   referralsReceived     LoyaltyReferral[]      @relation("ReferralReferred")
   referredUsers         User[]                 @relation("ReferredBy")
 
+  // Inventory
+  createdInventoryMovements InventoryMovement[] @relation("InventoryCreatedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1148,4 +1151,50 @@ model LoyaltyBirthdayGrant {
 
   @@unique([userId, year])
   @@index([userId])
+}
+
+/**
+ * ================= INVENTORY =================
+ */
+
+model InventoryItem {
+  id            Int      @id @default(autoincrement())
+  name          String
+  sku           String?  @unique
+  description   String?
+  quantity      Int      @default(0)
+  lowStockAlert Int      @default(5)
+  unit          String   @default("عدد")
+  costPrice     Int?
+  sellPrice     Int?
+  location      String?
+  supplier      String?
+  minOrderQty   Int      @default(1)
+  isActive      Boolean  @default(true)
+
+  movements InventoryMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([sku])
+  @@index([isActive])
+}
+
+model InventoryMovement {
+  id               Int      @id @default(autoincrement())
+  inventoryItemId  Int
+  inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type             String   // IN, OUT, ADJUST, RETURN
+  quantity         Int
+  note             String?
+  createdBy        Int?
+  createdByUser    User?    @relation("InventoryCreatedBy", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([inventoryItemId])
+  @@index([type])
+  @@index([createdAt])
 }
