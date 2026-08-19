@@ -222,8 +222,9 @@ body {
     background: var(--glass-bg-medium);
     position: fixed;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
     width: 97%;
     border-radius: 1rem;
     z-index: 50;
@@ -231,7 +232,7 @@ body {
 
 @media (max-width: 639px) {
     .glass-navbar {
-        top: 8px;
+        top: 12px;
     }
 }
 

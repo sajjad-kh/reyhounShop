@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Package, CreditCard, Tag, Palette, Gift, KeyRound, X, ShoppingBag, Star } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -131,9 +132,108 @@ const NotificationBell: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) 
     }
   };
 
+  const renderDropdown = () => (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-accent-primary/20 flex items-center justify-center">
+            <Bell className="w-4 h-4 text-accent-primary" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">اعلان‌ها</h3>
+            {unreadCount > 0 && (
+              <p className="text-[10px] text-white/50">{unreadCount} خوانده نشده</p>
+            )}
+          </div>
+        </div>
+        {unreadCount > 0 && (
+          <button
+            onClick={() => markAllRead.mutate()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium
+                       text-accent-primary bg-accent-primary/10 hover:bg-accent-primary/20
+                       transition-all duration-200 active:scale-95"
+          >
+            <CheckCheck className="w-3.5 h-3.5" />
+            همه خوانده شد
+          </button>
+        )}
+      </div>
+
+      {/* Notifications List */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-8 h-8 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
+            <p className="text-xs text-white/40">در حال بارگذاری...</p>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+              <Bell className="w-7 h-7 text-white/25" />
+            </div>
+            <p className="text-sm text-white/40 font-medium">اعلانی وجود ندارد</p>
+            <p className="text-[11px] text-white/25">اعلان‌های جدید اینجا نمایش داده می‌شوند</p>
+          </div>
+        ) : (
+          <div className="py-1">
+            {notifications.map((n, idx) => {
+              const config = NOTIF_CONFIG[n.type] || { icon: <Bell className="w-4 h-4" />, color: 'text-white/50', bg: 'bg-white/5' };
+              const isUnread = !n.readAt;
+
+              const btnClass = (isAdmin ? 'text-left' : 'text-right') + ' w-full px-4 py-3.5 flex items-start gap-3 transition-all duration-200 hover:bg-white/10 active:bg-white/15 group' + (isUnread ? ' bg-white/[0.06]' : '') + (idx !== notifications.length - 1 ? ' border-b border-white/[0.06]' : '');
+              return (
+                <button
+                  key={n.id}
+                  onClick={() => handleNotifClick(n)}
+                  className={btnClass}
+                >
+                  <div className={'w-9 h-9 rounded-xl ' + config.bg + ' flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200'}>
+                    <span className={config.color}>{config.icon}</span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={'text-[13px] font-semibold truncate ' + (isUnread ? 'text-white' : 'text-white/70')}>
+                        {n.title}
+                      </p>
+                      {isUnread && (
+                        <span className="w-2 h-2 rounded-full bg-accent-primary shrink-0 shadow-sm shadow-accent-primary/50" />
+                      )}
+                    </div>
+                    <p className={'text-xs mt-0.5 truncate ' + (isUnread ? 'text-white/60' : 'text-white/40')}>
+                      {n.message}
+                    </p>
+                    <p className="text-[10px] text-white/30 mt-1.5 font-medium">
+                      {timeAgo(n.createdAt)}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="px-4 py-3 border-t border-white/10 bg-white/[0.04]">
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate('/notifications');
+            }}
+            className="w-full py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white/70 hover:bg-white/10 transition-all duration-200"
+          >
+            مشاهده همه اعلان‌ها
+          </button>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="relative" ref={ref}>
-      {/* Bell Button */}
       <button
         onClick={() => setOpen(!open)}
         className="relative p-2.5 rounded-xl transition-all duration-300 hover:bg-white/10 active:scale-95"
@@ -147,110 +247,29 @@ const NotificationBell: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) 
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div
-          className={'absolute ' + (isAdmin ? 'right-0' : 'left-0') + ' mt-3 w-[380px] rounded-2xl overflow-hidden z-50 flex flex-col bg-[#1a1f3a] border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] animate-fade-in-up'}
-          style={{ animationDuration: '0.25s' }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-accent-primary/20 flex items-center justify-center">
-                <Bell className="w-4 h-4 text-accent-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">اعلان‌ها</h3>
-                {unreadCount > 0 && (
-                  <p className="text-[10px] text-white/50">{unreadCount} خوانده نشده</p>
-                )}
-              </div>
-            </div>
-            {unreadCount > 0 && (
-              <button
-                onClick={() => markAllRead.mutate()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium
-                           text-accent-primary bg-accent-primary/10 hover:bg-accent-primary/20
-                           transition-all duration-200 active:scale-95"
+        <>
+          {/* Mobile: centered modal via portal to escape flex parent */}
+          {createPortal(
+            <div className="sm:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+              <div
+                className="w-full max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col bg-[#1a1f3a] border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] animate-fade-in-up h-[90vh]"
+                style={{ animationDuration: '0.25s' }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <CheckCheck className="w-3.5 h-3.5" />
-                همه خوانده شد
-              </button>
-            )}
-          </div>
-
-          {/* Notifications List */}
-          <div className="overflow-y-auto max-h-[420px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <div className="w-8 h-8 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
-                <p className="text-xs text-white/40">در حال بارگذاری...</p>
+                {renderDropdown()}
               </div>
-            ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
-                  <Bell className="w-7 h-7 text-white/25" />
-                </div>
-                <p className="text-sm text-white/40 font-medium">اعلانی وجود ندارد</p>
-                <p className="text-[11px] text-white/25">اعلان‌های جدید اینجا نمایش داده می‌شوند</p>
-              </div>
-            ) : (
-              <div className="py-1">
-                {notifications.map((n, idx) => {
-                  const config = NOTIF_CONFIG[n.type] || { icon: <Bell className="w-4 h-4" />, color: 'text-white/50', bg: 'bg-white/5' };
-                  const isUnread = !n.readAt;
-
-                   const btnClass = (isAdmin ? 'text-left' : 'text-right') + ' w-full px-4 py-3.5 flex items-start gap-3 transition-all duration-200 hover:bg-white/10 active:bg-white/15 group' + (isUnread ? ' bg-white/[0.06]' : '') + (idx !== notifications.length - 1 ? ' border-b border-white/[0.06]' : '');
-                   return (
-                     <button
-                       key={n.id}
-                       onClick={() => handleNotifClick(n)}
-                       className={btnClass}
-                     >
-                      {/* Icon */}
-                      <div className={'w-9 h-9 rounded-xl ' + config.bg + ' flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200'}>
-                        <span className={config.color}>{config.icon}</span>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className={'text-[13px] font-semibold truncate ' + (isUnread ? 'text-white' : 'text-white/70')}>
-                            {n.title}
-                          </p>
-                          {isUnread && (
-                            <span className="w-2 h-2 rounded-full bg-accent-primary shrink-0 shadow-sm shadow-accent-primary/50" />
-                          )}
-                        </div>
-                        <p className={'text-xs mt-0.5 truncate ' + (isUnread ? 'text-white/60' : 'text-white/40')}>
-                          {n.message}
-                        </p>
-                        <p className="text-[10px] text-white/30 mt-1.5 font-medium">
-                          {timeAgo(n.createdAt)}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="px-4 py-3 border-t border-white/10 bg-white/[0.04]">
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  navigate('/notifications');
-                }}
-                className="w-full py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white/70 hover:bg-white/10 transition-all duration-200"
-              >
-                مشاهده همه اعلان‌ها
-              </button>
-            </div>
+            </div>,
+            document.body
           )}
-        </div>
+          {/* Desktop: absolute dropdown */}
+          <div
+            className={'hidden sm:block absolute ' + (isAdmin ? 'right-0' : 'left-0') + ' mt-3 w-[380px] rounded-2xl overflow-hidden z-50 flex flex-col bg-[#1a1f3a] border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] animate-fade-in-up'}
+            style={{ animationDuration: '0.25s' }}
+          >
+            {renderDropdown()}
+          </div>
+        </>
       )}
     </div>
   );
