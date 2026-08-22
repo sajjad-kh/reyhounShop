@@ -76,8 +76,9 @@ export const NotificationsPage: React.FC = () => {
   const markAllRead = useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
     onSuccess: () => {
+      queryClient.setQueryData(['notifications-unread'], 0);
       queryClient.invalidateQueries({ queryKey: ['notifications-page'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread'], refetchType: 'none' });
     },
   });
 

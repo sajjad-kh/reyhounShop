@@ -65,14 +65,17 @@ const NotificationBell: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) 
   const markAllRead = useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+      queryClient.setQueryData(['notifications-unread'], 0);
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread'], refetchType: 'none' });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-notification-modal]')) return;
+      if (ref.current && !ref.current.contains(target)) {
         setOpen(false);
       }
     };
@@ -251,7 +254,7 @@ const NotificationBell: React.FC<{ isAdmin?: boolean }> = ({ isAdmin = false }) 
         <>
           {/* Mobile: centered modal via portal to escape flex parent */}
           {createPortal(
-            <div className="sm:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+            <div data-notification-modal className="sm:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
               <div
                 className="w-full max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col bg-[#1a1f3a] border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] animate-fade-in-up h-[90vh]"
                 style={{ animationDuration: '0.25s' }}
