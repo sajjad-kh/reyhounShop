@@ -28,8 +28,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     const inputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    const handleInputChange = (value: string) => {
         setQuery(value);
 
         if (showSuggestions && value.trim().length >= 2) {

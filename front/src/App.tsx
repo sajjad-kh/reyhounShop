@@ -13,7 +13,7 @@ function App() {
       <Toaster
         position="top-center"
         gutter={12}
-        containerStyle={{ top: 20, overflow: 'visible' }}
+        containerStyle={{ top: 80, overflow: 'visible' }}
         toastOptions={{
           duration: 3000,
           style: {

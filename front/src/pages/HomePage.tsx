@@ -72,6 +72,8 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    const [homeSearchInput, setHomeSearchInput] = useState('');
+
     const handleSearch = (query: string) => {
         if (query.trim()) {
             navigate(`/search?search=${encodeURIComponent(query)}`);
@@ -178,7 +180,13 @@ export const HomePage: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="جستجوی محصولات..."
-                                onChange={(e) => handleSearch(e.target.value)}
+                                value={homeSearchInput}
+                                onChange={(e) => setHomeSearchInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleSearch(homeSearchInput);
+                                    }
+                                }}
                                 className="w-full pr-12 pl-4 py-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white text-base placeholder:text-white/25 focus:outline-none focus:border-accent-primary/40 focus:bg-white/[0.06] transition-all"
                             />
                         </div>
